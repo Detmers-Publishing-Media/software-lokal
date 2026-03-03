@@ -1,0 +1,75 @@
+---
+- name: "Server via UpCloud API erstellen"
+  delegate_to: localhost
+  block:
+    - name: "Server erstellen"
+      ansible.builtin.uri:
+        url: "https://api.upcloud.com/1.3/server"
+        method: POST
+        headers:
+          Authorization: "Bearer {{ vault_upcloud_api_token }}"
+          Content-Type: "application/json"
+        body_format: json
+        body:
+          server:
+            zone: "{{ upcloud_zone }}"
+            title: "codefabrik-{{ server_role | default('prod') }}"
+            hostname: "codefabrik-{{ server_role | default('prod') }}"
+            plan: "{{ upcloud_plan }}"
+            metadata: "yes"
+            login_user:
+              username: root
+              ssh_keys:
+                ssh_key:
+                  - "{{ lookup('file', ssh_key_path + '.pub') }}"
+            storage_devices:
+              storage_device:
+                - action: clone
+                  storage: "{{ upcloud_os_template }}"
+                  title: "codefabrik-os"
+                  size: "{{ upcloud_os_storage }}"
+                  tier: "{{ upcloud_storage_tier }}"
+        status_code: [200, 201, 202]
+      register: server_result
+
+    - name: "Server-UUID und IP speichern"
+      ansible.builtin.set_fact:
+        server_uuid: "{{ server_result.json.server.uuid }}"
+        server_ip: "{{ server_result.json.server.ip_addresses.ip_address | selectattr('access', 'eq', 'public') | selectattr('family', 'eq', 'IPv4') | map(attribute='address') | first }}"
+
+    - name: "Warte auf Server-Start"
+      ansible.builtin.uri:
+        url: "https://api.upcloud.com/1.3/server/{{ server_uuid }}"
+        method: GET
+        headers:
+          Authorization: "Bearer {{ vault_upcloud_api_token }}"
+      register: server_status
+      until: server_status.json.server.state == "started"
+      retries: 30
+      delay: 10
+
+    - name: "Server-Info lokal speichern"
+      ansible.builtin.copy:
+        content: |
+          SERVER_UUID={{ server_uuid }}
+          SERVER_IP={{ server_ip }}
+        dest: "/output/.server-env"
+      delegate_to: localhost
+
+    - name: "Warte auf SSH"
+      ansible.builtin.wait_for:
+        host: "{{ server_ip }}"
+        port: 22
+        timeout: 300
+      delegate_to: localhost
+
+    - name: "Inventory dynamisch aktualisieren"
+      ansible.builtin.add_host:
+        name: "factory-{{ server_role | default('prod') }}"
+        ansible_host: "{{ server_ip }}"
+        ansible_user: root
+        ansible_ssh_private_key_file: "{{ ssh_key_path }}"
+        server_uuid: "{{ server_uuid }}"
+        server_ip: "{{ server_ip }}"
+        groups:
+          - "{{ server_role | default('prod') }}"

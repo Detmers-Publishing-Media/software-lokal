@@ -1,0 +1,165 @@
+---
+- name: "Process-Repo erstellen"
+  ansible.builtin.uri:
+    url: "http://localhost:3000/api/v1/orgs/{{ factory_org }}/repos"
+    method: POST
+    headers:
+      Authorization: "token {{ forgejo_api_token }}"
+      Content-Type: "application/json"
+    body_format: json
+    body:
+      name: "{{ process_repo }}"
+      private: true
+      auto_init: true
+    status_code: [201, 409]
+
+- name: "Produkt-Repo erstellen"
+  ansible.builtin.uri:
+    url: "http://localhost:3000/api/v1/orgs/{{ factory_org }}/repos"
+    method: POST
+    headers:
+      Authorization: "token {{ forgejo_api_token }}"
+      Content-Type: "application/json"
+    body_format: json
+    body:
+      name: "{{ product_repo }}"
+      private: true
+      auto_init: true
+    status_code: [201, 409]
+
+- name: "Deploy Key bei Repos registrieren"
+  ansible.builtin.uri:
+    url: "http://localhost:3000/api/v1/repos/{{ factory_org }}/{{ item }}/keys"
+    method: POST
+    headers:
+      Authorization: "token {{ forgejo_api_token }}"
+      Content-Type: "application/json"
+    body_format: json
+    body:
+      title: "openclaw-deploy"
+      key: "{{ deploy_key_pub.stdout }}"
+      read_only: false
+    status_code: [201, 422]
+  loop:
+    - "{{ process_repo }}"
+    - "{{ product_repo }}"
+
+- name: "Repo-Strukturen erstellen"
+  ansible.builtin.shell: |
+    TMPDIR=$(mktemp -d)
+    cd $TMPDIR
+
+    # Process-Repo Struktur
+    git clone http://factory-admin:{{ forgejo_admin_password }}@localhost:3000/{{ factory_org }}/{{ process_repo }}.git
+    cd {{ process_repo }}
+
+    mkdir -p work/{01-inbox,02-triage,"03-backlog/by-product/{{ product_repo }}",04-in-progress,05-review,06-quality-gate,07-release,08-done,"09-blocked/needs-po"}
+    mkdir -p agents/{dispatcher,architect,reviewer}
+    mkdir -p rules templates metrics adr .context
+    mkdir -p .forgejo/workflows
+
+    cat > .forgejo/workflows/test-simple.yml << 'WFEOF'
+    name: Test Simple
+    on:
+      push:
+        branches: [main]
+    jobs:
+      test:
+        runs-on: ubuntu-latest
+        steps:
+          - uses: actions/checkout@v4
+          - run: echo "Process-Repo OK"
+    WFEOF
+
+    cat > CLAUDE.md << 'CLEOF'
+    # CLAUDE.md
+    ## Modus: Vollautomatisch / Headless
+    Du arbeitest im Headless-Modus. KEINE Rückfragen. KEINE TODOs.
+    Implementiere sofort die beste Lösung.
+    CLEOF
+
+    echo "# Code-Fabrik Process Repository" > .context/PRODUCT.md
+    echo "# Architektur" > .context/ARCHITECTURE.md
+    echo "# Konventionen" > .context/CONVENTIONS.md
+    echo "# Entscheidungen" > .context/DECISIONS.md
+
+    cat > work/01-inbox/STORY-000099.yml << 'STEOF'
+    id: STORY-000099
+    type: story
+    title: "Health-Endpoint für Gateway"
+    beschreibung: |
+      Als Betreiber möchte ich einen /health Endpoint am Gateway,
+      der den Status aller Services zurückgibt.
+    akzeptanzkriterien:
+      - GET /health antwortet mit HTTP 200
+      - Response enthält status und version
+    produkt: {{ product_repo }}
+    prioritaet: hoch
+    STEOF
+
+    touch "work/02-triage/.gitkeep" \
+          "work/03-backlog/by-product/{{ product_repo }}/.gitkeep" \
+          "work/04-in-progress/.gitkeep" \
+          "work/05-review/.gitkeep" \
+          "work/06-quality-gate/.gitkeep" \
+          "work/07-release/.gitkeep" \
+          "work/08-done/.gitkeep" \
+          "work/09-blocked/needs-po/.gitkeep"
+    touch metrics/.gitkeep agents/dispatcher/.gitkeep agents/architect/.gitkeep agents/reviewer/.gitkeep
+    touch rules/.gitkeep templates/.gitkeep adr/.gitkeep
+
+    git add -A
+    git commit -m "Initiale Struktur + STORY-000099"
+    git push origin main
+
+    # Produkt-Repo Struktur
+    cd $TMPDIR
+    git clone http://factory-admin:{{ forgejo_admin_password }}@localhost:3000/{{ factory_org }}/{{ product_repo }}.git
+    cd {{ product_repo }}
+
+    mkdir -p .forgejo/workflows .context src tests
+
+    cat > .forgejo/workflows/auto-test.yml << 'ATEOF'
+    name: Auto-Test
+    on:
+      pull_request:
+        types: [opened, synchronize]
+    jobs:
+      test:
+        runs-on: ubuntu-latest
+        steps:
+          - uses: actions/checkout@v4
+          - run: echo "Tests passed"
+    ATEOF
+
+    cat > .forgejo/workflows/auto-release.yml << 'AREOF'
+    name: Auto-Release
+    on:
+      push:
+        branches: [main]
+    jobs:
+      release:
+        runs-on: ubuntu-latest
+        steps:
+          - uses: actions/checkout@v4
+          - run: echo "Release created"
+    AREOF
+
+    cat > CLAUDE.md << 'CLEOF'
+    # CLAUDE.md
+    ## Modus: Vollautomatisch / Headless
+    Du arbeitest im Headless-Modus. KEINE Rückfragen. KEINE TODOs.
+    CLEOF
+
+    echo "# Factory Gateway" > .context/PRODUCT.md
+    echo "# Architektur" > .context/ARCHITECTURE.md
+    echo "# Konventionen" > .context/CONVENTIONS.md
+    echo "# Entscheidungen" > .context/DECISIONS.md
+
+    git add -A
+    git commit -m "Initiale Struktur + Workflows"
+    git push origin main
+
+    rm -rf $TMPDIR
+  args:
+    executable: /bin/bash

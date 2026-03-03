@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ideenportal - Code-Fabrik</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1><a href="/">Code-Fabrik</a></h1>
+      <nav>
+        <a href="/support">Support</a>
+        <a href="/ideas">Ideen</a>
+        <a href="/request">Anforderung</a>
+        <a href="/status">Status</a>
+      </nav>
+    </div>
+  </header>
+  <div class="container">
+    <div id="detail-view" style="display:none">
+      <h2>Idee</h2>
+      <div class="card" id="ideaDetail"></div>
+      <a href="/ideas">&larr; Alle Ideen</a>
+    </div>
+    <div id="list-view">
+      <h2>Ideenportal</h2>
+      <div class="card">
+        <h3>Neue Idee einreichen</h3>
+        <form id="ideaForm" style="margin-top:0.5rem">
+          <label for="title">Titel</label>
+          <input type="text" id="title" required>
+          <label for="description">Beschreibung</label>
+          <textarea id="description" required placeholder="Beschreiben Sie Ihre Produktidee..."></textarea>
+          <label for="submitter_email">E-Mail (optional)</label>
+          <input type="email" id="submitter_email">
+          <label for="submitter_name">Name (optional)</label>
+          <input type="text" id="submitter_name">
+          <button type="submit" class="btn">Idee einreichen</button>
+        </form>
+        <div id="error" class="error" style="display:none"></div>
+        <div id="result" class="success" style="display:none"></div>
+      </div>
+      <h3 style="margin-top:1.5rem">Eingereichte Ideen</h3>
+      <div id="ideas"><p>Lade Ideen...</p></div>
+    </div>
+  </div>
+  <footer>Code-Fabrik v0.4.1</footer>
+  <script>
+    const path = location.pathname.split('/');
+    if (path.length > 2 && path[2]) {
+      document.getElementById('list-view').style.display = 'none';
+      document.getElementById('detail-view').style.display = 'block';
+      fetch(`/api/ideas/${path[2]}`).then(r => r.json()).then(idea => {
+        if (idea.error) { document.getElementById('ideaDetail').innerHTML = `<p>${esc(idea.error)}</p>`; return; }
+        document.getElementById('ideaDetail').innerHTML = `
+          <h3>${esc(idea.title)}</h3>
+          <p>${esc(idea.description)}</p>
+          <p style="margin-top:0.5rem"><span class="badge ${idea.status === 'accepted' ? 'badge-green' : 'badge-gray'}">${esc(idea.status)}</span> | ${idea.votes} Stimmen</p>
+          <button class="btn" style="margin-top:0.5rem" onclick="vote('${esc(idea.idea_number)}')">Abstimmen</button>
+        `;
+      });
+    } else {
+      loadIdeas();
+    }
+
+    async function loadIdeas() {
+      const res = await fetch('/api/ideas');
+      const ideas = await res.json();
+      const el = document.getElementById('ideas');
+      if (!ideas.length) { el.innerHTML = '<p>Noch keine Ideen eingereicht.</p>'; return; }
+      el.innerHTML = ideas.map(i => `
+        <div class="card idea-card">
+          <div>
+            <h3><a href="/ideas/${esc(i.idea_number)}">${esc(i.title)}</a></h3>
+            <p>${esc((i.description || '').substring(0, 150))}${i.description?.length > 150 ? '...' : ''}</p>
+            <p style="font-size:0.85rem;color:#888;margin-top:0.3rem">${esc(i.idea_number)} | ${new Date(i.created_at).toLocaleDateString('de')}</p>
+          </div>
+          <div class="votes">
+            <span>${i.votes}</span>
+            <button class="btn btn-secondary" style="padding:0.3rem 0.6rem;font-size:0.8rem" onclick="vote('${esc(i.idea_number)}')">+1</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function vote(ideaNumber) {
+      await fetch(`/api/ideas/${ideaNumber}/vote`, { method: 'POST' });
+      location.reload();
+    }
+
+    document.getElementById('ideaForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const errEl = document.getElementById('error');
+      const resEl = document.getElementById('result');
+      errEl.style.display = 'none'; resEl.style.display = 'none';
+      try {
+        const res = await fetch('/api/ideas', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title: document.getElementById('title').value,
+            description: document.getElementById('description').value,
+            submitter_email: document.getElementById('submitter_email').value || undefined,
+            submitter_name: document.getElementById('submitter_name').value || undefined
+          })
+        });
+        const data = await res.json();
+        if (!res.ok) { errEl.textContent = data.error; errEl.style.display = 'block'; return; }
+        resEl.innerHTML = `Idee <strong>${esc(data.idea_number)}</strong> eingereicht!`;
+        resEl.style.display = 'block';
+        document.getElementById('ideaForm').reset();
+        loadIdeas();
+      } catch (err) { errEl.textContent = err.message; errEl.style.display = 'block'; }
+    });
+
+    function esc(s) { if (!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+  </script>
+</body>
+</html>

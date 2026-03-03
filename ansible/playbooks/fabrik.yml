@@ -1,0 +1,44 @@
+---
+# Fabrik-Status und Runtime-Control
+- name: "Code-Fabrik Status"
+  hosts: factory-prod
+  gather_facts: false
+  tasks:
+    - name: "Runtime Control Status"
+      ansible.builtin.shell: |
+        docker exec factory-postgres psql -U forgejo -d forgejo -c \
+          "SELECT env_name, mode, traffic_enabled, jobs_enabled, reason, updated_at, updated_by FROM runtime_control"
+      register: rc_status
+      changed_when: false
+
+    - name: "Poller State (letzte 10)"
+      ansible.builtin.shell: |
+        docker exec factory-postgres psql -U forgejo -d forgejo -c \
+          "SELECT object_id, stage, updated_at FROM poller_state ORDER BY updated_at DESC LIMIT 10"
+      register: ps_status
+      changed_when: false
+
+    - name: "Docker Services"
+      ansible.builtin.shell: docker compose -f /opt/codefabrik/docker-compose.yml ps
+      register: docker_status
+      changed_when: false
+
+    - name: "Systemd Services"
+      ansible.builtin.shell: |
+        systemctl is-active act-runner
+        systemctl is-active openclaw-poller.timer
+      register: systemd_status
+      changed_when: false
+      ignore_errors: true
+
+    - name: "Status ausgeben"
+      ansible.builtin.debug:
+        msg:
+          - "=== Runtime Control ==="
+          - "{{ rc_status.stdout }}"
+          - "=== Poller State ==="
+          - "{{ ps_status.stdout }}"
+          - "=== Docker ==="
+          - "{{ docker_status.stdout }}"
+          - "=== Systemd ==="
+          - "{{ systemd_status.stdout }}"

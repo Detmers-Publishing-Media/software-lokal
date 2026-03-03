@@ -1,0 +1,59 @@
+---
+- name: "Portal-Quellcode auf Server kopieren"
+  ansible.builtin.copy:
+    src: /portal/
+    dest: "{{ portal_docker_compose_dir }}/"
+    owner: root
+    group: root
+
+- name: ".env fuer Portal generieren"
+  ansible.builtin.copy:
+    content: |
+      # Portal DB
+      PORTAL_DB_PASSWORD={{ portal_db_password }}
+      DB_HOST=postgres
+      DB_PORT=5432
+      DB_NAME=portal
+      DB_USER=portal
+
+      # Portal Config
+      PORTAL_PORT=3200
+      NODE_ENV=production
+
+      # PROD Referenzen (direkte IP, beide Server im selben Rechenzentrum)
+      PROD_SERVER_UUID={{ prod_server_uuid }}
+      PROD_READY_URL=http://{{ prod_server_ip }}:3100/ready
+      FORGEJO_URL=http://{{ prod_server_ip }}:3000
+      FORGEJO_API_TOKEN={{ forgejo_api_token }}
+      PROD_FORGEJO_REPO={{ factory_org }}/{{ process_repo }}
+
+      # UpCloud
+      UPCLOUD_API_TOKEN={{ vault_upcloud_api_token }}
+
+      # Auth
+      ADMIN_TOKEN={{ admin_token }}
+    dest: "{{ portal_docker_compose_dir }}/.env"
+    mode: '0600'
+
+- name: "docker-compose.yml deployen"
+  ansible.builtin.template:
+    src: ../templates/portal-docker-compose.yml.j2
+    dest: "{{ portal_docker_compose_dir }}/docker-compose.yml"
+
+- name: "Caddyfile deployen"
+  ansible.builtin.template:
+    src: ../templates/portal-caddyfile.j2
+    dest: "{{ portal_docker_compose_dir }}/Caddyfile"
+
+- name: "Docker Stack starten"
+  ansible.builtin.shell: |
+    cd {{ portal_docker_compose_dir }} && docker compose up -d --build 2>&1
+  register: compose_result
+
+- name: "Docker-Compose Output"
+  ansible.builtin.debug:
+    msg: "{{ compose_result.stdout_lines[-5:] }}"
+
+- name: "Warte auf Docker-Services (30s)"
+  ansible.builtin.pause:
+    seconds: 30

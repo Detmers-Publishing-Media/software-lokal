@@ -1,0 +1,134 @@
+---
+- name: "Phase 1: Server provisionieren"
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    server_role: prod
+  roles:
+    - server
+
+- name: "Phase 1b: DNS erstellen"
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: "Server-Variablen aus .server-env laden"
+      ansible.builtin.shell: |
+        cat /output/.server-env
+      register: server_env_raw
+      delegate_to: localhost
+
+    - name: "server_ip aus .server-env setzen"
+      ansible.builtin.set_fact:
+        server_ip: "{{ (server_env_raw.stdout | regex_search('SERVER_IP=(.+)', '\\1'))[0] }}"
+
+    - name: "DNS-Records erstellen"
+      ansible.builtin.include_role:
+        name: dns
+
+- name: "Phase 2: Server konfigurieren"
+  hosts: factory-prod
+  gather_facts: true
+  vars:
+    forgejo_admin_password: "{{ lookup('password', '/dev/null length=16 chars=hexdigits') }}"
+    postgres_password: "{{ lookup('password', '/dev/null length=32 chars=hexdigits') }}"
+    jwt_secret: "{{ lookup('password', '/dev/null length=32 chars=hexdigits') }}"
+  pre_tasks:
+    - name: "OpenClaw Docker-Verzeichnis sicherstellen"
+      ansible.builtin.file:
+        path: "{{ docker_compose_dir }}/docker/openclaw"
+        state: directory
+        mode: '0755'
+
+    - name: "OpenClaw Dockerfile deployen"
+      ansible.builtin.copy:
+        content: |
+          FROM node:22-slim
+          RUN apt-get update && apt-get install -y \
+              git curl xvfb procps ssh \
+              && rm -rf /var/lib/apt/lists/*
+          RUN git config --global user.name "Factory Junior" && \
+              git config --global user.email "junior@factory.local"
+          WORKDIR /app
+          COPY start-with-xvfb.sh /start-with-xvfb.sh
+          RUN chmod +x /start-with-xvfb.sh
+          ENTRYPOINT ["/start-with-xvfb.sh"]
+        dest: "{{ docker_compose_dir }}/docker/openclaw/Dockerfile"
+
+    - name: "start-with-xvfb.sh deployen"
+      ansible.builtin.copy:
+        content: |
+          #!/bin/bash
+          export DISPLAY=:99
+          Xvfb :99 -screen 0 1024x768x24 &
+          sleep 1
+          exec tail -f /dev/null
+        dest: "{{ docker_compose_dir }}/docker/openclaw/start-with-xvfb.sh"
+        mode: '0755'
+
+    - name: "docker-compose.yml deployen"
+      ansible.builtin.template:
+        src: ../templates/docker-compose.yml.j2
+        dest: "{{ docker_compose_dir }}/docker-compose.yml"
+
+    - name: "Passwörter für spätere Phasen speichern"
+      ansible.builtin.copy:
+        content: |
+          forgejo_admin_password={{ forgejo_admin_password }}
+          postgres_password={{ postgres_password }}
+          jwt_secret={{ jwt_secret }}
+        dest: /output/.factory-passwords.env
+        mode: '0600'
+      delegate_to: localhost
+
+  roles:
+    - base
+    - caddy
+    - gateway
+
+  post_tasks:
+    - name: "Docker Stack starten"
+      ansible.builtin.shell: |
+        cd {{ docker_compose_dir }} && docker compose up -d --build 2>&1
+      register: compose_result
+
+    - name: "Docker-Compose Output"
+      ansible.builtin.debug:
+        msg: "{{ compose_result.stdout_lines[-5:] }}"
+
+    - name: "Warte auf Docker-Services (30s)"
+      ansible.builtin.pause:
+        seconds: 30
+
+- name: "Phase 3: Services konfigurieren"
+  hosts: factory-prod
+  gather_facts: false
+  vars:
+    forgejo_admin_password: "{{ lookup('ini', 'forgejo_admin_password type=properties file=/output/.factory-passwords.env') }}"
+    postgres_password: "{{ lookup('ini', 'postgres_password type=properties file=/output/.factory-passwords.env') }}"
+    jwt_secret: "{{ lookup('ini', 'jwt_secret type=properties file=/output/.factory-passwords.env') }}"
+  roles:
+    - postgres
+    - forgejo
+    - runner
+    - openclaw
+    - repos
+    - secrets
+    - poller
+
+- name: "Phase 4: Smoke-Test"
+  hosts: factory-prod
+  gather_facts: false
+  roles:
+    - smoke-test
+
+- name: "Phase 5: Infra nach Forgejo pushen"
+  hosts: factory-prod
+  gather_facts: false
+  tags: [push-infra]
+  vars:
+    forgejo_admin_password: "{{ lookup('ini', 'forgejo_admin_password type=properties file=/output/.factory-passwords.env') }}"
+    forgejo_api_token: "{{ lookup('ini', 'FORGEJO_API_TOKEN type=properties file=/output/.tokens-env') }}"
+  roles:
+    - push-infra

@@ -1,0 +1,80 @@
+---
+- name: "Warte auf Forgejo"
+  ansible.builtin.shell: |
+    for i in $(seq 1 60); do
+      curl -sf http://localhost:3000/api/v1/version 2>/dev/null && exit 0
+      sleep 3
+    done
+    exit 1
+  register: forgejo_ready
+
+- name: "Admin-Account erstellen"
+  ansible.builtin.shell: |
+    docker exec -u git factory-forgejo forgejo admin user create \
+      --admin \
+      --username factory-admin \
+      --password "{{ forgejo_admin_password }}" \
+      --email admin@factory.local \
+      --must-change-password=false 2>&1 || true
+  register: admin_result
+
+- name: "Bestehenden API-Token löschen (idempotent)"
+  ansible.builtin.shell: |
+    TOKEN_ID=$(curl -sf \
+      -u "factory-admin:{{ forgejo_admin_password }}" \
+      "http://localhost:3000/api/v1/users/factory-admin/tokens" \
+      | jq -r '.[] | select(.name == "factory-automation") | .id' 2>/dev/null || echo "")
+    if [ -n "$TOKEN_ID" ] && [ "$TOKEN_ID" != "null" ]; then
+      curl -sf -X DELETE \
+        -u "factory-admin:{{ forgejo_admin_password }}" \
+        "http://localhost:3000/api/v1/users/factory-admin/tokens/$TOKEN_ID" || true
+      echo "Token gelöscht: $TOKEN_ID"
+    else
+      echo "Kein bestehender Token gefunden"
+    fi
+  register: token_delete_result
+  changed_when: "'gelöscht' in token_delete_result.stdout"
+
+- name: "API-Token generieren"
+  ansible.builtin.shell: |
+    curl -sf -X POST \
+      -u "factory-admin:{{ forgejo_admin_password }}" \
+      -H "Content-Type: application/json" \
+      -d '{"name":"factory-automation","scopes":["all"]}' \
+      "http://localhost:3000/api/v1/users/factory-admin/tokens" \
+      | jq -r '.sha1'
+  register: api_token_result
+  retries: 5
+  delay: 5
+  until: api_token_result.stdout | length > 10
+
+- name: "API-Token speichern"
+  ansible.builtin.set_fact:
+    forgejo_api_token: "{{ api_token_result.stdout }}"
+
+- name: "Token lokal speichern"
+  ansible.builtin.copy:
+    content: |
+      FORGEJO_API_TOKEN={{ forgejo_api_token }}
+      FORGEJO_ADMIN_PASSWORD={{ forgejo_admin_password }}
+    dest: "/output/.tokens-env"
+  delegate_to: localhost
+
+- name: "Organisation erstellen"
+  ansible.builtin.uri:
+    url: "http://localhost:3000/api/v1/orgs"
+    method: POST
+    headers:
+      Authorization: "token {{ forgejo_api_token }}"
+      Content-Type: "application/json"
+    body_format: json
+    body:
+      username: "{{ factory_org }}"
+      full_name: "Code-Fabrik"
+      visibility: "private"
+    status_code: [201, 422]
+
+- name: "Actions aktivieren (falls nötig)"
+  ansible.builtin.shell: |
+    docker exec -u git factory-forgejo forgejo admin setting set \
+      actions.ENABLED true 2>/dev/null || true

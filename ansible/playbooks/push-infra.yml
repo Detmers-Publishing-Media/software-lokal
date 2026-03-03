@@ -1,0 +1,10 @@
+---
+- name: "Infra nach Forgejo pushen"
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    forgejo_admin_password: "{{ lookup('ini', 'forgejo_admin_password type=properties file=/output/.factory-passwords.env') }}"
+    forgejo_api_token: "{{ lookup('ini', 'FORGEJO_API_TOKEN type=properties file=/output/.tokens-env') }}"
+  roles:
+    - push-infra

@@ -1,0 +1,40 @@
+---
+- name: "Poller-Script deployen"
+  ansible.builtin.template:
+    src: openclaw-poller.sh.j2
+    dest: /opt/codefabrik/openclaw-poller.sh
+    mode: '0755'
+
+- name: "Poller systemd Service"
+  ansible.builtin.copy:
+    content: |
+      [Unit]
+      Description=OpenClaw Poller
+
+      [Service]
+      Type=oneshot
+      ExecStart=/opt/codefabrik/openclaw-poller.sh
+      Environment=FORGEJO_API_TOKEN={{ forgejo_api_token }}
+    dest: /etc/systemd/system/openclaw-poller.service
+
+- name: "Poller systemd Timer"
+  ansible.builtin.copy:
+    content: |
+      [Unit]
+      Description=OpenClaw Poller Timer
+
+      [Timer]
+      OnBootSec=60
+      OnUnitActiveSec=30
+      AccuracySec=5
+
+      [Install]
+      WantedBy=timers.target
+    dest: /etc/systemd/system/openclaw-poller.timer
+
+- name: "Poller Timer starten"
+  ansible.builtin.systemd:
+    name: openclaw-poller.timer
+    state: started
+    enabled: yes
+    daemon_reload: yes

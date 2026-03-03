@@ -1,0 +1,45 @@
+---
+- name: "Watchdog systemd Service erstellen"
+  ansible.builtin.copy:
+    content: |
+      [Unit]
+      Description=Portal Watchdog — PROD Status Check
+
+      [Service]
+      Type=oneshot
+      ExecStart=/usr/bin/docker exec portal-dispatcher node src/watchdog.js
+      TimeoutStartSec=60
+    dest: /etc/systemd/system/portal-watchdog.service
+
+- name: "Watchdog systemd Timer erstellen"
+  ansible.builtin.copy:
+    content: |
+      [Unit]
+      Description=Portal Watchdog Timer — PROD Status Check alle 5 Minuten
+
+      [Timer]
+      OnCalendar=*:0/5
+      Persistent=true
+
+      [Install]
+      WantedBy=timers.target
+    dest: /etc/systemd/system/portal-watchdog.timer
+
+- name: "systemd neu laden"
+  ansible.builtin.systemd:
+    daemon_reload: yes
+
+- name: "Watchdog Timer aktivieren und starten"
+  ansible.builtin.systemd:
+    name: portal-watchdog.timer
+    state: started
+    enabled: yes
+
+- name: "Watchdog einmal manuell ausfuehren"
+  ansible.builtin.shell: docker exec portal-dispatcher node src/watchdog.js 2>&1 || true
+  register: watchdog_result
+  changed_when: false
+
+- name: "Watchdog Ergebnis"
+  ansible.builtin.debug:
+    msg: "{{ watchdog_result.stdout_lines }}"

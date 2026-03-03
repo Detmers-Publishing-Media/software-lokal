@@ -1,0 +1,29 @@
+---
+- name: "Warte auf PostgreSQL"
+  ansible.builtin.shell: docker exec portal-db pg_isready -U portal
+  register: pg_ready
+  retries: 30
+  delay: 5
+  until: pg_ready.rc == 0
+  changed_when: false
+
+- name: "init.sql in Container kopieren"
+  ansible.builtin.shell: docker cp {{ portal_docker_compose_dir }}/src/db/init.sql portal-db:/tmp/init.sql
+
+- name: "Datenbank initialisieren"
+  ansible.builtin.shell: docker exec portal-db psql -U portal -d portal -f /tmp/init.sql
+  register: db_init_result
+
+- name: "DB-Init Ergebnis"
+  ansible.builtin.debug:
+    msg: "{{ db_init_result.stdout_lines[-5:] }}"
+
+- name: "PROD-Server-Info in prod_status speichern"
+  ansible.builtin.shell: |
+    docker exec portal-db psql -U portal -d portal -c "
+    UPDATE prod_status SET
+      server_uuid = '{{ prod_server_uuid }}',
+      server_ip = '{{ prod_server_ip }}',
+      updated_at = NOW()
+    WHERE id = 1;"
+  when: prod_server_uuid is defined and prod_server_uuid | length > 0

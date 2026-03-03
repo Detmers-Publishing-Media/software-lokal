@@ -1,0 +1,19 @@
+# Secrets & Runtime
+.server-env
+.tokens-env
+.factory-passwords.env
+.portal-env
+.portal-passwords.env
+.portal-smoke-results.env
+
+# Logs & PID files
+*.log
+*.pid
+
+# Runtime-Outputs
+*-result.md
+*-claude-output.log
+
+# Vault (encrypted, aber trotzdem nicht ins Repo)
+ansible/inventory/*/group_vars/all/vault.yml
+ansible/inventory/group_vars/all/vault.yml

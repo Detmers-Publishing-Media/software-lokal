@@ -1,0 +1,95 @@
+---
+# Code-Fabrik v0.4.1 — Portal Installation
+# Voraussetzung: PROD muss installiert sein (.server-env + .tokens-env vorhanden)
+
+- name: "Phase 1: Portal-Server provisionieren"
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  roles:
+    - portal-server
+
+- name: "Phase 2: Portal DNS erstellen"
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: "Portal-Variablen aus .portal-env laden"
+      ansible.builtin.shell: cat /output/.portal-env
+      register: portal_env_raw
+      delegate_to: localhost
+
+    - name: "portal_ip setzen"
+      ansible.builtin.set_fact:
+        portal_ip: "{{ (portal_env_raw.stdout | regex_search('PORTAL_IP=(.+)', '\\1'))[0] }}"
+
+    - name: "DNS-Record erstellen"
+      ansible.builtin.include_role:
+        name: portal-dns
+
+- name: "Phase 3: Portal-Server Basis-Setup"
+  hosts: factory-portal
+  gather_facts: true
+  roles:
+    - portal-setup
+
+- name: "Phase 3b: Portal-Secrets generieren"
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: "Portal-Secrets generieren und speichern"
+      ansible.builtin.shell: |
+        set -euo pipefail
+        if [ -f /output/.portal-passwords.env ]; then
+          echo "Portal-Secrets existieren bereits"
+        else
+          DB_PASS=$(openssl rand -hex 16)
+          ADM_TOKEN=$(openssl rand -hex 16)
+          cat > /output/.portal-passwords.env << EOF
+        PORTAL_DB_PASSWORD=${DB_PASS}
+        ADMIN_TOKEN=${ADM_TOKEN}
+        EOF
+          chmod 600 /output/.portal-passwords.env
+          echo "Portal-Secrets generiert"
+        fi
+      args:
+        executable: /bin/bash
+      register: secrets_result
+
+    - name: "Ergebnis"
+      ansible.builtin.debug:
+        msg: "{{ secrets_result.stdout }}"
+
+- name: "Phase 4: Portal deployen"
+  hosts: factory-portal
+  gather_facts: false
+  vars:
+    portal_db_password: "{{ lookup('ini', 'PORTAL_DB_PASSWORD type=properties file=/output/.portal-passwords.env') }}"
+    admin_token: "{{ lookup('ini', 'ADMIN_TOKEN type=properties file=/output/.portal-passwords.env') }}"
+    prod_server_uuid: "{{ lookup('ini', 'SERVER_UUID type=properties file=/output/.server-env') }}"
+    prod_server_ip: "{{ lookup('ini', 'SERVER_IP type=properties file=/output/.server-env') }}"
+    forgejo_api_token: "{{ lookup('ini', 'FORGEJO_API_TOKEN type=properties file=/output/.tokens-env') }}"
+  roles:
+    - portal-deploy
+
+- name: "Phase 5: Datenbank initialisieren"
+  hosts: factory-portal
+  gather_facts: false
+  vars:
+    prod_server_uuid: "{{ lookup('ini', 'SERVER_UUID type=properties file=/output/.server-env') }}"
+    prod_server_ip: "{{ lookup('ini', 'SERVER_IP type=properties file=/output/.server-env') }}"
+  roles:
+    - portal-db
+
+- name: "Phase 6: Watchdog aktivieren"
+  hosts: factory-portal
+  gather_facts: false
+  roles:
+    - portal-watchdog
+
+- name: "Phase 7: Validierung"
+  hosts: factory-portal
+  gather_facts: false
+  roles:
+    - portal-validate

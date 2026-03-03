@@ -1,0 +1,55 @@
+---
+- name: "Server-IP laden"
+  ansible.builtin.shell: grep SERVER_IP /output/.server-env | cut -d= -f2
+  delegate_to: localhost
+  register: server_ip_result
+  changed_when: false
+
+- name: "infra-local Repo erstellen"
+  ansible.builtin.uri:
+    url: "http://{{ server_ip_result.stdout }}:3000/api/v1/orgs/{{ factory_org }}/repos"
+    method: POST
+    headers:
+      Authorization: "token {{ forgejo_api_token }}"
+    body_format: json
+    body:
+      name: infra-local
+      private: true
+      auto_init: false
+    status_code: [201, 409]
+  delegate_to: localhost
+
+- name: "Paket-Dateien nach Forgejo pushen"
+  ansible.builtin.shell: |
+    set -euo pipefail
+    SERVER_IP="{{ server_ip_result.stdout }}"
+    TMPDIR=$(mktemp -d)
+
+    # Dateien sammeln
+    cp -r /ansible/* "$TMPDIR/"
+    cp /output/.gitignore "$TMPDIR/" 2>/dev/null || true
+    cp /output/teardown-remote.sh "$TMPDIR/" 2>/dev/null || true
+    cp /output/v0.4.0-konzept.md "$TMPDIR/" 2>/dev/null || true
+
+    # Paket-Inputs aus ~/
+    if [ -d /package-inputs ]; then
+      cp /package-inputs/* "$TMPDIR/" 2>/dev/null || true
+    fi
+
+    # Vault NICHT einchecken
+    rm -f "$TMPDIR/inventory/group_vars/all/vault.yml"
+
+    cd "$TMPDIR"
+    git init -b main
+    git config user.name "Factory Ansible"
+    git config user.email "ansible@factory.local"
+    git add -A
+    git commit -m "Infra-Stand nach Installation v{{ factory_version }}"
+    git remote add origin \
+      "http://factory-admin:{{ forgejo_admin_password }}@${SERVER_IP}:3000/{{ factory_org }}/infra-local.git"
+    git push -u origin main
+
+    rm -rf "$TMPDIR"
+  delegate_to: localhost
+  args:
+    executable: /bin/bash

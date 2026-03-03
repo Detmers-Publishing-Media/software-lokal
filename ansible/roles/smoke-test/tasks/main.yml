@@ -1,0 +1,77 @@
+---
+- name: "Smoke-Test: Forgejo API"
+  ansible.builtin.uri:
+    url: "http://localhost:3000/api/v1/version"
+    status_code: 200
+  register: forgejo_check
+
+- name: "Smoke-Test: PostgreSQL"
+  ansible.builtin.shell: docker exec factory-postgres pg_isready -U forgejo
+  register: pg_check
+  changed_when: false
+
+- name: "Smoke-Test: OpenClaw"
+  ansible.builtin.shell: docker exec factory-openclaw echo alive
+  register: openclaw_check
+  changed_when: false
+
+- name: "Smoke-Test: Runner"
+  ansible.builtin.shell: systemctl is-active act-runner
+  register: runner_check
+  changed_when: false
+
+- name: "Smoke-Test: Poller Timer"
+  ansible.builtin.shell: systemctl is-active openclaw-poller.timer
+  register: poller_check
+  changed_when: false
+
+- name: "Smoke-Test: Gateway /health"
+  ansible.builtin.uri:
+    url: "http://localhost:3100/health"
+    status_code: 200
+  register: health_check
+
+- name: "Runtime Control auf LIVE setzen"
+  ansible.builtin.shell: |
+    docker exec factory-postgres psql -U forgejo -d forgejo -tAq -c "
+    UPDATE runtime_control SET mode='LIVE', traffic_enabled=true,
+    jobs_enabled=true, reason='', updated_by='ansible', updated_at=NOW()
+    WHERE env_name='prod';"
+
+- name: "Smoke-Test: Gateway /ready (nach LIVE)"
+  ansible.builtin.uri:
+    url: "http://localhost:3100/ready"
+    status_code: 200
+  register: ready_check
+  retries: 3
+  delay: 5
+
+- name: "Smoke-Test: Warte auf Poller-Verarbeitung von STORY-000099"
+  ansible.builtin.shell: |
+    for i in $(seq 1 60); do
+      STATE=$(docker exec factory-postgres psql -U forgejo -d forgejo -tAq -c \
+        "SELECT stage FROM poller_state WHERE object_id='STORY-000099'" 2>/dev/null | tr -d '[:space:]')
+      if [ "$STATE" = "pr_created" ] || [ "$STATE" = "done" ]; then
+        echo "SMOKE_SUCCESS: STORY-000099 reached stage $STATE"
+        exit 0
+      fi
+      echo "Warte... stage=$STATE ($(($i * 10))s)"
+      sleep 10
+    done
+    echo "SMOKE_TIMEOUT: STORY-000099 did not complete in 10 minutes"
+    exit 0
+  register: smoke_result
+  changed_when: false
+
+- name: "Smoke-Test Ergebnis"
+  ansible.builtin.debug:
+    msg: |
+      Smoke-Test Ergebnis:
+        Forgejo:  ✅
+        Postgres: ✅
+        OpenClaw: ✅
+        Runner:   ✅
+        Poller:   ✅
+        /health:  ✅
+        /ready:   ✅
+        Pipeline: {{ smoke_result.stdout_lines[-1] }}

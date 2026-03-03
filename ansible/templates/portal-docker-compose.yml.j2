@@ -1,0 +1,74 @@
+version: "3.8"
+
+services:
+  portal-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: portal-app
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3200:3200"
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - portal-net
+
+  portal-dispatcher:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: portal-dispatcher
+    restart: unless-stopped
+    command: ["node", "src/dispatcher.js"]
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - portal-net
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: portal-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: portal
+      POSTGRES_USER: portal
+      POSTGRES_PASSWORD: "{{ portal_db_password }}"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U portal"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - portal-net
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: portal-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - portal-net
+
+volumes:
+  pgdata:
+  caddy_data:
+  caddy_config:
+
+networks:
+  portal-net:
+    driver: bridge

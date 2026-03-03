@@ -1,0 +1,19 @@
+---
+- name: "DNS Records erstellen"
+  delegate_to: localhost
+  ansible.builtin.uri:
+    url: "https://api.cloudflare.com/client/v4/zones/{{ cloudflare_zone_id }}/dns_records"
+    method: POST
+    headers:
+      Authorization: "Bearer {{ vault_cloudflare_api_token }}"
+      Content-Type: "application/json"
+    body_format: json
+    body:
+      type: A
+      name: "{{ item.name }}"
+      content: "{{ server_ip }}"
+      ttl: 1
+      proxied: true
+    status_code: [200, 201, 409]
+  loop: "{{ dns_records }}"
+  ignore_errors: true

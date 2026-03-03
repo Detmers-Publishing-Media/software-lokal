@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Support - Code-Fabrik</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1><a href="/">Code-Fabrik</a></h1>
+      <nav>
+        <a href="/support">Support</a>
+        <a href="/ideas">Ideen</a>
+        <a href="/request">Anforderung</a>
+        <a href="/status">Status</a>
+      </nav>
+    </div>
+  </header>
+  <div class="container">
+    <div id="case-view" style="display:none">
+      <h2>Case-Status</h2>
+      <div class="card" id="caseDetail"></div>
+    </div>
+    <div id="form-view">
+      <h2>Support-Anfrage</h2>
+      <div class="card">
+        <form id="supportForm">
+          <label for="license_key">Lizenzkey</label>
+          <input type="text" id="license_key" required placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
+          <label for="title">Titel</label>
+          <input type="text" id="title" required>
+          <label for="description">Beschreibung</label>
+          <textarea id="description" required></textarea>
+          <label for="category">Kategorie</label>
+          <select id="category">
+            <option value="bug">Bug</option>
+            <option value="question">Frage</option>
+            <option value="feature">Feature-Wunsch</option>
+          </select>
+          <button type="submit" class="btn">Absenden</button>
+        </form>
+      </div>
+      <div id="error" class="error" style="display:none"></div>
+      <div id="result" class="success" style="display:none"></div>
+      <h3 style="margin-top:2rem">Meine Cases</h3>
+      <p style="margin-bottom:0.5rem;font-size:0.9rem;color:#666">Lizenzkey oben eingeben, dann:</p>
+      <button class="btn btn-secondary" onclick="loadCases()">Cases laden</button>
+      <div id="cases" style="margin-top:1rem"></div>
+    </div>
+  </div>
+  <footer>Code-Fabrik v0.4.1</footer>
+  <script>
+    const path = location.pathname.split('/');
+    if (path.length > 2 && path[2]) {
+      document.getElementById('form-view').style.display = 'none';
+      document.getElementById('case-view').style.display = 'block';
+      const caseNumber = path[2];
+      const params = new URLSearchParams(location.search);
+      const key = params.get('key');
+      if (key) {
+        fetch(`/api/support/${caseNumber}?key=${key}`).then(r => r.json()).then(c => {
+          if (c.error) { document.getElementById('caseDetail').innerHTML = `<p class="error">${esc(c.error)}</p>`; return; }
+          document.getElementById('caseDetail').innerHTML = `
+            <h3>${esc(c.case_number)}: ${esc(c.title)}</h3>
+            <p>Status: <span class="badge ${c.status === 'resolved' ? 'badge-green' : 'badge-yellow'}">${esc(c.status)}</span></p>
+            <p>Kategorie: ${esc(c.category)} | Prioritaet: ${esc(c.priority)}</p>
+            ${c.pipeline_object_id ? `<p>Pipeline: ${esc(c.pipeline_object_id)}</p>` : ''}
+            <p style="margin-top:0.5rem;font-size:0.85rem;color:#888">Erstellt: ${new Date(c.created_at).toLocaleString('de')}</p>
+          `;
+        });
+      } else {
+        document.getElementById('caseDetail').innerHTML = '<p>Bitte key= Parameter angeben.</p>';
+      }
+    }
+
+    document.getElementById('supportForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const errEl = document.getElementById('error');
+      const resEl = document.getElementById('result');
+      errEl.style.display = 'none'; resEl.style.display = 'none';
+      try {
+        const res = await fetch('/api/support', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            license_key: document.getElementById('license_key').value,
+            title: document.getElementById('title').value,
+            description: document.getElementById('description').value,
+            category: document.getElementById('category').value
+          })
+        });
+        const data = await res.json();
+        if (!res.ok) { errEl.textContent = data.error; errEl.style.display = 'block'; return; }
+        resEl.innerHTML = `Case <strong>${esc(data.case_number)}</strong> erstellt. Status: ${esc(data.status)}`;
+        resEl.style.display = 'block';
+      } catch (err) { errEl.textContent = err.message; errEl.style.display = 'block'; }
+    });
+
+    async function loadCases() {
+      const key = document.getElementById('license_key').value;
+      if (!key) return;
+      const res = await fetch(`/api/support?key=${key}`);
+      const cases = await res.json();
+      const el = document.getElementById('cases');
+      if (cases.error) { el.innerHTML = `<p class="error">${esc(cases.error)}</p>`; return; }
+      if (!cases.length) { el.innerHTML = '<p>Keine Cases gefunden.</p>'; return; }
+      el.innerHTML = cases.map(c => `
+        <div class="card">
+          <h3><a href="/support/${esc(c.case_number)}?key=${key}">${esc(c.case_number)}</a>: ${esc(c.title)}</h3>
+          <p><span class="badge ${c.status === 'resolved' ? 'badge-green' : 'badge-yellow'}">${esc(c.status)}</span> ${esc(c.category)} | ${esc(c.priority)}</p>
+        </div>
+      `).join('');
+    }
+
+    function esc(s) { if (!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+  </script>
+</body>
+</html>

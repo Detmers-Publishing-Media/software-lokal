@@ -1,0 +1,132 @@
+---
+- name: "Smoke-Test: Portal /api/status"
+  ansible.builtin.uri:
+    url: "http://localhost:3200/api/status"
+    status_code: 200
+  register: status_check
+  retries: 5
+  delay: 5
+
+- name: "Smoke-Test: Portal Status-Antwort"
+  ansible.builtin.debug:
+    msg: "{{ status_check.json }}"
+
+- name: "Smoke-Test: Produkte abrufen"
+  ansible.builtin.uri:
+    url: "http://localhost:3200/api/products"
+    status_code: 200
+  register: products_check
+
+- name: "Smoke-Test: factory-gateway Produkt vorhanden"
+  ansible.builtin.assert:
+    that: products_check.json | selectattr('id', 'eq', 'factory-gateway') | list | length > 0
+    fail_msg: "factory-gateway Produkt nicht gefunden"
+
+- name: "Smoke-Test: Kauf-Flow"
+  ansible.builtin.uri:
+    url: "http://localhost:3200/api/buy"
+    method: POST
+    body_format: json
+    body:
+      product_id: factory-gateway
+      customer_email: "smoke-test@factory.local"
+      customer_name: "Smoke Test"
+    status_code: 201
+  register: buy_result
+
+- name: "Smoke-Test: Lizenzkey erhalten"
+  ansible.builtin.assert:
+    that: buy_result.json.license_key is defined and buy_result.json.license_key | length > 0
+    fail_msg: "Kein Lizenzkey erhalten"
+
+- name: "Smoke-Test: Support-Case erstellen"
+  ansible.builtin.uri:
+    url: "http://localhost:3200/api/support"
+    method: POST
+    body_format: json
+    body:
+      license_key: "{{ buy_result.json.license_key }}"
+      title: "Smoke-Test Bug"
+      description: "Automatischer Smoke-Test Case"
+      category: bug
+    status_code: 201
+  register: support_result
+
+- name: "Smoke-Test: Case-Nummer erhalten"
+  ansible.builtin.assert:
+    that: support_result.json.case_number is defined
+    fail_msg: "Keine Case-Nummer erhalten"
+
+- name: "Smoke-Test: Idee einreichen"
+  ansible.builtin.uri:
+    url: "http://localhost:3200/api/ideas"
+    method: POST
+    body_format: json
+    body:
+      title: "Smoke-Test Idee"
+      description: "Automatische Smoke-Test Idee"
+    status_code: 201
+  register: idea_result
+
+- name: "Smoke-Test: Idee-Nummer erhalten"
+  ansible.builtin.assert:
+    that: idea_result.json.idea_number is defined
+    fail_msg: "Keine Idee-Nummer erhalten"
+
+- name: "Smoke-Test: Feature-Request erstellen"
+  ansible.builtin.uri:
+    url: "http://localhost:3200/api/requests"
+    method: POST
+    body_format: json
+    body:
+      license_key: "{{ buy_result.json.license_key }}"
+      title: "Smoke-Test Feature"
+      description: "Automatischer Smoke-Test Feature-Request"
+    status_code: 201
+  register: request_result
+
+- name: "Smoke-Test: Request-Nummer erhalten"
+  ansible.builtin.assert:
+    that: request_result.json.request_number is defined
+    fail_msg: "Keine Request-Nummer erhalten"
+
+- name: "Smoke-Test: Dispatch-Queue pruefen"
+  ansible.builtin.shell: |
+    docker exec portal-db psql -U portal -d portal -tAq -c "
+    SELECT COUNT(*) FROM dispatch_queue WHERE status IN ('queued', 'dispatching')"
+  register: queue_count
+  changed_when: false
+
+- name: "Smoke-Test: PostgreSQL"
+  ansible.builtin.shell: docker exec portal-db pg_isready -U portal
+  changed_when: false
+
+- name: "Smoke-Test: Watchdog Timer"
+  ansible.builtin.shell: systemctl is-active portal-watchdog.timer
+  changed_when: false
+
+- name: "Smoke-Test Ergebnis"
+  ansible.builtin.debug:
+    msg: |
+      Portal Smoke-Test:
+        /api/status:   ✅ ({{ status_check.json.portal }})
+        Produkte:      ✅ (factory-gateway)
+        Kauf-Flow:     ✅ (Key: {{ buy_result.json.license_key[:8] }}...)
+        Support-Case:  ✅ ({{ support_result.json.case_number }})
+        Idee:          ✅ ({{ idea_result.json.idea_number }})
+        Feature-Req:   ✅ ({{ request_result.json.request_number }})
+        Queue:         {{ queue_count.stdout }} Items wartend
+        PostgreSQL:    ✅
+        Watchdog:      ✅
+        PROD-Status:   {{ status_check.json.prod.status }}
+
+- name: "Smoke-Test: Lizenzkey lokal speichern (fuer manuelle Tests)"
+  ansible.builtin.copy:
+    content: |
+      SMOKE_LICENSE_KEY={{ buy_result.json.license_key }}
+      SMOKE_CASE_NUMBER={{ support_result.json.case_number }}
+      SMOKE_IDEA_NUMBER={{ idea_result.json.idea_number }}
+      SMOKE_REQUEST_NUMBER={{ request_result.json.request_number }}
+    dest: /output/.portal-smoke-results.env
+    mode: '0600'
+  delegate_to: localhost

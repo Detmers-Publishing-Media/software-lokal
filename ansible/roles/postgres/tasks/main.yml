@@ -1,0 +1,53 @@
+---
+- name: "Warte auf PostgreSQL"
+  ansible.builtin.shell: |
+    for i in $(seq 1 30); do
+      docker exec factory-postgres pg_isready -U forgejo 2>/dev/null && exit 0
+      sleep 2
+    done
+    exit 1
+  register: pg_ready
+  changed_when: false
+
+- name: "runtime_control Tabelle erstellen"
+  ansible.builtin.shell: |
+    docker exec factory-postgres psql -U forgejo -d forgejo -tAq -c "
+    CREATE TABLE IF NOT EXISTS runtime_control (
+        env_name        TEXT PRIMARY KEY,
+        mode            TEXT NOT NULL DEFAULT 'PRELIVE'
+                        CHECK (mode IN ('OFF', 'PRELIVE', 'LIVE', 'MAINTENANCE')),
+        traffic_enabled BOOLEAN NOT NULL DEFAULT FALSE,
+        jobs_enabled    BOOLEAN NOT NULL DEFAULT FALSE,
+        reason          TEXT DEFAULT '',
+        updated_at      TIMESTAMPTZ DEFAULT NOW(),
+        updated_by      TEXT DEFAULT ''
+    );"
+  register: rc_result
+  changed_when: "'CREATE' in rc_result.stdout or rc_result.rc == 0"
+
+- name: "runtime_control Default-Eintrag"
+  ansible.builtin.shell: |
+    docker exec factory-postgres psql -U forgejo -d forgejo -tAq -c "
+    INSERT INTO runtime_control (env_name, mode, traffic_enabled, jobs_enabled, updated_by)
+    VALUES ('prod', 'PRELIVE', true, false, 'ansible')
+    ON CONFLICT (env_name) DO NOTHING;"
+
+- name: "leader_lock Tabelle erstellen"
+  ansible.builtin.shell: |
+    docker exec factory-postgres psql -U forgejo -d forgejo -tAq -c "
+    CREATE TABLE IF NOT EXISTS leader_lock (
+        lock_name   TEXT PRIMARY KEY,
+        holder_id   TEXT NOT NULL,
+        acquired_at TIMESTAMPTZ DEFAULT NOW(),
+        expires_at  TIMESTAMPTZ NOT NULL
+    );"
+
+- name: "poller_state Tabelle erstellen"
+  ansible.builtin.shell: |
+    docker exec factory-postgres psql -U forgejo -d forgejo -tAq -c "
+    CREATE TABLE IF NOT EXISTS poller_state (
+        object_id   TEXT PRIMARY KEY,
+        stage       TEXT NOT NULL,
+        commit_hash TEXT DEFAULT '',
+        updated_at  TIMESTAMPTZ DEFAULT NOW()
+    );"

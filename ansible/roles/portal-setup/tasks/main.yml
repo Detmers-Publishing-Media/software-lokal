@@ -1,0 +1,68 @@
+---
+- name: "APT aktualisieren"
+  ansible.builtin.apt:
+    update_cache: yes
+    cache_valid_time: 3600
+
+- name: "Grundpakete installieren"
+  ansible.builtin.apt:
+    name:
+      - curl
+      - jq
+      - ufw
+      - ca-certificates
+      - gnupg
+      - lsb-release
+    state: present
+
+- name: "Docker GPG Key"
+  ansible.builtin.shell: |
+    install -m 0755 -d /etc/apt/keyrings
+    curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+    chmod a+r /etc/apt/keyrings/docker.asc
+  args:
+    creates: /etc/apt/keyrings/docker.asc
+
+- name: "Docker APT Repo"
+  ansible.builtin.shell: |
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] \
+    https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo $VERSION_CODENAME) stable" \
+    > /etc/apt/sources.list.d/docker.list
+  args:
+    creates: /etc/apt/sources.list.d/docker.list
+
+- name: "APT aktualisieren (Docker Repo)"
+  ansible.builtin.apt:
+    update_cache: yes
+
+- name: "Docker installieren"
+  ansible.builtin.apt:
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-compose-plugin
+    state: present
+
+- name: "Docker Service starten"
+  ansible.builtin.systemd:
+    name: docker
+    state: started
+    enabled: yes
+
+- name: "UFW konfigurieren"
+  ansible.builtin.shell: |
+    ufw default deny incoming
+    ufw default allow outgoing
+    ufw allow 22/tcp
+    ufw allow 80/tcp
+    ufw allow 443/tcp
+    echo "y" | ufw enable
+  args:
+    creates: /etc/ufw/ufw.conf
+
+- name: "Arbeitsverzeichnis erstellen"
+  ansible.builtin.file:
+    path: "{{ portal_docker_compose_dir }}"
+    state: directory
+    mode: '0755'

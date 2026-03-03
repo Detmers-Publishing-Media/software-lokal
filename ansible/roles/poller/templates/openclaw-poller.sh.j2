@@ -1,0 +1,380 @@
+#!/bin/bash
+# OpenClaw Poller v0.4.0 — 4-Phasen Pipeline
+set -euo pipefail
+
+LOGFILE=/var/log/openclaw-poller.log
+LOCK_FILE=/tmp/openclaw-poller.lock
+FORGEJO_URL="http://localhost:3000"
+FORGEJO_ORG="{{ factory_org }}"
+PROCESS_REPO="{{ process_repo }}"
+PRODUCT_REPO="{{ product_repo }}"
+FACTORY_VERSION="{{ factory_version }}"
+HOLDER_ID="poller-$(hostname)-$$"
+
+log() {
+  echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | tee -a "$LOGFILE"
+}
+
+# ─── PID-Lock ──────────────────────────────────────────────────────────────
+if [ -f "$LOCK_FILE" ]; then
+  OLD_PID=$(cat "$LOCK_FILE" 2>/dev/null || echo "0")
+  if kill -0 "$OLD_PID" 2>/dev/null; then
+    log "Poller läuft bereits (PID $OLD_PID) — überspringe"
+    exit 0
+  else
+    log "Veraltetes Lock-File (PID $OLD_PID tot) — entferne"
+    rm -f "$LOCK_FILE"
+  fi
+fi
+echo $$ > "$LOCK_FILE"
+trap 'rm -f "$LOCK_FILE"' EXIT
+
+log "=== Poller v$FACTORY_VERSION gestartet (PID $$) ==="
+
+# ─── DB-Verfügbarkeit (fail-closed) ────────────────────────────────────────
+if ! docker exec factory-postgres pg_isready -U forgejo -q 2>/dev/null; then
+  log "FEHLER: PostgreSQL nicht erreichbar — fail-closed"
+  exit 1
+fi
+
+# ─── Kill Switch (runtime_control) ─────────────────────────────────────────
+JOBS_ENABLED=$(docker exec factory-postgres psql -U forgejo -d forgejo -tAq -c \
+  "SELECT jobs_enabled FROM runtime_control WHERE env_name='prod'" 2>/dev/null | tr -d '[:space:]')
+
+if [ "$JOBS_ENABLED" != "t" ]; then
+  log "Kill Switch aktiv (jobs_enabled=$JOBS_ENABLED) — überspringe"
+  exit 0
+fi
+
+# ─── Leader Lock (5 Min Lease) ─────────────────────────────────────────────
+LOCK_ACQUIRED=$(docker exec factory-postgres psql -U forgejo -d forgejo -tAq -c "
+  INSERT INTO leader_lock (lock_name, holder_id, expires_at)
+  VALUES ('poller', '$HOLDER_ID', NOW() + INTERVAL '5 minutes')
+  ON CONFLICT (lock_name) DO UPDATE
+    SET holder_id = '$HOLDER_ID',
+        acquired_at = NOW(),
+        expires_at = NOW() + INTERVAL '5 minutes'
+  WHERE leader_lock.expires_at < NOW()
+  RETURNING holder_id;" 2>/dev/null | tr -d '[:space:]')
+
+if [ "$LOCK_ACQUIRED" != "$HOLDER_ID" ]; then
+  log "Kein Leader Lock erworben — anderer Poller aktiv"
+  exit 0
+fi
+log "Leader Lock erworben: $HOLDER_ID"
+
+# ─── Hilfsfunktionen ───────────────────────────────────────────────────────
+forgejo_api() {
+  curl -sf \
+    -H "Authorization: token $FORGEJO_API_TOKEN" \
+    -H "Content-Type: application/json" \
+    "$@"
+}
+
+update_poller_state() {
+  local object_id="$1"
+  local stage="$2"
+  local commit_hash="${3:-}"
+  docker exec factory-postgres psql -U forgejo -d forgejo -tAq -c "
+    INSERT INTO poller_state (object_id, stage, commit_hash, updated_at)
+    VALUES ('$object_id', '$stage', '$commit_hash', NOW())
+    ON CONFLICT (object_id) DO UPDATE
+      SET stage = EXCLUDED.stage,
+          commit_hash = EXCLUDED.commit_hash,
+          updated_at = NOW();" 2>/dev/null || true
+}
+
+get_poller_state() {
+  local object_id="$1"
+  docker exec factory-postgres psql -U forgejo -d forgejo -tAq -c \
+    "SELECT stage FROM poller_state WHERE object_id='$object_id'" 2>/dev/null | tr -d '[:space:]'
+}
+
+# ─── Phase 1: DISPATCH — Inbox → Backlog ───────────────────────────────────
+log "--- Phase 1: dispatch ---"
+
+WORK_DIR=$(mktemp -d)
+trap 'rm -rf "$WORK_DIR"; rm -f "$LOCK_FILE"' EXIT
+
+# Process-Repo klonen
+CLONE_URL="http://factory-admin:${FORGEJO_API_TOKEN}@localhost:3000/$FORGEJO_ORG/$PROCESS_REPO.git"
+if ! git clone --quiet "$CLONE_URL" "$WORK_DIR/process" 2>/dev/null; then
+  log "FEHLER: Konnte Process-Repo nicht klonen"
+  exit 1
+fi
+
+cd "$WORK_DIR/process"
+git config user.name "Factory Poller"
+git config user.email "poller@factory.local"
+
+INBOX_DIR="work/01-inbox"
+BACKLOG_DIR="work/03-backlog"
+
+# Stories aus Inbox verarbeiten
+shopt -s nullglob
+for story_file in "$INBOX_DIR"/*.yml; do
+  story_id=$(basename "$story_file" .yml)
+  current_stage=$(get_poller_state "$story_id")
+
+  if [ -n "$current_stage" ] && [ "$current_stage" != "inbox" ]; then
+    log "dispatch: $story_id bereits in Stage '$current_stage' — überspringe"
+    continue
+  fi
+
+  log "dispatch: $story_id → backlog"
+
+  # Produkt-Feld aus YAML lesen
+  produkt=$(grep '^produkt:' "$story_file" | awk '{print $2}' | tr -d '"'"'" | tr -d '[:space:]')
+  if [ -z "$produkt" ]; then
+    produkt="$PRODUCT_REPO"
+    log "dispatch: $story_id hat kein produkt-Feld — verwende Default: $PRODUCT_REPO"
+  fi
+
+  # In Backlog verschieben
+  DEST_DIR="$BACKLOG_DIR/by-product/$produkt"
+  mkdir -p "$DEST_DIR"
+  git mv "$story_file" "$DEST_DIR/$story_id.yml" 2>/dev/null || mv "$story_file" "$DEST_DIR/$story_id.yml"
+
+  update_poller_state "$story_id" "backlog"
+  log "dispatch: $story_id → $DEST_DIR"
+done
+shopt -u nullglob
+
+# Änderungen pushen falls vorhanden
+if git diff --cached --quiet && git diff --quiet; then
+  log "dispatch: Keine Änderungen"
+else
+  git add -A
+  git commit -m "dispatch: Stories in Backlog verschoben" 2>/dev/null || true
+  git push origin main --quiet 2>/dev/null || true
+fi
+
+# ─── Phase 2: BRIDGE — Backlog → Feature-Branch + _task.md ────────────────
+log "--- Phase 2: bridge ---"
+
+cd "$WORK_DIR/process"
+git pull --quiet origin main 2>/dev/null || true
+
+IN_PROGRESS_COUNT=$(find work/04-in-progress -name "*.yml" 2>/dev/null | wc -l | tr -d '[:space:]')
+if [ "$IN_PROGRESS_COUNT" -gt "0" ]; then
+  log "bridge: $IN_PROGRESS_COUNT Stories bereits in-progress — überspringe"
+else
+  # Erste Story im Backlog nehmen (nach Produkt sortiert)
+  shopt -s nullglob
+  for story_file in work/03-backlog/by-product/*/*.yml; do
+    story_id=$(basename "$story_file" .yml)
+    current_stage=$(get_poller_state "$story_id")
+
+    if [ "$current_stage" = "backlog" ]; then
+      log "bridge: $story_id → in-progress"
+
+      # Story in in-progress verschieben
+      git mv "$story_file" "work/04-in-progress/$story_id.yml" 2>/dev/null || \
+        mv "$story_file" "work/04-in-progress/$story_id.yml"
+
+      # Story-Daten lesen
+      story_title=$(grep '^title:' "work/04-in-progress/$story_id.yml" | cut -d'"' -f2 | head -1)
+      story_beschreibung=$(awk '/^beschreibung:/,/^[a-z]/' "work/04-in-progress/$story_id.yml" | \
+        grep '^\s*|' | sed 's/^\s*|//' | head -10 || echo "Keine Beschreibung")
+      story_produkt=$(grep '^produkt:' "work/04-in-progress/$story_id.yml" | awk '{print $2}' | \
+        tr -d '"'"'" | tr -d '[:space:]')
+      [ -z "$story_produkt" ] && story_produkt="$PRODUCT_REPO"
+
+      # Feature-Branch im Produkt-Repo erstellen
+      BRANCH_NAME="feature/$(echo "$story_id" | tr '[:upper:]' '[:lower:]')-$(date +%s)"
+      PROD_CLONE_URL="http://factory-admin:${FORGEJO_API_TOKEN}@localhost:3000/$FORGEJO_ORG/$story_produkt.git"
+
+      if git clone --quiet "$PROD_CLONE_URL" "$WORK_DIR/$story_produkt" 2>/dev/null; then
+        cd "$WORK_DIR/$story_produkt"
+        git config user.name "Factory Poller"
+        git config user.email "poller@factory.local"
+        git checkout -b "$BRANCH_NAME" 2>/dev/null
+
+        # _task.md erstellen
+        AKZEPTANZKRITERIEN=$(awk '/^akzeptanzkriterien:/,/^[a-z]/' "$WORK_DIR/process/work/04-in-progress/$story_id.yml" | \
+          grep '^\s*-' | sed 's/^\s*- /- /' | head -20 || echo "- Siehe Story")
+
+        cat > "_task.md" << TASKEOF
+# Task: $story_id
+
+## Titel
+$story_title
+
+## Beschreibung
+$(cat "$WORK_DIR/process/work/04-in-progress/$story_id.yml" | grep -A20 '^beschreibung:' | tail -n +2 | grep '  ' | sed 's/^  //' || echo "Implementiere die Story gemäß Akzeptanzkriterien.")
+
+## Akzeptanzkriterien
+$AKZEPTANZKRITERIEN
+
+## Metadaten
+- Story-ID: $story_id
+- Branch: $BRANCH_NAME
+- Version: v$FACTORY_VERSION
+TASKEOF
+
+        git add _task.md
+        git commit -m "$story_id: Task-Branch erstellt"
+        git push origin "$BRANCH_NAME" --quiet 2>/dev/null
+
+        cd "$WORK_DIR/process"
+        update_poller_state "$story_id" "in-progress" "$BRANCH_NAME"
+        log "bridge: $story_id → Branch '$BRANCH_NAME' erstellt"
+      else
+        log "bridge: FEHLER beim Klonen von $story_produkt — überspringe $story_id"
+      fi
+
+      break  # Nur eine Story pro Durchlauf
+    fi
+  done
+  shopt -u nullglob
+
+  # Process-Repo aktualisieren
+  cd "$WORK_DIR/process"
+  if ! git diff --cached --quiet || ! git diff --quiet; then
+    git add -A
+    git commit -m "bridge: $story_id nach in-progress verschoben" 2>/dev/null || true
+    git push origin main --quiet 2>/dev/null || true
+  fi
+fi
+
+# ─── Phase 3: OPENCLAW — Feature-Branch → Claude Code implementiert ────────
+log "--- Phase 3: openclaw ---"
+
+# Alle in-progress Stories verarbeiten
+shopt -s nullglob
+for story_file in "$WORK_DIR/process/work/04-in-progress"/*.yml 2>/dev/null; do
+  story_id=$(basename "$story_file" .yml)
+  current_stage=$(get_poller_state "$story_id")
+
+  if [ "$current_stage" != "in-progress" ]; then
+    continue
+  fi
+
+  story_produkt=$(grep '^produkt:' "$story_file" | awk '{print $2}' | tr -d '"'"'" | tr -d '[:space:]')
+  [ -z "$story_produkt" ] && story_produkt="$PRODUCT_REPO"
+
+  # Branch-Name aus poller_state lesen
+  BRANCH_NAME=$(docker exec factory-postgres psql -U forgejo -d forgejo -tAq -c \
+    "SELECT commit_hash FROM poller_state WHERE object_id='$story_id'" 2>/dev/null | tr -d '[:space:]')
+
+  if [ -z "$BRANCH_NAME" ]; then
+    log "openclaw: $story_id hat keinen Branch — überspringe"
+    continue
+  fi
+
+  log "openclaw: $story_id → Branch $BRANCH_NAME → Claude Code"
+
+  # Sicherstellen dass junior User und Claude Code vorhanden
+  docker exec factory-openclaw bash -c '
+    id junior 2>/dev/null || useradd -m -s /bin/bash junior
+    mkdir -p /home/junior/.ssh /home/junior/repos
+    [ -f /home/junior/.ssh/openclaw_deploy_key ] || cp /root/.ssh/openclaw_deploy_key /home/junior/.ssh/
+    [ -f /home/junior/.ssh/known_hosts ] || cp /root/.ssh/known_hosts /home/junior/.ssh/ 2>/dev/null || true
+    cat > /home/junior/.ssh/config << EOF
+Host factory-forgejo
+  HostName factory-forgejo
+  Port 22
+  User git
+  IdentityFile /home/junior/.ssh/openclaw_deploy_key
+  StrictHostKeyChecking no
+EOF
+    chmod 600 /home/junior/.ssh/*
+    chown -R junior:junior /home/junior/.ssh /home/junior/repos
+    git config --global user.name "Factory Junior" 2>/dev/null || true
+  ' 2>/dev/null || true
+  docker exec factory-openclaw su junior -c \
+    "git config --global user.name 'Factory Junior'; git config --global user.email 'junior@factory.local'" 2>/dev/null || true
+  docker exec factory-openclaw npm install -g @anthropic-ai/claude-code 2>/dev/null || true
+
+  # Script für junior erstellen
+  SCRIPT_FILE="/tmp/openclaw-run-${story_id}.sh"
+  cat > "$SCRIPT_FILE" << RUNEOF
+#!/bin/bash
+set -e
+cd /home/junior/repos
+rm -rf $story_produkt
+git clone ssh://git@factory-forgejo/$FORGEJO_ORG/$story_produkt.git
+cd $story_produkt
+git checkout $BRANCH_NAME 2>/dev/null || git checkout -b $BRANCH_NAME
+export ANTHROPIC_API_KEY="{{ vault_anthropic_api_key }}"
+claude --dangerously-skip-permissions -p "\$(cat _task.md)" 2>&1 | tee /var/log/openclaw-${story_id}.log
+git add -A
+git diff --cached --quiet || git commit -m "${story_id}: Implementierung durch Factory Junior"
+git push origin $BRANCH_NAME 2>/dev/null
+RUNEOF
+
+  docker cp "$SCRIPT_FILE" factory-openclaw:"$SCRIPT_FILE"
+  docker exec factory-openclaw chmod +x "$SCRIPT_FILE"
+  docker exec factory-openclaw chown junior:junior "$SCRIPT_FILE"
+  rm -f "$SCRIPT_FILE"
+
+  if docker exec factory-openclaw su junior -c "bash $SCRIPT_FILE" 2>&1 | \
+    tee -a "$LOGFILE"; then
+    update_poller_state "$story_id" "openclaw-done" "$BRANCH_NAME"
+    log "openclaw: $story_id ✅ Implementierung abgeschlossen"
+  else
+    log "openclaw: $story_id ⚠️ Fehler bei Implementierung"
+    update_poller_state "$story_id" "openclaw-error" "$BRANCH_NAME"
+  fi
+done
+shopt -u nullglob
+
+# ─── Phase 4: PR-CHECK — PR erstellen falls noch keiner existiert ──────────
+log "--- Phase 4: pr-check ---"
+
+shopt -s nullglob
+for story_file in "$WORK_DIR/process/work/04-in-progress"/*.yml 2>/dev/null; do
+  story_id=$(basename "$story_file" .yml)
+  current_stage=$(get_poller_state "$story_id")
+
+  if [ "$current_stage" != "openclaw-done" ]; then
+    continue
+  fi
+
+  story_produkt=$(grep '^produkt:' "$story_file" | awk '{print $2}' | tr -d '"'"'" | tr -d '[:space:]')
+  [ -z "$story_produkt" ] && story_produkt="$PRODUCT_REPO"
+
+  story_title=$(grep '^title:' "$story_file" | cut -d'"' -f2 | head -1)
+
+  BRANCH_NAME=$(docker exec factory-postgres psql -U forgejo -d forgejo -tAq -c \
+    "SELECT commit_hash FROM poller_state WHERE object_id='$story_id'" 2>/dev/null | tr -d '[:space:]')
+
+  if [ -z "$BRANCH_NAME" ]; then
+    continue
+  fi
+
+  log "pr-check: $story_id → PR erstellen für Branch $BRANCH_NAME"
+
+  # Prüfe ob PR bereits existiert
+  EXISTING_PR=$(forgejo_api \
+    "$FORGEJO_URL/api/v1/repos/$FORGEJO_ORG/$story_produkt/pulls?state=open&head=$BRANCH_NAME" \
+    2>/dev/null | jq '. | length' 2>/dev/null || echo "0")
+
+  if [ "$EXISTING_PR" -gt "0" ]; then
+    log "pr-check: $story_id — PR existiert bereits"
+    update_poller_state "$story_id" "pr_created" "$BRANCH_NAME"
+    continue
+  fi
+
+  # PR erstellen
+  PR_RESULT=$(forgejo_api \
+    -X POST \
+    -d "{
+      \"title\": \"$story_id: $story_title\",
+      \"body\": \"Automatisch erstellt durch Code-Fabrik v$FACTORY_VERSION\\n\\nStory: $story_id\",
+      \"head\": \"$BRANCH_NAME\",
+      \"base\": \"main\"
+    }" \
+    "$FORGEJO_URL/api/v1/repos/$FORGEJO_ORG/$story_produkt/pulls" 2>/dev/null)
+
+  PR_NUMBER=$(echo "$PR_RESULT" | jq -r '.number // "?"' 2>/dev/null)
+  if [ "$PR_NUMBER" != "?" ] && [ -n "$PR_NUMBER" ]; then
+    log "pr-check: $story_id → PR #$PR_NUMBER erstellt ✅"
+    update_poller_state "$story_id" "pr_created" "$BRANCH_NAME"
+  else
+    log "pr-check: $story_id → PR-Erstellung fehlgeschlagen: $PR_RESULT"
+  fi
+done
+shopt -u nullglob
+
+log "=== Poller v$FACTORY_VERSION abgeschlossen ==="

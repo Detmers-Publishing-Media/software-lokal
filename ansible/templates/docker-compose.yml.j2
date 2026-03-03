@@ -1,0 +1,100 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: factory-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: forgejo
+      POSTGRES_PASSWORD: "{{ postgres_password }}"
+      POSTGRES_DB: forgejo
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - factory-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U forgejo"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  forgejo:
+    image: "{{ forgejo_image }}"
+    container_name: factory-forgejo
+    restart: unless-stopped
+    environment:
+      FORGEJO__database__DB_TYPE: postgres
+      FORGEJO__database__HOST: postgres:5432
+      FORGEJO__database__NAME: forgejo
+      FORGEJO__database__USER: forgejo
+      FORGEJO__database__PASSWD: "{{ postgres_password }}"
+      FORGEJO__server__DOMAIN: "{{ forgejo_domain }}"
+      FORGEJO__server__ROOT_URL: "https://{{ forgejo_domain }}"
+      FORGEJO__server__SSH_PORT: 2222
+      FORGEJO__actions__ENABLED: "true"
+      FORGEJO__security__SECRET_KEY: "{{ jwt_secret }}"
+      FORGEJO__security__INSTALL_LOCK: "true"
+    ports:
+      - "3000:3000"
+      - "2222:22"
+    volumes:
+      - forgejo_data:/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - factory-net
+
+  openclaw:
+    build:
+      context: ./docker/openclaw
+      dockerfile: Dockerfile
+    container_name: factory-openclaw
+    restart: unless-stopped
+    volumes:
+      - openclaw_data:/root/.openclaw
+      - /mnt/data/repos:/repos:rw
+    networks:
+      - factory-net
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: factory-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - factory-net
+
+  gateway:
+    build:
+      context: ./gateway
+      dockerfile: Dockerfile
+    container_name: factory-gateway
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: "{{ postgres_password }}"
+    ports:
+      - "3100:3100"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - factory-net
+
+volumes:
+  postgres_data:
+  forgejo_data:
+  openclaw_data:
+  caddy_data:
+  caddy_config:
+
+networks:
+  factory-net:
+    driver: bridge

@@ -1,0 +1,11 @@
+---
+- name: "Caddyfile erstellen"
+  ansible.builtin.copy:
+    content: |
+      {{ forgejo_domain }} {
+          reverse_proxy forgejo:3000
+      }
+      gateway.codefabrik.{{ cloudflare_zone }} {
+          reverse_proxy gateway:3100
+      }
+    dest: "{{ docker_compose_dir }}/Caddyfile"

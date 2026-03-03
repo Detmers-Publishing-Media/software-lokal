@@ -1,0 +1,19 @@
+---
+- name: "DNS Records auflisten"
+  delegate_to: localhost
+  ansible.builtin.uri:
+    url: "https://api.cloudflare.com/client/v4/zones/{{ cloudflare_zone_id }}/dns_records"
+    method: GET
+    headers:
+      Authorization: "Bearer {{ vault_cloudflare_api_token }}"
+  register: dns_records_result
+
+- name: "Codefabrik DNS Records löschen"
+  delegate_to: localhost
+  ansible.builtin.uri:
+    url: "https://api.cloudflare.com/client/v4/zones/{{ cloudflare_zone_id }}/dns_records/{{ item.id }}"
+    method: DELETE
+    headers:
+      Authorization: "Bearer {{ vault_cloudflare_api_token }}"
+  loop: "{{ dns_records_result.json.result | selectattr('name', 'search', 'codefabrik') | list }}"
+  ignore_errors: true

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Status - Code-Fabrik</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1><a href="/">Code-Fabrik</a></h1>
+      <nav>
+        <a href="/support">Support</a>
+        <a href="/ideas">Ideen</a>
+        <a href="/request">Anforderung</a>
+        <a href="/status">Status</a>
+      </nav>
+    </div>
+  </header>
+  <div class="container">
+    <h2>System-Status</h2>
+    <div class="status-grid">
+      <div class="card">
+        <h3>Portal</h3>
+        <p id="portalStatus">Pruefe...</p>
+      </div>
+      <div class="card">
+        <h3>Fabrik (PROD)</h3>
+        <p id="prodStatus">Pruefe...</p>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Warteschlange</h3>
+      <p id="queueStatus">Lade...</p>
+    </div>
+    <p style="margin-top:1rem;font-size:0.85rem;color:#888">Automatische Aktualisierung alle 30 Sekunden.</p>
+  </div>
+  <footer>Code-Fabrik v0.4.1</footer>
+  <script>
+    function statusBadge(status) {
+      const map = {
+        running: ['badge-green', 'Laeuft'],
+        stopped: ['badge-red', 'Gestoppt'],
+        unreachable: ['badge-red', 'Nicht erreichbar'],
+        unknown: ['badge-gray', 'Unbekannt'],
+        ok: ['badge-green', 'Online']
+      };
+      const [cls, label] = map[status] || ['badge-gray', status];
+      return `<span class="badge ${cls}">${label}</span>`;
+    }
+
+    async function loadStatus() {
+      try {
+        const res = await fetch('/api/status');
+        const data = await res.json();
+
+        document.getElementById('portalStatus').innerHTML = statusBadge(data.portal === 'ok' ? 'ok' : 'unknown')
+          + ` <span style="font-size:0.85rem;color:#888">v${esc(data.version || '?')}</span>`;
+
+        const prod = data.prod;
+        let prodHtml = statusBadge(prod.status);
+        if (prod.version) prodHtml += ` <span style="font-size:0.85rem;color:#888">v${esc(prod.version)}</span>`;
+        if (prod.last_check) prodHtml += `<br><span style="font-size:0.8rem;color:#aaa">Letzte Pruefung: ${new Date(prod.last_check).toLocaleString('de')}</span>`;
+        document.getElementById('prodStatus').innerHTML = prodHtml;
+
+        const q = data.queue;
+        document.getElementById('queueStatus').innerHTML = `${q.pending} wartend, ${q.dispatching} in Bearbeitung`;
+      } catch (err) {
+        document.getElementById('portalStatus').innerHTML = '<span class="badge badge-red">Fehler</span>';
+      }
+    }
+
+    function esc(s) { if (!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+    loadStatus();
+    setInterval(loadStatus, 30000);
+  </script>
+</body>
+</html>

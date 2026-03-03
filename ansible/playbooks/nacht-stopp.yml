@@ -1,0 +1,26 @@
+---
+# Schaltet Jobs-Verarbeitung ab (Kill Switch) — für Nacht-Pause
+- name: "Code-Fabrik Nacht-Stopp"
+  hosts: factory-prod
+  gather_facts: false
+  tasks:
+    - name: "Kill Switch aktivieren"
+      ansible.builtin.shell: |
+        docker exec factory-postgres psql -U forgejo -d forgejo -tAq -c "
+        UPDATE runtime_control SET
+          jobs_enabled=false,
+          reason='Nacht-Stopp',
+          updated_by='ansible',
+          updated_at=NOW()
+        WHERE env_name='prod';"
+
+    - name: "Status prüfen"
+      ansible.builtin.shell: |
+        docker exec factory-postgres psql -U forgejo -d forgejo -tAq -c \
+          "SELECT env_name, mode, jobs_enabled, reason FROM runtime_control WHERE env_name='prod'"
+      register: status
+      changed_when: false
+
+    - name: "Status ausgeben"
+      ansible.builtin.debug:
+        msg: "{{ status.stdout }}"
