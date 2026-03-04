@@ -5,10 +5,10 @@
 
 ---
 
-## v0.5.8 "Geschaeftsplan"
+## v0.5.8 "Geschaeftsplan" *(parallel/spaeter)*
 
 **Ziel:** Business-Plan auf Basis Gesamtkonzept v3 ueberarbeiten.
-**Typ:** Rein dokumentarisch, kein Code.
+**Typ:** Rein dokumentarisch, kein Code. Kein Blocker fuer v0.6.x.
 
 - [ ] Business-Plan ueberarbeiten (Marktanalyse, Finanzplanung, Zielgruppen)
 - [ ] Preisstruktur finalisieren (39/59/79 EUR Staffelung lt. Kap. 4.2)
@@ -19,42 +19,95 @@
 
 ---
 
-## v0.6.0 "Mitglieder" — Erstes echtes Produkt
+## v0.6.0 "Mitglieder" — MitgliederSimple v0.1 ✓
 
 **Ziel:** Mitgliederverwaltung (MitgliederSimple) als erste fertige Desktop-App ausliefern.
 **Typ:** Produkt-Entwicklung + Pipeline-Erweiterung.
 **Basis:** Bestehendes Projekt `products/mitglieder-simple/` (SvelteKit + Tauri).
 
-- [ ] MitgliederSimple fertig bauen (Mitgliederliste, CRUD, Datenexport)
-- [ ] Phase-0-Tests auf Forgejo Runner (lt. `docs/test-conventions.md`)
+- [x] MitgliederSimple fertig bauen (Mitgliederliste, CRUD, Datenexport)
+- [x] CSV-Export (Semikolon-getrennt, UTF-8 BOM, Excel-kompatibel)
+- [x] Phase-0-Tests (node:test — CSV + DB-Layer)
 - [ ] Produkt in Portal-DB seeden + Forgejo Release erstellen
 - [ ] Erster Referenzkunden-Test per Mail (Phase 1 lt. Gesamtkonzept Kap. 5.1)
 - [ ] Feedback einholen und iterieren
 
 ---
 
-## v0.6.1 "Pruefstand" — Azure Testing
+## v0.6.1 "Mitglieder v0.2" — MitgliederSimple nach Feedback
 
-**Ziel:** Windows-Installer-Validierung automatisieren.
-**Typ:** Infrastruktur + CI/CD.
+**Ziel:** MitgliederSimple v0.2 nach erstem Referenzkunden-Feedback.
+**Typ:** Produkt-Iteration.
 
-- [ ] ADR-009 umsetzen (Test-Server oder Docker-Isolation, s. `docs/adr/ADR-009`)
-- [ ] Phase-1-Tests: Windows-Installer-Validierung (Azure DevOps Pipeline)
-- [ ] Tauri-Build fuer Windows/macOS/Linux via OpenClaw
-- [ ] Installer-Smoke-Tests (EXE installiert, startet, Grundfunktion OK)
-- [ ] Build-Artefakte automatisch in Forgejo Release hochladen
+- [ ] Referenzkunden-Feedback auswerten
+- [ ] Weitere Felder / Validierungen (je nach Feedback)
+- [ ] CSV-Import Verbesserungen
+- [ ] UX-Optimierungen
 
 ---
 
-## v0.6.2 "Schaufenster"
+## v0.6.2 "Pruefstand" — Azure Testing + EXE-Erstellung
 
-**Ziel:** Oeffentliche Produktseite im Portal.
-**Typ:** Portal-Erweiterung.
+**Ziel:** Azure Testing und Windows-EXE-Erstellung fuer MitgliederSimple.
+**Typ:** Infrastruktur + CI/CD + Produkt-Iteration.
+**Status:** **Aktuell**
 
-- [ ] Produktseite im Portal (Texte aus spec.yml, generiert via Text-Generator)
+- [ ] ADR-009 umsetzen (Azure DevOps Pipeline)
+- [ ] Phase-1-Tests: Windows-Installer-Validierung (Azure)
+- [ ] Tauri-Build fuer Windows via OpenClaw → EXE erstellen
+- [ ] Installer-Smoke-Tests (EXE installiert, startet, Grundfunktion OK)
+- [ ] Build-Artefakte automatisch in Forgejo Release hochladen
+- [ ] Referenzkunden-Feedback auswerten (MitgliederSimple v0.2)
 - [ ] "So rechnet dieses Tool" Seite (lt. Gesamtkonzept Kap. 12.2)
 - [ ] Testbericht oeffentlich einsehbar (Anzahl Tests, Ergebnisse)
-- [ ] Portal-Navigation erweitern (Produkt-Detailseiten)
+
+---
+
+## v0.6.3 "Wappen" — Logo-Personalisierung + UX
+
+**Ziel:** Vereine koennen ihr eigenes Logo in der App hinterlegen.
+**Typ:** Produkt-Feature.
+
+- [ ] Settings-Seite: Vereinslogo hochladen (PNG/JPG, wird lokal gespeichert)
+- [ ] Logo in Sidebar/Titelbereich der App anzeigen
+- [ ] Fallback: generisches Platzhalter-Icon wenn kein Logo gesetzt
+- [ ] Logo im CSV-Export-Header (optional)
+
+---
+
+## v0.6.4 "Taschenrechner" — Finanz-Rechner MVP (Bundle B-24)
+
+**Ziel:** 5 risikofreie Rechner-Tools fuer Versicherungsmakler als erstes B-24-Produkt.
+**Typ:** Produkt-Entwicklung (neues Bundle) + Geschaeftsmodell-Validierung.
+**Konzept:** `docs/konzept/finanz-rechner-mvp.md`
+
+### Kern-Deliverables
+- [ ] Tauri-Monorepo `products/finanz-rechner/` aufsetzen (Shared UI + Math-Engine)
+- [ ] BeitragsAnpassungsRechner (3 Tage) — kostenlos/Probe
+- [ ] StornoHaftungsRechner (4 Tage) — bezahlt
+- [ ] RatenzuschlagRechner (2 Tage) — kostenlos/Probe
+- [ ] CourtagenBarwertRechner (3 Tage) — bezahlt
+- [ ] SpartenDeckungsGrad (4 Tage) — bezahlt
+- [ ] Transparenz-Box in jedem Rechner (Formel + Disclaimer sichtbar neben Ergebnis)
+- [ ] PDF-Export fuer bezahlte Version
+
+### Portal-Integration
+- [ ] Produkt B-24 in Portal-DB seeden
+- [ ] Probe-Lizenz-Typ implementieren (2 Rechner kostenlos, kein PDF, Wasserzeichen)
+- [ ] Bezahl-Key schaltet alle 5 Rechner + PDF-Export frei
+- [ ] Digistore24-Produkt "Finanz-Rechner-Toolbox" anlegen (39 EUR Einmalkauf)
+
+### Qualitaet
+- [ ] Automatisierte Berechnungstests (Referenzwerte gegen Excel/Formelsammlung)
+- [ ] Oeffentlicher Testbericht pro Rechner
+- [ ] Transparenz-Box: Formel, "Was er tut / Was er NICHT tut"
+
+### Makler-Validierung
+- [ ] 1-2 Test-Makler als Pilotkunden gewinnen
+- [ ] Feedback einholen: Sind die 5 Rechner die richtigen?
+- [ ] Erwartungsmanagement: "Was du bekommst / Was du nicht bekommst" (s. Konzept Kap. 5)
+
+**Geschaetzter Aufwand:** 4 Wochen (5 Rechner + PDF + Portal-Integration + Lizenzpruefung)
 
 ---
 
@@ -87,16 +140,16 @@
 
 ---
 
-## v0.9.0 "Marktplatz" — Bundle B-24 (Finanz-Rechner)
+## v0.9.0 "Marktplatz" — B-24 Erweiterung + B-21 Start
 
-**Ziel:** Paralleles Bundle validieren.
-**Typ:** Produkt + Geschaeftsmodell-Validierung.
+**Ziel:** Finanz-Rechner-Bundle ausbauen (10-15 weitere Rechner), erstes B-21-Tool.
+**Typ:** Produkt-Skalierung + zweites Bundle.
 
-- [ ] Tilgungsplanrechner als erstes B-24-Tool
-- [ ] Shared Math-Engine (`@codefabrik/math-engine`)
-- [ ] Referenz-Makler-Gespraech (lt. Gesamtkonzept Kap. 11.3)
-- [ ] Zweites Digistore24-Produkt (B-24 Bundle)
-- [ ] Portal: Bundle-Auswahl auf Produktseite
+- [ ] B-24 erweitern: TilgungsPlanRechner, EntgeltUmwandlung, SteuerProgression, RiesterZulagen, etc.
+- [ ] Shared Math-Engine verfeinern (`@codefabrik/math-engine`)
+- [ ] Erstes B-21-Tool (MaklerKartei oder WiederVorlage — nach Makler-Feedback)
+- [ ] Portal: Bundle-Auswahl auf Produktseite (B-05, B-24, B-21)
+- [ ] Drittes Digistore24-Produkt (B-21 Makler-Buero-Toolbox)
 
 ---
 

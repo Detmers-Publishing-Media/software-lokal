@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Transparenz - Code-Fabrik</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1><a href="/">Code-Fabrik</a></h1>
+      <nav>
+        <a href="/support">Support</a>
+        <a href="/ideas">Ideen</a>
+        <a href="/request">Anforderung</a>
+        <a href="/status">Status</a>
+      </nav>
+    </div>
+  </header>
+  <div class="container">
+    <h2>Transparenz</h2>
+
+    <div class="card">
+      <h3>So rechnet dieses Tool</h3>
+      <p>MitgliederSimple ist eine lokale Desktop-Anwendung. Alle Daten bleiben auf Ihrem Rechner — es gibt keine Cloud-Verbindung, keine Telemetrie, keinen Server-Kontakt.</p>
+      <ul style="margin-top:0.5rem;padding-left:1.2rem">
+        <li>Mitgliederdaten werden in einer lokalen SQLite-Datenbank gespeichert</li>
+        <li>Beitragsberechnung erfolgt nach den hinterlegten Beitragsklassen</li>
+        <li>CSV-Export erzeugt Dateien im deutschen Format (Semikolon-getrennt, UTF-8)</li>
+        <li>Keine automatischen Updates — Sie entscheiden, wann Sie aktualisieren</li>
+      </ul>
+    </div>
+
+    <div class="card" style="margin-top:1rem">
+      <h3>Testbericht</h3>
+      <p style="margin-bottom:0.5rem;font-size:0.9rem;color:#666">Automatisierte Tests werden bei jedem Release durchgefuehrt und hier veroeffentlicht.</p>
+      <div id="reports">Lade Testberichte...</div>
+    </div>
+  </div>
+  <footer>Code-Fabrik v0.6.2</footer>
+  <script>
+    function esc(s) { if (!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+    const path = location.pathname.split('/');
+    const productId = path[2] || 'mitglieder-simple';
+
+    async function loadReports() {
+      const el = document.getElementById('reports');
+      try {
+        const res = await fetch(`/api/test-reports/${encodeURIComponent(productId)}`);
+        const reports = await res.json();
+
+        if (!reports.length) {
+          el.innerHTML = '<p>Noch keine Testberichte vorhanden.</p>';
+          return;
+        }
+
+        el.innerHTML = '<table style="width:100%;border-collapse:collapse;font-size:0.9rem">'
+          + '<thead><tr style="border-bottom:2px solid #ddd;text-align:left">'
+          + '<th style="padding:0.5rem">Plattform</th>'
+          + '<th style="padding:0.5rem">Version</th>'
+          + '<th style="padding:0.5rem">Tests</th>'
+          + '<th style="padding:0.5rem">Ergebnis</th>'
+          + '<th style="padding:0.5rem">Datum</th>'
+          + '</tr></thead><tbody>'
+          + reports.map(r => {
+              const allPassed = r.failed_tests === 0;
+              const badgeCls = allPassed ? 'badge-green' : 'badge-red';
+              const badgeText = allPassed ? 'Bestanden' : `${r.failed_tests} fehlgeschlagen`;
+              return `<tr style="border-bottom:1px solid #eee">`
+                + `<td style="padding:0.5rem">${esc(r.platform)}</td>`
+                + `<td style="padding:0.5rem">${esc(r.version || '-')}</td>`
+                + `<td style="padding:0.5rem">${r.passed_tests}/${r.total_tests}</td>`
+                + `<td style="padding:0.5rem"><span class="badge ${badgeCls}">${badgeText}</span></td>`
+                + `<td style="padding:0.5rem">${new Date(r.created_at).toLocaleDateString('de')}</td>`
+                + `</tr>`;
+            }).join('')
+          + '</tbody></table>';
+
+        // Details des neuesten Reports anzeigen
+        const latest = reports[0];
+        if (latest.test_details && latest.test_details.length) {
+          el.innerHTML += '<h4 style="margin-top:1rem">Details (letzter Build)</h4>'
+            + '<div style="margin-top:0.5rem">'
+            + latest.test_details.map(t => {
+                const icon = t.passed ? '<span class="badge badge-green">OK</span>' : '<span class="badge badge-red">FAIL</span>';
+                return `<p style="margin:0.3rem 0">${icon} ${esc(t.name)} <span style="font-size:0.85rem;color:#888">— ${esc(t.detail)}</span></p>`;
+              }).join('')
+            + '</div>';
+        }
+      } catch (err) {
+        el.innerHTML = '<p class="error" style="display:block">Fehler beim Laden der Testberichte.</p>';
+      }
+    }
+
+    loadReports();
+  </script>
+</body>
+</html>
