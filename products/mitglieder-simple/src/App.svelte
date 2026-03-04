@@ -2,26 +2,39 @@
   import { onMount } from 'svelte';
   import { currentView } from './lib/stores/navigation.js';
   import { initDb } from './lib/db.js';
+  import { checkMemberLimit } from './lib/license.js';
   import MemberList from './routes/MemberList.svelte';
   import MemberForm from './routes/MemberForm.svelte';
   import MemberDetail from './routes/MemberDetail.svelte';
   import Import from './routes/Import.svelte';
+  import Payments from './routes/Payments.svelte';
   import Settings from './routes/Settings.svelte';
 
   let dbReady = $state(false);
   let dbError = $state(null);
+  let limitReached = $state(false);
 
   onMount(async () => {
     try {
       await initDb();
       dbReady = true;
+      const limit = await checkMemberLimit();
+      limitReached = !limit.allowed;
     } catch (err) {
       dbError = err.message;
     }
   });
 
+  // Re-check limit when navigating back to list (after save/delete)
+  $effect(() => {
+    if ($currentView === 'list' && dbReady) {
+      checkMemberLimit().then(l => limitReached = !l.allowed);
+    }
+  });
+
   const navItems = [
     { id: 'list', label: 'Mitglieder' },
+    { id: 'payments', label: 'Beitraege' },
     { id: 'add', label: 'Neu' },
     { id: 'import', label: 'Import' },
     { id: 'settings', label: 'Einstellungen' },
@@ -38,7 +51,9 @@
         <li>
           <button
             class:active={$currentView.startsWith(item.id)}
+            disabled={item.id === 'add' && limitReached}
             onclick={() => currentView.set(item.id)}
+            title={item.id === 'add' && limitReached ? 'Probe-Limit erreicht' : ''}
           >
             {item.label}
           </button>
@@ -54,6 +69,8 @@
       <div class="loading">Datenbank wird geladen...</div>
     {:else if $currentView === 'list'}
       <MemberList />
+    {:else if $currentView === 'payments'}
+      <Payments />
     {:else if $currentView === 'add'}
       <MemberForm />
     {:else if $currentView.startsWith('edit:')}
@@ -102,6 +119,8 @@
 
   .sidebar button:hover { background: var(--color-border); }
   .sidebar button.active { background: var(--color-primary); color: white; }
+  .sidebar button:disabled { opacity: 0.4; cursor: not-allowed; }
+  .sidebar button:disabled:hover { background: none; }
 
   .content {
     flex: 1;

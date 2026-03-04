@@ -4,17 +4,25 @@
   import { members } from '../lib/stores/members.js';
   import { getMember, saveMember, getFeeClasses, getMembers } from '../lib/db.js';
   import { STATUS_OPTIONS } from '../lib/types.js';
+  import { checkMemberLimit } from '../lib/license.js';
 
   let { memberId = null } = $props();
 
+  const today = new Date().toISOString().split('T')[0];
+
   let form = $state({
     first_name: '', last_name: '', street: '', zip: '', city: '',
-    phone: '', email: '', birth_date: '', entry_date: new Date().toISOString().split('T')[0],
+    phone: '', email: '', birth_date: '', entry_date: today,
     exit_date: '', exit_reason: '', status: 'aktiv', fee_class_id: 1, notes: '',
+    consent_phone: null, consent_email: null,
+    consent_photo_internal: null, consent_photo_public: null,
+    consent_withdrawn_at: null,
   });
 
   let feeClasses = $state([]);
   let saving = $state(false);
+  let limitReached = $state(false);
+  let limitInfo = $state(null);
   let isEdit = $derived(memberId != null);
 
   onMount(async () => {
@@ -27,9 +35,25 @@
     }
   });
 
+  function toggleConsent(field) {
+    form[field] = form[field] ? null : today;
+  }
+
   async function handleSubmit() {
     if (!form.first_name.trim() || !form.last_name.trim()) return;
+
+    // Check trial limit for new members
+    if (!isEdit) {
+      const limit = await checkMemberLimit();
+      if (!limit.allowed) {
+        limitReached = true;
+        limitInfo = limit;
+        return;
+      }
+    }
+
     saving = true;
+    limitReached = false;
     try {
       await saveMember(memberId ? { ...form, id: memberId } : form);
       members.set(await getMembers());
@@ -45,6 +69,14 @@
     <h1>{isEdit ? 'Mitglied bearbeiten' : 'Neues Mitglied'}</h1>
     <button class="btn-secondary" onclick={() => currentView.set('list')}>Abbrechen</button>
   </div>
+
+  {#if limitReached && limitInfo}
+    <div class="limit-box">
+      <strong>Probe-Limit erreicht</strong>
+      <p>Sie haben {limitInfo.count} von {limitInfo.limit} Mitgliedern in der Probe-Version.
+        Um weitere Mitglieder anzulegen, benoetigen Sie eine Lizenz.</p>
+    </div>
+  {/if}
 
   <form onsubmit={e => { e.preventDefault(); handleSubmit(); }}>
     <fieldset>
@@ -99,6 +131,48 @@
     </fieldset>
 
     <fieldset>
+      <legend>DSGVO-Einwilligungen</legend>
+      <div class="consent-grid">
+        <div class="consent-item">
+          <label class="consent-label">
+            <input type="checkbox" checked={!!form.consent_phone} onchange={() => toggleConsent('consent_phone')} />
+            Telefon
+          </label>
+          {#if form.consent_phone}
+            <input type="date" bind:value={form.consent_phone} class="consent-date" />
+          {/if}
+        </div>
+        <div class="consent-item">
+          <label class="consent-label">
+            <input type="checkbox" checked={!!form.consent_email} onchange={() => toggleConsent('consent_email')} />
+            E-Mail
+          </label>
+          {#if form.consent_email}
+            <input type="date" bind:value={form.consent_email} class="consent-date" />
+          {/if}
+        </div>
+        <div class="consent-item">
+          <label class="consent-label">
+            <input type="checkbox" checked={!!form.consent_photo_internal} onchange={() => toggleConsent('consent_photo_internal')} />
+            Foto intern
+          </label>
+          {#if form.consent_photo_internal}
+            <input type="date" bind:value={form.consent_photo_internal} class="consent-date" />
+          {/if}
+        </div>
+        <div class="consent-item">
+          <label class="consent-label">
+            <input type="checkbox" checked={!!form.consent_photo_public} onchange={() => toggleConsent('consent_photo_public')} />
+            Foto oeffentlich
+          </label>
+          {#if form.consent_photo_public}
+            <input type="date" bind:value={form.consent_photo_public} class="consent-date" />
+          {/if}
+        </div>
+      </div>
+    </fieldset>
+
+    <fieldset>
       <legend>Notizen</legend>
       <textarea bind:value={form.notes} rows="3"></textarea>
     </fieldset>
@@ -124,4 +198,12 @@
   .btn-primary:hover { background: var(--color-primary-hover); }
   .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
   .btn-secondary { padding: 0.5rem 1rem; background: none; border: 1px solid var(--color-border); border-radius: 0.375rem; }
+  .limit-box { background: #fff3cd; border: 1px solid #ffc107; border-radius: 0.5rem; padding: 1rem; margin-bottom: 1rem; }
+  .limit-box strong { color: #856404; }
+  .limit-box p { margin: 0.5rem 0 0; font-size: 0.875rem; color: #856404; }
+  .consent-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+  .consent-item { display: flex; flex-direction: column; gap: 0.25rem; }
+  .consent-label { display: flex; flex-direction: row; align-items: center; gap: 0.5rem; font-size: 0.875rem; color: var(--color-text); cursor: pointer; }
+  .consent-label input[type="checkbox"] { width: auto; margin: 0; }
+  .consent-date { font-size: 0.8125rem; padding: 0.25rem 0.5rem; width: auto; }
 </style>

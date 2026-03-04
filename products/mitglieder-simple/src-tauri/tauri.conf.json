@@ -1,6 +1,6 @@
 {
   "productName": "MitgliederSimple",
-  "version": "0.1.0",
+  "version": "0.4.0",
   "identifier": "de.detmers-publish.mitglieder-simple",
   "build": {
     "frontendDist": "../dist",

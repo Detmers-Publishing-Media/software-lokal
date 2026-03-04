@@ -1,14 +1,63 @@
 <script>
   import { onMount } from 'svelte';
-  import { getFeeClasses, saveFeeClass } from '../lib/db.js';
+  import { getFeeClasses, saveFeeClass, getClubProfile, saveClubProfile } from '../lib/db.js';
 
   let feeClasses = $state([]);
   let newClass = $state({ name: '', amount_cents: 0, interval: 'jaehrlich' });
   let saving = $state(false);
 
+  let profile = $state({
+    name: '', street: '', zip: '', city: '',
+    register_court: '', register_number: '', tax_id: '',
+    iban: '', bic: '', bank_name: '',
+    contact_email: '', contact_phone: '', chairman: '', logo_path: '',
+  });
+  let profileSaving = $state(false);
+  let profileMsg = $state('');
+  let logoPreview = $state('');
+
   onMount(async () => {
     feeClasses = await getFeeClasses();
+    const p = await getClubProfile();
+    if (p) profile = { ...profile, ...p };
+    if (profile.logo_path) logoPreview = profile.logo_path;
   });
+
+  async function handleProfileSave() {
+    profileSaving = true;
+    profileMsg = '';
+    try {
+      await saveClubProfile(profile);
+      profileMsg = 'Gespeichert';
+      setTimeout(() => profileMsg = '', 2000);
+    } finally {
+      profileSaving = false;
+    }
+  }
+
+  async function handleLogoSelect() {
+    try {
+      const { open } = await import('@tauri-apps/plugin-dialog');
+      const selected = await open({
+        multiple: false,
+        filters: [{ name: 'Bilder', extensions: ['png', 'jpg', 'jpeg', 'svg'] }],
+      });
+      if (selected) {
+        const { copyFile, mkdir, exists } = await import('@tauri-apps/plugin-fs');
+        const { appDataDir, join } = await import('@tauri-apps/api/path');
+        const appData = await appDataDir();
+        const logoDir = await join(appData, 'logos');
+        if (!(await exists(logoDir))) await mkdir(logoDir, { recursive: true });
+        const fileName = selected.split(/[/\\]/).pop();
+        const dest = await join(logoDir, fileName);
+        await copyFile(selected, dest);
+        profile.logo_path = dest;
+        logoPreview = dest;
+      }
+    } catch (err) {
+      console.error('Logo-Auswahl fehlgeschlagen:', err);
+    }
+  }
 
   async function handleAdd() {
     if (!newClass.name.trim()) return;
@@ -22,6 +71,59 @@
 
 <div class="settings-page">
   <h1>Einstellungen</h1>
+
+  <section>
+    <h2>Vereinsprofil</h2>
+    <form onsubmit={e => { e.preventDefault(); handleProfileSave(); }}>
+      <div class="row">
+        <label>Vereinsname *<input bind:value={profile.name} placeholder="z.B. Turnverein 1880 e.V." /></label>
+      </div>
+      <div class="row">
+        <label>Strasse<input bind:value={profile.street} /></label>
+      </div>
+      <div class="row">
+        <label>PLZ<input bind:value={profile.zip} maxlength="5" /></label>
+        <label>Ort<input bind:value={profile.city} /></label>
+      </div>
+      <div class="row">
+        <label>Registergericht<input bind:value={profile.register_court} placeholder="Amtsgericht..." /></label>
+        <label>VR-Nummer<input bind:value={profile.register_number} /></label>
+      </div>
+      <div class="row">
+        <label>Steuer-Nr.<input bind:value={profile.tax_id} /></label>
+        <label>Vorsitzende/r<input bind:value={profile.chairman} /></label>
+      </div>
+      <div class="row">
+        <label>IBAN<input bind:value={profile.iban} /></label>
+        <label>BIC<input bind:value={profile.bic} /></label>
+      </div>
+      <div class="row">
+        <label>Bankname<input bind:value={profile.bank_name} /></label>
+      </div>
+      <div class="row">
+        <label>E-Mail<input bind:value={profile.contact_email} type="email" /></label>
+        <label>Telefon<input bind:value={profile.contact_phone} type="tel" /></label>
+      </div>
+      <div class="row logo-row">
+        <label>Logo
+          <div class="logo-upload">
+            <button type="button" class="btn-secondary" onclick={handleLogoSelect}>Datei waehlen...</button>
+            {#if logoPreview}
+              <img src={logoPreview} alt="Logo-Vorschau" class="logo-preview" />
+            {/if}
+          </div>
+        </label>
+      </div>
+      <div class="profile-actions">
+        <button type="submit" class="btn-primary" disabled={profileSaving}>
+          {profileSaving ? 'Speichern...' : 'Profil speichern'}
+        </button>
+        {#if profileMsg}
+          <span class="save-msg">{profileMsg}</span>
+        {/if}
+      </div>
+    </form>
+  </section>
 
   <section>
     <h2>Beitragsklassen</h2>
@@ -60,7 +162,7 @@
 
   <section class="about">
     <h2>Ueber MitgliederSimple</h2>
-    <p>Version 0.1.0</p>
+    <p>Version 0.4.0</p>
     <p>B-05 Verein & Ehrenamt Digital</p>
     <p>Lizenz: MIT</p>
   </section>
@@ -77,4 +179,10 @@
   label { display: flex; flex-direction: column; gap: 0.25rem; flex: 1; font-size: 0.8125rem; color: var(--color-text-muted); }
   .about p { color: var(--color-text-muted); font-size: 0.875rem; }
   .btn-primary { padding: 0.5rem 1rem; background: var(--color-primary); color: white; border: none; border-radius: 0.375rem; }
+  .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+  .btn-secondary { padding: 0.375rem 0.75rem; background: none; border: 1px solid var(--color-border); border-radius: 0.375rem; font-size: 0.8125rem; }
+  .logo-upload { display: flex; align-items: center; gap: 0.75rem; }
+  .logo-preview { max-height: 48px; max-width: 120px; object-fit: contain; border: 1px solid var(--color-border); border-radius: 0.25rem; }
+  .profile-actions { display: flex; align-items: center; gap: 0.75rem; margin-top: 0.5rem; }
+  .save-msg { color: var(--color-success); font-size: 0.875rem; }
 </style>

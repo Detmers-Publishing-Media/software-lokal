@@ -16,11 +16,16 @@ Stand: 2026-03-04
 | v0.5.0 | Kassenschluss | Digistore24 IPN-Integration, Lizenzkey-Lifecycle | Done |
 | v0.5.5 | Produkttexte | Text-Generator aus spec.yml, YAML-Generator | Done |
 | v0.5.6 | Testkauf-Flow | MitgliederSimple Seed, Forgejo Release, Download-Seite | Done |
-| v0.5.7 | Kompass | Gesamtkonzept, Roadmap, naechste Schritte (Dokumentation) | **Aktuell** |
+| v0.5.7 | Kompass | Gesamtkonzept, Roadmap, naechste Schritte (Dokumentation) | Done |
+| v0.6.0 | Mitglieder | MitgliederSimple v0.1 (CRUD + CSV-Export) | Done |
+| v0.6.1 | Mitglieder v0.2 | MitgliederSimple nach Referenzkunden-Feedback | Geplant |
+| v0.6.2 | Pruefstand | Azure Testing + EXE-Erstellung | **Aktuell** |
+| — | MitgliederSimple v0.3 "Protokoll" | Event-Log, Hash-Kette, Schema-Meta, 7 Testkategorien | Done |
+| v0.6.3 | Taschenrechner | Finanz-Rechner MVP — 5 Makler-Rechner (Bundle B-24) | Vorgemerkt |
 
 ---
 
-## Infrastruktur-Stand (v0.5.7)
+## Infrastruktur-Stand (v0.6.0)
 
 ### PROD-Server (UpCloud)
 - **IP:** 212.147.229.108
