@@ -1,0 +1,71 @@
+schema_version: 1
+product_id: "mitglieder-simple"
+name: "MitgliederSimple"
+tagline: "Mitgliederverwaltung fuer Vereine — einfach, offline, DSGVO-konform"
+version: "0.1.0"
+license: "MIT"
+type: "app"
+tech_stack: "tauri-svelte"
+bundles: ["B-05-verein-ehrenamt"]
+platforms: ["linux", "windows", "macos"]
+
+description:
+  short: "Desktop-App zur Verwaltung von Vereinsmitgliedern"
+  long: |
+    MitgliederSimple verwaltet Mitgliederdaten, Beitraege und
+    Kontaktinformationen lokal auf Ihrem Rechner.
+    Keine Cloud, keine monatlichen Kosten, DSGVO-konform.
+  benefits:
+    - "Alle Daten lokal — keine Cloud"
+    - "CSV Import/Export (Excel-Migration)"
+    - "Beitragsverwaltung mit flexiblen Intervallen"
+    - "Laeuft auf Windows, macOS und Linux"
+  target_audience: "Foerdervereine, Kulturvereine, Sportvereine"
+
+pricing:
+  model: "einmalkauf"
+  price_cents: 4900
+  includes:
+    - "Fertige Installer (Windows, Linux, macOS)"
+    - "Automatische Update-Benachrichtigung"
+    - "Support-Ticket-System (Antwort in 48h)"
+    - "Feature-Request mit Voting-Recht"
+    - "Zugang zum Download-Portal"
+
+features:
+  - id: "mitglieder-crud"
+    name: "Mitglieder verwalten"
+    description: "Anlegen, bearbeiten, suchen und loeschen"
+    status: "planned"
+  - id: "csv-import"
+    name: "CSV Import/Export"
+    description: "Mitgliederlisten importieren und exportieren"
+    status: "planned"
+  - id: "beitrag-tracking"
+    name: "Beitragsverwaltung"
+    description: "Beitragsklassen und Zahlungsstatus"
+    status: "planned"
+
+faq:
+  - question: "Brauche ich den Support-Key, um die Software zu nutzen?"
+    answer: "Nein. Die Software ist Open Source (MIT) und funktioniert komplett ohne Key. Der Key gibt Ihnen Zugang zu fertigen Installern, Updates und Support."
+  - question: "Wo werden meine Daten gespeichert?"
+    answer: "Lokal auf Ihrem Computer in einer SQLite-Datenbank. Keine Cloud."
+  - question: "Auf welchen Betriebssystemen laeuft die App?"
+    answer: "Windows 10+, macOS 12+ und Linux (Ubuntu 22.04+)."
+
+installation:
+  prerequisites:
+    - "Windows 10+, macOS 12+ oder Linux (Ubuntu 22.04+)"
+    - "100 MB freier Festplattenspeicher"
+  steps:
+    - "Laden Sie die aktuelle Version herunter"
+    - "Fuehren Sie die Installationsdatei aus"
+    - "Starten Sie die Anwendung — keine Konfiguration noetig"
+  notes: "Die App speichert Daten im Home-Verzeichnis."
+
+architecture:
+  frontend: "Svelte 5 SPA in Tauri WebView"
+  backend: "Tauri v2 Rust Backend"
+  database: "SQLite via @tauri-apps/plugin-sql"
+  shared_lib: "@codefabrik/vereins-shared"

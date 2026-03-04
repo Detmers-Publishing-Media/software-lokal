@@ -1,0 +1,35 @@
+---
+- name: "Scripts-Verzeichnis"
+  ansible.builtin.file:
+    path: /opt/codefabrik/scripts
+    state: directory
+    mode: '0755'
+
+- name: "Nacht-Stopp Scripts deployen"
+  ansible.builtin.template:
+    src: "{{ item }}.j2"
+    dest: "/opt/codefabrik/scripts/{{ item }}"
+    mode: '0755'
+  loop:
+    - nightstop.sh
+    - nightstart.sh
+
+- name: "systemd Units deployen"
+  ansible.builtin.template:
+    src: "{{ item }}.j2"
+    dest: "/etc/systemd/system/{{ item }}"
+  loop:
+    - codefabrik-nightstop.service
+    - codefabrik-nightstop.timer
+    - codefabrik-nightstart.service
+    - codefabrik-nightstart.timer
+
+- name: "Timer aktivieren"
+  ansible.builtin.systemd:
+    name: "{{ item }}"
+    state: started
+    enabled: yes
+    daemon_reload: yes
+  loop:
+    - codefabrik-nightstop.timer
+    - codefabrik-nightstart.timer

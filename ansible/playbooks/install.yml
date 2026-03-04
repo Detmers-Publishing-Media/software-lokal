@@ -30,11 +30,29 @@
 - name: "Phase 2: Server konfigurieren"
   hosts: factory-prod
   gather_facts: true
-  vars:
-    forgejo_admin_password: "{{ lookup('password', '/dev/null length=16 chars=hexdigits') }}"
-    postgres_password: "{{ lookup('password', '/dev/null length=32 chars=hexdigits') }}"
-    jwt_secret: "{{ lookup('password', '/dev/null length=32 chars=hexdigits') }}"
   pre_tasks:
+    - name: "Prüfe ob Passwörter existieren"
+      ansible.builtin.stat:
+        path: /output/.factory-passwords.env
+      register: existing_passwords
+      delegate_to: localhost
+
+    - name: "Existierende Passwörter laden (Reinstall)"
+      ansible.builtin.set_fact:
+        forgejo_admin_password: "{{ lookup('ini', 'forgejo_admin_password type=properties file=/output/.factory-passwords.env') }}"
+        postgres_password: "{{ lookup('ini', 'postgres_password type=properties file=/output/.factory-passwords.env') }}"
+        jwt_secret: "{{ lookup('ini', 'jwt_secret type=properties file=/output/.factory-passwords.env') }}"
+      when: existing_passwords.stat.exists
+      delegate_to: localhost
+
+    - name: "Neue Passwörter generieren (Erstinstallation)"
+      ansible.builtin.set_fact:
+        forgejo_admin_password: "{{ lookup('password', '/dev/null length=16 chars=hexdigits') }}"
+        postgres_password: "{{ lookup('password', '/dev/null length=32 chars=hexdigits') }}"
+        jwt_secret: "{{ lookup('password', '/dev/null length=32 chars=hexdigits') }}"
+      when: not existing_passwords.stat.exists
+      delegate_to: localhost
+
     - name: "OpenClaw Docker-Verzeichnis sicherstellen"
       ansible.builtin.file:
         path: "{{ docker_compose_dir }}/docker/openclaw"
@@ -112,6 +130,7 @@
     - postgres
     - forgejo
     - runner
+    - tauri-build
     - openclaw
     - repos
     - secrets
@@ -122,6 +141,12 @@
   gather_facts: false
   roles:
     - smoke-test
+
+- name: "Phase 4b: Nacht-Stopp Timer"
+  hosts: factory-prod
+  gather_facts: false
+  roles:
+    - nightstop
 
 - name: "Phase 5: Infra nach Forgejo pushen"
   hosts: factory-prod

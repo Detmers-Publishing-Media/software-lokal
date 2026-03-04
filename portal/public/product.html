@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Produkt — Code-Fabrik</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .tabs { display: flex; gap: 0; margin-bottom: 1.5rem; border-bottom: 2px solid #e5e7eb; }
+    .tabs a { padding: 0.6rem 1.2rem; color: #555; font-size: 0.95rem; border-bottom: 2px solid transparent; margin-bottom: -2px; }
+    .tabs a:hover { color: #1a1a2e; text-decoration: none; }
+    .tabs a.active { color: #2563eb; border-bottom-color: #2563eb; font-weight: 500; }
+    .benefit-list { list-style: none; padding: 0; }
+    .benefit-list li { padding: 0.5rem 0; padding-left: 1.5rem; position: relative; }
+    .benefit-list li::before { content: "\2713"; position: absolute; left: 0; color: #16a34a; font-weight: bold; }
+    .feature-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    @media (max-width: 600px) { .feature-grid { grid-template-columns: 1fr; } }
+    .faq-item { margin-bottom: 1rem; }
+    .faq-item h4 { margin-bottom: 0.3rem; color: #1a1a2e; }
+    .faq-item p { color: #555; font-size: 0.95rem; }
+    .step-list { counter-reset: steps; list-style: none; padding: 0; }
+    .step-list li { counter-increment: steps; padding: 0.6rem 0 0.6rem 2.5rem; position: relative; }
+    .step-list li::before { content: counter(steps); position: absolute; left: 0; width: 1.8rem; height: 1.8rem; background: #2563eb; color: #fff; border-radius: 50%; text-align: center; line-height: 1.8rem; font-size: 0.85rem; }
+    .price-tag { font-size: 1.8rem; font-weight: bold; color: #1a1a2e; }
+    .price-tag small { font-size: 0.9rem; color: #555; font-weight: normal; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1><a href="/">Code-Fabrik</a></h1>
+      <nav>
+        <a href="/support">Support</a>
+        <a href="/ideas">Ideen</a>
+        <a href="/request">Anforderung</a>
+        <a href="/status">Status</a>
+      </nav>
+    </div>
+  </header>
+  <div class="container">
+    <div id="product-header"></div>
+    <div class="tabs" id="tabs"></div>
+    <div id="content"><p>Lade...</p></div>
+  </div>
+  <footer>Code-Fabrik v0.5.5</footer>
+  <script>
+    const pathParts = window.location.pathname.split('/').filter(Boolean);
+    const productId = pathParts[1] || '';
+    const section = pathParts[2] || 'overview';
+
+    function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+    function parseJson(str) {
+      try { return JSON.parse(str); } catch { return str; }
+    }
+
+    function renderTabs() {
+      const base = '/product/' + esc(productId);
+      const tabs = [
+        { id: 'overview', label: 'Uebersicht', href: base },
+        { id: 'faq', label: 'FAQ', href: base + '/faq' },
+        { id: 'install', label: 'Installation', href: base + '/install' },
+        { id: 'releases', label: 'Releases', href: base + '/releases' }
+      ];
+      document.getElementById('tabs').innerHTML = tabs.map(t =>
+        `<a href="${t.href}" class="${t.id === section ? 'active' : ''}">${t.label}</a>`
+      ).join('');
+    }
+
+    async function load() {
+      renderTabs();
+      const [prodRes, textsRes] = await Promise.all([
+        fetch('/api/products/' + productId),
+        fetch('/api/products/' + productId + '/texts')
+      ]);
+
+      if (!prodRes.ok) {
+        document.getElementById('content').innerHTML = '<div class="error">Produkt nicht gefunden.</div>';
+        return;
+      }
+
+      const product = await prodRes.json();
+      const texts = await textsRes.json();
+
+      document.getElementById('product-header').innerHTML = `
+        <h2>${esc(product.name)}</h2>
+        <p style="color:#555;margin-bottom:1rem">${esc(product.description || '')}</p>
+      `;
+      document.title = esc(product.name) + ' — Code-Fabrik';
+
+      const el = document.getElementById('content');
+
+      if (section === 'overview') {
+        renderOverview(el, product, texts);
+      } else if (section === 'faq') {
+        renderFaq(el, texts);
+      } else if (section === 'install') {
+        renderInstall(el, texts);
+      } else if (section === 'releases') {
+        renderReleases(el, texts);
+      }
+    }
+
+    function renderOverview(el, product, texts) {
+      const desc = texts.description ? parseJson(texts.description.content) : {};
+      const benefits = texts.benefits ? parseJson(texts.benefits.content) : [];
+      const features = texts.features ? parseJson(texts.features.content) : [];
+      const price = product.price_cents === 0
+        ? '<span class="badge badge-green">Kostenlos</span>'
+        : `<span class="price-tag">${(product.price_cents / 100).toFixed(2)} EUR <small>einmalig</small></span>`;
+
+      el.innerHTML = `
+        <div class="card">
+          <p>${esc(typeof desc === 'object' ? desc.long || desc.short || '' : desc)}</p>
+        </div>
+        ${benefits.length ? `
+        <div class="card">
+          <h3>Vorteile</h3>
+          <ul class="benefit-list">
+            ${benefits.map(b => `<li>${esc(b)}</li>`).join('')}
+          </ul>
+        </div>` : ''}
+        ${features.length ? `
+        <div class="card">
+          <h3>Features</h3>
+          <div class="feature-grid">
+            ${features.map(f => `
+              <div class="card" style="margin-bottom:0">
+                <h4>${esc(f.name)}</h4>
+                <p>${esc(f.description)}</p>
+                <span class="badge ${f.status === 'implemented' ? 'badge-green' : 'badge-yellow'}">${esc(f.status)}</span>
+              </div>
+            `).join('')}
+          </div>
+        </div>` : ''}
+        <div class="card" style="text-align:center">
+          ${price}
+          <div style="margin-top:1rem">
+            <a href="/buy/${esc(product.id)}" class="btn">Jetzt erwerben</a>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderFaq(el, texts) {
+      const faq = texts.faq ? parseJson(texts.faq.content) : [];
+      if (!faq.length) {
+        el.innerHTML = '<p>Noch keine FAQ vorhanden.</p>';
+        return;
+      }
+      el.innerHTML = `<div class="card">${faq.map(f => `
+        <div class="faq-item">
+          <h4>${esc(f.question)}</h4>
+          <p>${esc(f.answer)}</p>
+        </div>
+      `).join('')}</div>`;
+    }
+
+    function renderInstall(el, texts) {
+      const inst = texts.installation ? parseJson(texts.installation.content) : {};
+      el.innerHTML = `
+        ${inst.prerequisites && inst.prerequisites.length ? `
+        <div class="card">
+          <h3>Voraussetzungen</h3>
+          <ul>${inst.prerequisites.map(p => `<li>${esc(p)}</li>`).join('')}</ul>
+        </div>` : ''}
+        ${inst.steps && inst.steps.length ? `
+        <div class="card">
+          <h3>Installationsschritte</h3>
+          <ol class="step-list">${inst.steps.map(s => `<li>${esc(s)}</li>`).join('')}</ol>
+        </div>` : ''}
+        ${inst.notes ? `<div class="card"><p><strong>Hinweis:</strong> ${esc(inst.notes)}</p></div>` : ''}
+      `;
+    }
+
+    function renderReleases(el, texts) {
+      const rn = texts.release_notes ? parseJson(texts.release_notes.content) : null;
+      if (!rn) {
+        el.innerHTML = '<p>Noch keine Releases vorhanden.</p>';
+        return;
+      }
+      el.innerHTML = `
+        <div class="card">
+          <h3>${esc(rn.name)} v${esc(rn.version)}</h3>
+          <p style="color:#555">${esc(rn.date || '')}</p>
+        </div>
+      `;
+    }
+
+    load();
+  </script>
+</body>
+</html>

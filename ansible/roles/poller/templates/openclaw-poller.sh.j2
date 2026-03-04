@@ -1,5 +1,5 @@
 #!/bin/bash
-# OpenClaw Poller v0.4.0 — 4-Phasen Pipeline
+# OpenClaw Poller v0.5.5 — 5-Phasen Pipeline mit Review-Loop + Metriken
 set -euo pipefail
 
 LOGFILE=/var/log/openclaw-poller.log
@@ -90,6 +90,56 @@ get_poller_state() {
     "SELECT stage FROM poller_state WHERE object_id='$object_id'" 2>/dev/null | tr -d '[:space:]'
 }
 
+# ─── Retry mit Exponential Backoff ───────────────────────────────────────────
+# Nutzung: retry_with_backoff MAX_RETRIES "Beschreibung" command arg1 arg2
+retry_with_backoff() {
+  local max_retries=$1
+  local description=$2
+  shift 2
+
+  local attempt=0
+  local wait_seconds=10  # 10s → 30s → 90s
+
+  while [ $attempt -lt $max_retries ]; do
+    attempt=$((attempt + 1))
+    log "[$description] Versuch $attempt/$max_retries"
+
+    if "$@"; then
+      log "[$description] Erfolg nach Versuch $attempt"
+      return 0
+    fi
+
+    if [ $attempt -lt $max_retries ]; then
+      log "[$description] Fehlgeschlagen. Warte ${wait_seconds}s..."
+      sleep $wait_seconds
+      wait_seconds=$((wait_seconds * 3))
+    fi
+  done
+
+  log "[$description] Fehlgeschlagen nach $max_retries Versuchen"
+  return 1
+}
+
+log_poller_event() {
+  local object_id="$1"
+  local event="$2"
+  local details="${3:-}"
+  docker exec factory-postgres psql -U forgejo -d forgejo -tAq -c "
+    INSERT INTO poller_events (object_id, event, details)
+    VALUES ('$object_id', '$event', '$(echo "$details" | head -c 500)');" 2>/dev/null || true
+}
+
+record_metric() {
+  local object_id="$1"
+  local field="$2"
+  local value="${3:-NOW()}"
+  docker exec factory-postgres psql -U forgejo -d forgejo -tAq -c "
+    INSERT INTO pipeline_metrics (object_id, $field)
+    VALUES ('$object_id', $value)
+    ON CONFLICT (object_id)
+    DO UPDATE SET $field = $value;" 2>/dev/null || true
+}
+
 # ─── Phase 1: DISPATCH — Inbox → Backlog ───────────────────────────────────
 log "--- Phase 1: dispatch ---"
 
@@ -98,8 +148,13 @@ trap 'rm -rf "$WORK_DIR"; rm -f "$LOCK_FILE"' EXIT
 
 # Process-Repo klonen
 CLONE_URL="http://factory-admin:${FORGEJO_API_TOKEN}@localhost:3000/$FORGEJO_ORG/$PROCESS_REPO.git"
-if ! git clone --quiet "$CLONE_URL" "$WORK_DIR/process" 2>/dev/null; then
-  log "FEHLER: Konnte Process-Repo nicht klonen"
+clone_process_repo() {
+  git clone --quiet "$CLONE_URL" "$WORK_DIR/process" 2>/dev/null
+}
+
+if ! retry_with_backoff 3 "clone:process-repo" clone_process_repo; then
+  log "FEHLER: Konnte Process-Repo nicht klonen nach 3 Versuchen"
+  log_poller_event "SYSTEM" "clone_failed" "Process-Repo nicht erreichbar"
   exit 1
 fi
 
@@ -136,6 +191,9 @@ for story_file in "$INBOX_DIR"/*.yml; do
   git mv "$story_file" "$DEST_DIR/$story_id.yml" 2>/dev/null || mv "$story_file" "$DEST_DIR/$story_id.yml"
 
   update_poller_state "$story_id" "backlog"
+  record_metric "$story_id" "dispatched_at"
+  record_metric "$story_id" "product" "'$produkt'"
+  log_poller_event "$story_id" "dispatched" "Verschoben nach $DEST_DIR"
   log "dispatch: $story_id → $DEST_DIR"
 done
 shopt -u nullglob
@@ -218,6 +276,8 @@ TASKEOF
 
         cd "$WORK_DIR/process"
         update_poller_state "$story_id" "in-progress" "$BRANCH_NAME"
+        record_metric "$story_id" "in_progress_at"
+        log_poller_event "$story_id" "in_progress" "Branch $BRANCH_NAME erstellt"
         log "bridge: $story_id → Branch '$BRANCH_NAME' erstellt"
       else
         log "bridge: FEHLER beim Klonen von $story_produkt — überspringe $story_id"
@@ -246,7 +306,7 @@ for story_file in "$WORK_DIR/process/work/04-in-progress"/*.yml 2>/dev/null; do
   story_id=$(basename "$story_file" .yml)
   current_stage=$(get_poller_state "$story_id")
 
-  if [ "$current_stage" != "in-progress" ]; then
+  if [ "$current_stage" != "in-progress" ] && [ "$current_stage" != "needs-fix" ]; then
     continue
   fi
 
@@ -262,7 +322,7 @@ for story_file in "$WORK_DIR/process/work/04-in-progress"/*.yml 2>/dev/null; do
     continue
   fi
 
-  log "openclaw: $story_id → Branch $BRANCH_NAME → Claude Code"
+  log "openclaw: $story_id (stage=$current_stage) → Branch $BRANCH_NAME → Claude Code"
 
   # Sicherstellen dass junior User und Claude Code vorhanden
   docker exec factory-openclaw bash -c '
@@ -286,6 +346,13 @@ EOF
     "git config --global user.name 'Factory Junior'; git config --global user.email 'junior@factory.local'" 2>/dev/null || true
   docker exec factory-openclaw npm install -g @anthropic-ai/claude-code 2>/dev/null || true
 
+  # Prompt bestimmen: bei needs-fix auch _review.md einbeziehen
+  PROMPT_CMD='cat _task.md'
+  if [ "$current_stage" = "needs-fix" ]; then
+    PROMPT_CMD='echo "## Original-Task"; cat _task.md; echo ""; echo "## Review-Feedback (bitte alle Punkte beheben)"; cat _review.md 2>/dev/null || echo "Keine Review-Datei gefunden"'
+    log "openclaw: $story_id — needs-fix Modus, _review.md wird einbezogen"
+  fi
+
   # Script für junior erstellen
   SCRIPT_FILE="/tmp/openclaw-run-${story_id}.sh"
   cat > "$SCRIPT_FILE" << RUNEOF
@@ -297,7 +364,8 @@ git clone ssh://git@factory-forgejo/$FORGEJO_ORG/$story_produkt.git
 cd $story_produkt
 git checkout $BRANCH_NAME 2>/dev/null || git checkout -b $BRANCH_NAME
 export ANTHROPIC_API_KEY="{{ vault_anthropic_api_key }}"
-claude --dangerously-skip-permissions -p "\$(cat _task.md)" 2>&1 | tee /var/log/openclaw-${story_id}.log
+PROMPT=\$($PROMPT_CMD)
+claude --model {{ impl_model }} --dangerously-skip-permissions -p "\$PROMPT" 2>&1 | tee /var/log/openclaw-${story_id}.log
 git add -A
 git diff --cached --quiet || git commit -m "${story_id}: Implementierung durch Factory Junior"
 git push origin $BRANCH_NAME 2>/dev/null
@@ -308,14 +376,166 @@ RUNEOF
   docker exec factory-openclaw chown junior:junior "$SCRIPT_FILE"
   rm -f "$SCRIPT_FILE"
 
-  if docker exec factory-openclaw su junior -c "bash $SCRIPT_FILE" 2>&1 | \
-    tee -a "$LOGFILE"; then
+  run_openclaw_task() {
+    docker exec factory-openclaw su junior -c "bash $SCRIPT_FILE" 2>&1 | \
+      tee -a "$LOGFILE"
+  }
+
+  if retry_with_backoff 3 "openclaw:$story_id" run_openclaw_task; then
     update_poller_state "$story_id" "openclaw-done" "$BRANCH_NAME"
-    log "openclaw: $story_id ✅ Implementierung abgeschlossen"
+    log_poller_event "$story_id" "openclaw-done" "Implementierung abgeschlossen"
+    log "openclaw: $story_id Implementierung abgeschlossen"
   else
-    log "openclaw: $story_id ⚠️ Fehler bei Implementierung"
     update_poller_state "$story_id" "openclaw-error" "$BRANCH_NAME"
+    log_poller_event "$story_id" "retry_exhausted" "Fehlgeschlagen nach 3 Versuchen"
+    record_metric "$story_id" "blocked_at"
+    record_metric "$story_id" "blocked_reason" "'retry_exhausted'"
+    record_metric "$story_id" "retry_count" "3"
+    log "openclaw: $story_id Fehler nach 3 Versuchen"
   fi
+done
+shopt -u nullglob
+
+# ─── Phase 3b: REVIEW — Opus reviewed, bei Schwaechen Fix-Schleife ────────
+log "--- Phase 3b: review ---"
+
+shopt -s nullglob
+for story_file in "$WORK_DIR/process/work/04-in-progress"/*.yml 2>/dev/null; do
+  story_id=$(basename "$story_file" .yml)
+  current_stage=$(get_poller_state "$story_id")
+
+  if [ "$current_stage" != "openclaw-done" ]; then
+    continue
+  fi
+
+  story_produkt=$(grep '^produkt:' "$story_file" | awk '{print $2}' | tr -d '"'"'" | tr -d '[:space:]')
+  [ -z "$story_produkt" ] && story_produkt="$PRODUCT_REPO"
+
+  BRANCH_NAME=$(docker exec factory-postgres psql -U forgejo -d forgejo -tAq -c \
+    "SELECT commit_hash FROM poller_state WHERE object_id='$story_id'" 2>/dev/null | tr -d '[:space:]')
+
+  if [ -z "$BRANCH_NAME" ]; then
+    continue
+  fi
+
+  # Review-Iterationen pruefen
+  REVIEW_ITERS=$(docker exec factory-postgres psql -U forgejo -d forgejo -tAq -c \
+    "SELECT COALESCE(review_iterations, 0) FROM pipeline_metrics WHERE object_id='$story_id'" 2>/dev/null | tr -d '[:space:]')
+  REVIEW_ITERS=${REVIEW_ITERS:-0}
+
+  if [ "$REVIEW_ITERS" -ge "{{ max_review_iterations }}" ]; then
+    log "review: $story_id — Max-Iterationen ({{ max_review_iterations }}) erreicht → force-approve"
+    update_poller_state "$story_id" "reviewed" "$BRANCH_NAME"
+    record_metric "$story_id" "review_verdict" "'force-approved'"
+    record_metric "$story_id" "review_completed_at"
+    log_poller_event "$story_id" "force_approved" "Max-Iterationen erreicht ($REVIEW_ITERS)"
+    continue
+  fi
+
+  log "review: $story_id → Branch $BRANCH_NAME → Opus Review (Iteration $((REVIEW_ITERS + 1)))"
+
+  # Review-Start markieren
+  if [ "$REVIEW_ITERS" -eq "0" ]; then
+    record_metric "$story_id" "review_started_at"
+  fi
+
+  # Repo klonen und Diff erstellen
+  REVIEW_DIR=$(mktemp -d)
+  PROD_CLONE_URL="http://factory-admin:${FORGEJO_API_TOKEN}@localhost:3000/$FORGEJO_ORG/$story_produkt.git"
+
+  if ! git clone --quiet "$PROD_CLONE_URL" "$REVIEW_DIR/$story_produkt" 2>/dev/null; then
+    log "review: $story_id — Klonen fehlgeschlagen — überspringe"
+    rm -rf "$REVIEW_DIR"
+    continue
+  fi
+
+  cd "$REVIEW_DIR/$story_produkt"
+  git checkout "$BRANCH_NAME" 2>/dev/null || { log "review: Branch $BRANCH_NAME nicht gefunden"; cd "$WORK_DIR/process"; rm -rf "$REVIEW_DIR"; continue; }
+
+  DIFF=$(git diff main...HEAD 2>/dev/null | head -c 51200)
+  TASK_CONTENT=$(cat _task.md 2>/dev/null || echo "Keine _task.md gefunden")
+
+  # Review-Prompt bauen
+  REVIEW_PROMPT="Du bist ein Senior Code-Reviewer. Pruefe den folgenden Diff gegen die Task-Beschreibung.
+
+## Pruefkriterien
+1. **Korrektheit**: Erfuellt der Code alle Akzeptanzkriterien?
+2. **Tests**: Sind ausreichend Tests vorhanden?
+3. **Sicherheit**: Keine Injection, XSS, oder andere Schwachstellen?
+4. **Qualitaet**: Sauberer Code, keine offensichtlichen Bugs?
+
+## Task
+${TASK_CONTENT}
+
+## Diff
+\`\`\`diff
+${DIFF}
+\`\`\`
+
+## Antwortformat
+Antworte mit GENAU einer der folgenden Zeilen am Ende:
+- VERDICT: APPROVED (wenn alles in Ordnung ist)
+- VERDICT: NEEDS_FIX (wenn Aenderungen noetig sind)
+
+Bei NEEDS_FIX: Liste vorher die konkreten Probleme und Loesungsvorschlaege auf."
+
+  # Review-Prompt in Datei schreiben (fuer Claude)
+  REVIEW_PROMPT_FILE="/tmp/review-prompt-${story_id}.txt"
+  echo "$REVIEW_PROMPT" > "$REVIEW_PROMPT_FILE"
+
+  # Opus Review starten
+  REVIEW_SCRIPT="/tmp/review-run-${story_id}.sh"
+  cat > "$REVIEW_SCRIPT" << REVIEWEOF
+#!/bin/bash
+set -e
+export ANTHROPIC_API_KEY="{{ vault_anthropic_api_key }}"
+claude --model {{ review_model }} --dangerously-skip-permissions -p "\$(cat $REVIEW_PROMPT_FILE)" 2>&1
+REVIEWEOF
+
+  docker cp "$REVIEW_PROMPT_FILE" factory-openclaw:"$REVIEW_PROMPT_FILE"
+  docker cp "$REVIEW_SCRIPT" factory-openclaw:"$REVIEW_SCRIPT"
+  docker exec factory-openclaw chmod +x "$REVIEW_SCRIPT"
+  docker exec factory-openclaw chown junior:junior "$REVIEW_SCRIPT" "$REVIEW_PROMPT_FILE"
+  rm -f "$REVIEW_PROMPT_FILE" "$REVIEW_SCRIPT"
+
+  REVIEW_OUTPUT=$(docker exec factory-openclaw su junior -c "bash $REVIEW_SCRIPT" 2>&1 || echo "REVIEW_ERROR")
+
+  # Verdict parsen
+  VERDICT=$(echo "$REVIEW_OUTPUT" | grep -oP 'VERDICT:\s*\K\S+' | tail -1 || echo "")
+
+  if [ "$VERDICT" = "APPROVED" ]; then
+    log "review: $story_id — APPROVED"
+    update_poller_state "$story_id" "reviewed" "$BRANCH_NAME"
+    record_metric "$story_id" "review_iterations" "$((REVIEW_ITERS + 1))"
+    record_metric "$story_id" "review_verdict" "'approved'"
+    record_metric "$story_id" "review_completed_at"
+    log_poller_event "$story_id" "review_approved" "Approved nach Iteration $((REVIEW_ITERS + 1))"
+  elif [ "$VERDICT" = "NEEDS_FIX" ]; then
+    log "review: $story_id — NEEDS_FIX (Iteration $((REVIEW_ITERS + 1)))"
+
+    # _review.md auf Branch schreiben
+    cd "$REVIEW_DIR/$story_produkt"
+    echo "$REVIEW_OUTPUT" > _review.md
+    git add _review.md
+    git commit -m "${story_id}: Review-Feedback (Iteration $((REVIEW_ITERS + 1)))" 2>/dev/null || true
+    git push origin "$BRANCH_NAME" --quiet 2>/dev/null || true
+
+    update_poller_state "$story_id" "needs-fix" "$BRANCH_NAME"
+    record_metric "$story_id" "review_iterations" "$((REVIEW_ITERS + 1))"
+    record_metric "$story_id" "review_verdict" "'needs-fix'"
+    log_poller_event "$story_id" "review_needs_fix" "Iteration $((REVIEW_ITERS + 1))"
+  else
+    log "review: $story_id — Verdict nicht parsebar → force-approve"
+    log "review: Output (letzte 200 Zeichen): $(echo "$REVIEW_OUTPUT" | tail -c 200)"
+    update_poller_state "$story_id" "reviewed" "$BRANCH_NAME"
+    record_metric "$story_id" "review_iterations" "$((REVIEW_ITERS + 1))"
+    record_metric "$story_id" "review_verdict" "'force-approved'"
+    record_metric "$story_id" "review_completed_at"
+    log_poller_event "$story_id" "force_approved" "Verdict nicht parsebar"
+  fi
+
+  cd "$WORK_DIR/process"
+  rm -rf "$REVIEW_DIR"
 done
 shopt -u nullglob
 
@@ -327,7 +547,7 @@ for story_file in "$WORK_DIR/process/work/04-in-progress"/*.yml 2>/dev/null; do
   story_id=$(basename "$story_file" .yml)
   current_stage=$(get_poller_state "$story_id")
 
-  if [ "$current_stage" != "openclaw-done" ]; then
+  if [ "$current_stage" != "reviewed" ]; then
     continue
   fi
 
@@ -353,6 +573,7 @@ for story_file in "$WORK_DIR/process/work/04-in-progress"/*.yml 2>/dev/null; do
   if [ "$EXISTING_PR" -gt "0" ]; then
     log "pr-check: $story_id — PR existiert bereits"
     update_poller_state "$story_id" "pr_created" "$BRANCH_NAME"
+    record_metric "$story_id" "pr_created_at"
     continue
   fi
 
@@ -369,12 +590,18 @@ for story_file in "$WORK_DIR/process/work/04-in-progress"/*.yml 2>/dev/null; do
 
   PR_NUMBER=$(echo "$PR_RESULT" | jq -r '.number // "?"' 2>/dev/null)
   if [ "$PR_NUMBER" != "?" ] && [ -n "$PR_NUMBER" ]; then
-    log "pr-check: $story_id → PR #$PR_NUMBER erstellt ✅"
+    log "pr-check: $story_id → PR #$PR_NUMBER erstellt"
     update_poller_state "$story_id" "pr_created" "$BRANCH_NAME"
+    record_metric "$story_id" "pr_created_at"
+    log_poller_event "$story_id" "pr_created" "PR #$PR_NUMBER"
   else
     log "pr-check: $story_id → PR-Erstellung fehlgeschlagen: $PR_RESULT"
   fi
 done
 shopt -u nullglob
+
+# ─── Retention: Alte Events aufräumen (>30 Tage) ─────────────────────────────
+docker exec factory-postgres psql -U forgejo -d forgejo -tAq -c "
+  DELETE FROM poller_events WHERE created_at < NOW() - INTERVAL '30 days';" 2>/dev/null || true
 
 log "=== Poller v$FACTORY_VERSION abgeschlossen ==="

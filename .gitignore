@@ -17,3 +17,11 @@
 # Vault (encrypted, aber trotzdem nicht ins Repo)
 ansible/inventory/*/group_vars/all/vault.yml
 ansible/inventory/group_vars/all/vault.yml
+
+# KeePass
+vault.kdbx
+*.kdbx
+
+# Installer-Artefakte
+dist/
+*.tar.gz

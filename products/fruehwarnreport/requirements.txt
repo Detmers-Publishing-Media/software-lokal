@@ -1,0 +1,6 @@
+# fruehwarnung.py — Laufzeit-Abhängigkeiten
+# Ausschließlich Python-Standardbibliothek (csv, json, os, sys, datetime, argparse)
+# Keine externen Pakete erforderlich.
+
+# Für EXE-Build mit PyInstaller:
+pyinstaller>=6.0

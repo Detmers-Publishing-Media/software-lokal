@@ -1,10 +1,11 @@
 {
   "name": "codefabrik-portal",
-  "version": "0.4.1",
+  "version": "0.5.5",
   "private": true,
   "scripts": {
     "start": "node src/server.js",
-    "dispatcher": "node src/dispatcher.js"
+    "dispatcher": "node src/dispatcher.js",
+    "test": "node --test test/**/*.test.js"
   },
   "dependencies": {
     "express": "^4.21",

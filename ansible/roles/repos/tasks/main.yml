@@ -117,19 +117,62 @@
     git clone http://factory-admin:{{ forgejo_admin_password }}@localhost:3000/{{ factory_org }}/{{ product_repo }}.git
     cd {{ product_repo }}
 
-    mkdir -p .forgejo/workflows .context src tests
+    mkdir -p .forgejo/workflows .context src tests/fixtures tests/windows
+    echo '*' > tests/windows/.gitkeep
+    touch tests/fixtures/.gitkeep
+
+    # test-results/ soll nicht committet werden
+    cat > .gitignore << 'GIEOF'
+    test-results/
+    __pycache__/
+    *.pyc
+    .pytest_cache/
+    node_modules/
+    GIEOF
 
     cat > .forgejo/workflows/auto-test.yml << 'ATEOF'
     name: Auto-Test
     on:
       pull_request:
         types: [opened, synchronize]
+      push:
+        branches: [main]
     jobs:
-      test:
+      test-python:
         runs-on: ubuntu-latest
+        if: hashFiles('requirements.txt') != '' || hashFiles('pyproject.toml') != ''
         steps:
           - uses: actions/checkout@v4
-          - run: echo "Tests passed"
+          - name: Python + Dependencies
+            run: |
+              python3 -m venv .venv
+              source .venv/bin/activate
+              pip install --upgrade pip
+              pip install -r requirements.txt 2>/dev/null || true
+              pip install pytest pytest-cov
+          - name: pytest
+            run: |
+              source .venv/bin/activate
+              pytest tests/ \
+                --ignore=tests/windows \
+                --cov=src \
+                --cov-report=term-missing \
+                --cov-fail-under=70 \
+                --junitxml=test-results/results.xml \
+                -v
+      test-node:
+        runs-on: ubuntu-latest
+        if: hashFiles('package.json') != ''
+        steps:
+          - uses: actions/checkout@v4
+          - run: npm ci
+          - run: npm test
+      test-bash:
+        runs-on: ubuntu-latest
+        if: hashFiles('tests/test_*.sh') != ''
+        steps:
+          - uses: actions/checkout@v4
+          - run: bats tests/test_*.sh
     ATEOF
 
     cat > .forgejo/workflows/auto-release.yml << 'AREOF'
@@ -149,6 +192,12 @@
     # CLAUDE.md
     ## Modus: Vollautomatisch / Headless
     Du arbeitest im Headless-Modus. KEINE Rückfragen. KEINE TODOs.
+
+    ## Test-Konventionen
+    - tests/ = Phase 0 (Linux-Runner, immer)
+    - tests/windows/ = Phase 1+2 (Azure, nur wenn vorhanden)
+    - tests/fixtures/ = Statische Testdaten, committet
+    - test-results/ = Generiert, in .gitignore
     CLEOF
 
     echo "# Factory Gateway" > .context/PRODUCT.md
@@ -157,7 +206,7 @@
     echo "# Entscheidungen" > .context/DECISIONS.md
 
     git add -A
-    git commit -m "Initiale Struktur + Workflows"
+    git commit -m "Initiale Struktur + Phase-0-Workflows + Test-Konventionen"
     git push origin main
 
     rm -rf $TMPDIR

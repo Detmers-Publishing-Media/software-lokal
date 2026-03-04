@@ -1,4 +1,36 @@
 ---
+# ── Test-Toolchain fuer Phase 0 (host-Modus) ──
+
+- name: "Python3 + venv + pip installieren"
+  ansible.builtin.apt:
+    name:
+      - python3
+      - python3-venv
+      - python3-pip
+    state: present
+    update_cache: yes
+
+- name: "pytest systemweit installieren"
+  ansible.builtin.pip:
+    name:
+      - pytest
+      - pytest-cov
+    state: present
+    break_system_packages: yes
+
+- name: "bats (Bash Automated Testing) installieren"
+  ansible.builtin.apt:
+    name: bats
+    state: present
+
+- name: "Node.js pruefen (wird von base-Rolle installiert)"
+  ansible.builtin.command: node --version
+  register: node_check
+  changed_when: false
+  failed_when: false
+
+# ── Forgejo Runner ──
+
 - name: "act_runner herunterladen"
   ansible.builtin.shell: |
     RUNNER_VERSION=$(curl -sf "https://code.forgejo.org/api/v1/repos/forgejo/runner/releases/latest" | jq -r '.tag_name // "v6.3.1"')

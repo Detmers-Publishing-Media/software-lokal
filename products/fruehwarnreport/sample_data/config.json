@@ -1,0 +1,17 @@
+{
+  "schwellenwerte": {
+    "kritisch_tage": 90,
+    "warnung_tage": 180,
+    "hinweis_tage": 365
+  },
+  "pflichtfelder": [
+    "kunden_nr",
+    "kunden_name",
+    "zinsbindungsende"
+  ],
+  "datums_formate": [
+    "%Y-%m-%d",
+    "%d.%m.%Y",
+    "%d/%m/%Y"
+  ]
+}

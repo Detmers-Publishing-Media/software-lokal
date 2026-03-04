@@ -1,0 +1,9 @@
+[Unit]
+Description=Code-Fabrik Morgen-Start ({{ nightstart_hour }}:00)
+
+[Timer]
+OnCalendar=*-*-* {{ nightstart_hour }}:00:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target

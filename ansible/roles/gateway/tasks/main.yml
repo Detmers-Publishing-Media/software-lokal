@@ -57,6 +57,43 @@
             res.writeHead(503);
             res.end(JSON.stringify({ ready: false, reason: e.message }));
           }
+        } else if (req.url === '/metrics') {
+          const client = new Client({
+            host: 'postgres',
+            port: 5432,
+            database: 'forgejo',
+            user: 'forgejo',
+            password: process.env.POSTGRES_PASSWORD,
+            connectionTimeoutMillis: 5000
+          });
+          try {
+            await client.connect();
+            const { rows } = await client.query(`
+              SELECT
+                COUNT(*) FILTER (WHERE pr_created_at IS NOT NULL AND blocked_at IS NULL) as completed,
+                COUNT(*) FILTER (WHERE blocked_at IS NOT NULL) as blocked,
+                COUNT(*) FILTER (WHERE pr_created_at IS NULL AND blocked_at IS NULL) as in_progress,
+                ROUND(AVG(total_duration_minutes) FILTER (WHERE total_duration_minutes IS NOT NULL)) as avg_duration_min,
+                ROUND(AVG(dev_duration_minutes) FILTER (WHERE dev_duration_minutes IS NOT NULL)) as avg_dev_min,
+                MAX(pr_created_at) as last_pr,
+                ROUND(AVG(review_iterations) FILTER (WHERE review_iterations > 0)) as avg_review_iterations,
+                COUNT(*) FILTER (WHERE review_verdict = 'approved') as review_approved,
+                COUNT(*) FILTER (WHERE review_verdict LIKE '%fix%') as review_had_fixes,
+                COUNT(*) FILTER (WHERE review_verdict = 'force-approved') as review_force_approved
+              FROM pipeline_metrics
+            `);
+            await client.end();
+            res.writeHead(200);
+            res.end(JSON.stringify({
+              pipeline: rows[0],
+              version: '{{ factory_version }}',
+              timestamp: new Date().toISOString()
+            }));
+          } catch (e) {
+            try { await client.end(); } catch (_) {}
+            res.writeHead(500);
+            res.end(JSON.stringify({ error: 'metrics unavailable', reason: e.message }));
+          }
         } else {
           res.writeHead(404);
           res.end(JSON.stringify({ error: 'not found' }));

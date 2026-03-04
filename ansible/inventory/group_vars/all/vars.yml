@@ -1,8 +1,8 @@
 ---
 # Server
 upcloud_zone: de-fra1
-upcloud_plan: DEV-1xCPU-4GB
-upcloud_os_storage: 40
+upcloud_plan: DEV-1xCPU-2GB
+upcloud_os_storage: 25
 upcloud_storage_tier: hdd
 upcloud_os_template: 01000000-0000-4000-8000-000030240200  # Ubuntu 24.04
 
@@ -10,18 +10,18 @@ upcloud_os_template: 01000000-0000-4000-8000-000030240200  # Ubuntu 24.04
 cloudflare_zone: detmers-publish.de
 cloudflare_zone_id: b9525ee2fa8f0e14ce58b1f1b184c597
 dns_records:
-  - { name: "git.codefabrik", target: "{{ server_ip }}" }
-  - { name: "gateway.codefabrik", target: "{{ server_ip }}" }
+  - { name: "git-codefabrik", target: "{{ server_ip }}" }
+  - { name: "gateway-codefabrik", target: "{{ server_ip }}" }
 
 # Forgejo
-forgejo_domain: "git.codefabrik.detmers-publish.de"
+forgejo_domain: "git-codefabrik.detmers-publish.de"
 forgejo_image: "codeberg.org/forgejo/forgejo:10"
 
 # Docker
 docker_compose_dir: /opt/codefabrik
 
 # Factory
-factory_version: "0.4.1"
+factory_version: "0.5.7"
 factory_org: factory
 process_repo: process-repo
 product_repo: factory-gateway
@@ -30,7 +30,7 @@ product_repo: factory-gateway
 ssh_key_path: "/root/.ssh/codefabrik_deploy"
 
 # Portal
-portal_domain: "portal.codefabrik.detmers-publish.de"
+portal_domain: "portal-codefabrik.detmers-publish.de"
 portal_upcloud_plan: "DEV-1xCPU-1GB"
 portal_upcloud_os_storage: 25
 portal_docker_compose_dir: /opt/portal

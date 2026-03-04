@@ -29,51 +29,68 @@
       <div class="card">
         <h3>Neue Idee einreichen</h3>
         <form id="ideaForm" style="margin-top:0.5rem">
+          <label for="license_key">Lizenzkey</label>
+          <input type="text" id="license_key" required placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
           <label for="title">Titel</label>
           <input type="text" id="title" required>
           <label for="description">Beschreibung</label>
           <textarea id="description" required placeholder="Beschreiben Sie Ihre Produktidee..."></textarea>
-          <label for="submitter_email">E-Mail (optional)</label>
-          <input type="email" id="submitter_email">
-          <label for="submitter_name">Name (optional)</label>
-          <input type="text" id="submitter_name">
           <button type="submit" class="btn">Idee einreichen</button>
         </form>
         <div id="error" class="error" style="display:none"></div>
         <div id="result" class="success" style="display:none"></div>
       </div>
       <h3 style="margin-top:1.5rem">Eingereichte Ideen</h3>
-      <div id="ideas"><p>Lade Ideen...</p></div>
+      <p style="margin-bottom:0.5rem;font-size:0.9rem;color:#666">Lizenzkey oben eingeben, dann:</p>
+      <button class="btn btn-secondary" onclick="loadIdeas()">Ideen laden</button>
+      <div id="ideas" style="margin-top:1rem"></div>
     </div>
   </div>
-  <footer>Code-Fabrik v0.4.1</footer>
+  <footer>Code-Fabrik v0.5.5</footer>
   <script>
+    function esc(s) { if (!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+    function getKey() { return document.getElementById('license_key').value.trim(); }
+
     const path = location.pathname.split('/');
+    const params = new URLSearchParams(location.search);
+    const urlKey = params.get('key');
+    if (urlKey) {
+      const keyInput = document.getElementById('license_key');
+      if (keyInput) keyInput.value = urlKey;
+    }
+
     if (path.length > 2 && path[2]) {
       document.getElementById('list-view').style.display = 'none';
       document.getElementById('detail-view').style.display = 'block';
-      fetch(`/api/ideas/${path[2]}`).then(r => r.json()).then(idea => {
-        if (idea.error) { document.getElementById('ideaDetail').innerHTML = `<p>${esc(idea.error)}</p>`; return; }
-        document.getElementById('ideaDetail').innerHTML = `
-          <h3>${esc(idea.title)}</h3>
-          <p>${esc(idea.description)}</p>
-          <p style="margin-top:0.5rem"><span class="badge ${idea.status === 'accepted' ? 'badge-green' : 'badge-gray'}">${esc(idea.status)}</span> | ${idea.votes} Stimmen</p>
-          <button class="btn" style="margin-top:0.5rem" onclick="vote('${esc(idea.idea_number)}')">Abstimmen</button>
-        `;
-      });
-    } else {
-      loadIdeas();
+      const key = urlKey;
+      if (key) {
+        fetch(`/api/ideas/${path[2]}?key=${encodeURIComponent(key)}`).then(r => r.json()).then(idea => {
+          if (idea.error) { document.getElementById('ideaDetail').innerHTML = `<p>${esc(idea.error)}</p>`; return; }
+          document.getElementById('ideaDetail').innerHTML = `
+            <h3>${esc(idea.title)}</h3>
+            <p>${esc(idea.description)}</p>
+            <p style="margin-top:0.5rem"><span class="badge ${idea.status === 'accepted' ? 'badge-green' : 'badge-gray'}">${esc(idea.status)}</span> | ${idea.votes} Stimmen</p>
+            <button class="btn" style="margin-top:0.5rem" onclick="vote('${esc(idea.idea_number)}')">Abstimmen</button>
+          `;
+        });
+      } else {
+        document.getElementById('ideaDetail').innerHTML = '<p>Bitte key= Parameter angeben.</p>';
+      }
     }
 
     async function loadIdeas() {
-      const res = await fetch('/api/ideas');
+      const key = getKey();
+      if (!key) return;
+      const res = await fetch(`/api/ideas?key=${encodeURIComponent(key)}`);
       const ideas = await res.json();
       const el = document.getElementById('ideas');
+      if (ideas.error) { el.innerHTML = `<p class="error">${esc(ideas.error)}</p>`; return; }
       if (!ideas.length) { el.innerHTML = '<p>Noch keine Ideen eingereicht.</p>'; return; }
       el.innerHTML = ideas.map(i => `
         <div class="card idea-card">
           <div>
-            <h3><a href="/ideas/${esc(i.idea_number)}">${esc(i.title)}</a></h3>
+            <h3><a href="/ideas/${esc(i.idea_number)}?key=${encodeURIComponent(key)}">${esc(i.title)}</a></h3>
             <p>${esc((i.description || '').substring(0, 150))}${i.description?.length > 150 ? '...' : ''}</p>
             <p style="font-size:0.85rem;color:#888;margin-top:0.3rem">${esc(i.idea_number)} | ${new Date(i.created_at).toLocaleDateString('de')}</p>
           </div>
@@ -86,8 +103,14 @@
     }
 
     async function vote(ideaNumber) {
-      await fetch(`/api/ideas/${ideaNumber}/vote`, { method: 'POST' });
-      location.reload();
+      const key = getKey();
+      if (!key) { alert('Bitte Lizenzkey eingeben.'); return; }
+      await fetch(`/api/ideas/${ideaNumber}/vote`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ license_key: key })
+      });
+      loadIdeas();
     }
 
     document.getElementById('ideaForm').addEventListener('submit', async (e) => {
@@ -100,10 +123,9 @@
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
+            license_key: getKey(),
             title: document.getElementById('title').value,
-            description: document.getElementById('description').value,
-            submitter_email: document.getElementById('submitter_email').value || undefined,
-            submitter_name: document.getElementById('submitter_name').value || undefined
+            description: document.getElementById('description').value
           })
         });
         const data = await res.json();
@@ -111,11 +133,10 @@
         resEl.innerHTML = `Idee <strong>${esc(data.idea_number)}</strong> eingereicht!`;
         resEl.style.display = 'block';
         document.getElementById('ideaForm').reset();
-        loadIdeas();
+        const key = getKey();
+        if (key) loadIdeas();
       } catch (err) { errEl.textContent = err.message; errEl.style.display = 'block'; }
     });
-
-    function esc(s) { if (!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
   </script>
 </body>
 </html>

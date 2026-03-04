@@ -1,0 +1,43 @@
+{
+  "version": "1.0.0",
+  "description": "Zentrale Bundle-Registry: Welche Produkte gehoeren zu welchen Bundles",
+  "bundles": {
+    "B-05-verein-ehrenamt": {
+      "name": "Verein & Ehrenamt Digital",
+      "description": "50 Tools fuer Vereinsverwaltung als Tauri + Svelte Desktop-Apps",
+      "target": "Foerdervereine, Kulturvereine, Sportvereine",
+      "products": [
+        {
+          "repo": "mitglieder-simple",
+          "type": "app",
+          "description": "Einfache Mitgliederverwaltung"
+        },
+        {
+          "repo": "vereins-shared",
+          "type": "library",
+          "description": "Geteilte Komponenten und Helfer"
+        }
+      ]
+    }
+  },
+  "products": {
+    "mitglieder-simple": {
+      "bundles": ["B-05-verein-ehrenamt"],
+      "type": "app",
+      "tech": "tauri-svelte",
+      "forgejo_repo": "factory-admin/mitglieder-simple"
+    },
+    "vereins-shared": {
+      "bundles": ["B-05-verein-ehrenamt"],
+      "type": "library",
+      "tech": "npm-package",
+      "forgejo_repo": "factory-admin/vereins-shared"
+    },
+    "fruehwarnreport": {
+      "bundles": [],
+      "type": "app",
+      "tech": "python",
+      "forgejo_repo": "factory-admin/fruehwarnreport"
+    }
+  }
+}

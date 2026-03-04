@@ -1,0 +1,69 @@
+#!/bin/bash
+# Morgen-Start: Docker hoch, Kill Switch aufheben, Smoke-Test
+set -euo pipefail
+
+PSQL="docker exec factory-postgres psql -U forgejo -d forgejo -tAq"
+
+log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] [nightstart] $*" | systemd-cat -t codefabrik -p info; }
+err() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] [nightstart] ERROR: $*" | systemd-cat -t codefabrik -p err; }
+
+# 1. Docker Stack starten
+log "Starte Docker Services..."
+cd /opt/codefabrik
+docker compose up -d || { err "Docker compose up fehlgeschlagen"; exit 1; }
+
+# 2. Warte auf Services (max 2 Min)
+log "Warte auf Services..."
+for i in $(seq 1 24); do
+  if docker exec factory-postgres pg_isready -U forgejo -q 2>/dev/null; then
+    log "PostgreSQL bereit."
+    break
+  fi
+  if [ "$i" = "24" ]; then
+    err "Timeout: PostgreSQL nach 2 Min nicht bereit"
+    exit 1
+  fi
+  sleep 5
+done
+
+# 3. Warte auf Forgejo
+for i in $(seq 1 12); do
+  HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:3000/api/v1/version" 2>/dev/null || echo "0")
+  if [ "$HTTP_CODE" = "200" ]; then
+    log "Forgejo bereit."
+    break
+  fi
+  if [ "$i" = "12" ]; then
+    err "Timeout: Forgejo nach 1 Min nicht bereit"
+    exit 1
+  fi
+  sleep 5
+done
+
+# 4. Kill Switch aufheben
+log "Setze LIVE + jobs_enabled=true"
+$PSQL -c "
+  UPDATE runtime_control SET
+    mode='LIVE',
+    traffic_enabled=true,
+    jobs_enabled=true,
+    reason='',
+    updated_by='nightstart',
+    updated_at=NOW()
+  WHERE env_name='prod';" || err "Kill Switch aufheben fehlgeschlagen"
+
+# 5. Gateway Smoke-Test
+for i in $(seq 1 6); do
+  HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:3100/ready" 2>/dev/null || echo "0")
+  if [ "$HTTP_CODE" = "200" ]; then
+    log "Smoke-Test bestanden: /ready = 200"
+    break
+  fi
+  if [ "$i" = "6" ]; then
+    err "Smoke-Test fehlgeschlagen: /ready = $HTTP_CODE nach 30s"
+    exit 1
+  fi
+  sleep 5
+done
+
+log "Morgen-Start abgeschlossen."

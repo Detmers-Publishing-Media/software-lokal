@@ -47,16 +47,16 @@ function generateRequestYaml(request, license) {
   }, { lineWidth: -1 });
 }
 
-function generateIdeaYaml(idea) {
-  const desc = idea.submitter_email
-    ? `Eingereicht von: ${idea.submitter_email}\n${idea.description}`
-    : idea.description;
-
+function generateIdeaYaml(idea, license) {
   return yaml.dump({
     id: idea.idea_number,
     type: 'idea',
     title: `${idea.idea_number}: ${idea.title}`,
-    beschreibung: desc,
+    beschreibung: [
+      `Kundenidee (Lizenz: ${license.product_id}):`,
+      idea.description
+    ].join('\n'),
+    produkt: license.product_id,
     kategorie: idea.category || 'new_product',
     quelle: 'portal',
     portal_ref: idea.idea_number

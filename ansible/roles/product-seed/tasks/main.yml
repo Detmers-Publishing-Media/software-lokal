@@ -1,0 +1,126 @@
+---
+- name: "Produkt-Repo erstellen"
+  ansible.builtin.uri:
+    url: "http://localhost:3000/api/v1/orgs/{{ factory_org }}/repos"
+    method: POST
+    headers:
+      Authorization: "token {{ forgejo_api_token }}"
+      Content-Type: "application/json"
+    body_format: json
+    body:
+      name: "{{ item.repo }}"
+      private: "{{ not item.public }}"
+      auto_init: true
+    status_code: [201, 409]
+  loop: "{{ seed_products }}"
+
+- name: "Produkt-Source auf Server kopieren"
+  ansible.posix.synchronize:
+    src: "{{ playbook_dir }}/../../products/{{ item.repo }}/"
+    dest: "/tmp/seed-{{ item.repo }}/"
+    delete: true
+    rsync_opts:
+      - "--exclude=node_modules"
+      - "--exclude=.git"
+      - "--exclude=target"
+  loop: "{{ seed_products }}"
+
+- name: "Produkt-Source in Forgejo pushen"
+  ansible.builtin.shell: |
+    set -euo pipefail
+    WORKDIR=$(mktemp -d)
+    REPO_URL="http://x-access-token:{{ forgejo_api_token }}@localhost:3000/{{ factory_org }}/{{ item.repo }}.git"
+
+    git clone "$REPO_URL" "$WORKDIR/repo"
+    cd "$WORKDIR/repo"
+    git config user.email "deploy@codefabrik.local"
+    git config user.name "Code-Fabrik Deploy"
+    cp -r /tmp/seed-{{ item.repo }}/* "$WORKDIR/repo/" 2>/dev/null || true
+    cp -r /tmp/seed-{{ item.repo }}/.* "$WORKDIR/repo/" 2>/dev/null || true
+
+    cd "$WORKDIR/repo"
+    git add -A
+    if git diff --cached --quiet; then
+      echo "Keine Aenderungen"
+    else
+      git commit -m "Produkt-Source {{ item.tag }}"
+      git push origin main
+    fi
+
+    rm -rf "$WORKDIR"
+  args:
+    executable: /bin/bash
+  loop: "{{ seed_products }}"
+
+- name: "Source-Tarball erstellen"
+  ansible.builtin.shell: |
+    tar czf /tmp/{{ item.repo }}-{{ item.tag }}-src.tar.gz -C /tmp/seed-{{ item.repo }} .
+  loop: "{{ seed_products }}"
+
+- name: "Release erstellen"
+  ansible.builtin.uri:
+    url: "http://localhost:3000/api/v1/repos/{{ factory_org }}/{{ item.repo }}/releases"
+    method: POST
+    headers:
+      Authorization: "token {{ forgejo_api_token }}"
+      Content-Type: "application/json"
+    body_format: json
+    body:
+      tag_name: "{{ item.tag }}"
+      name: "{{ item.tag }} (Quellcode)"
+      body: "Alpha-Release — Quellcode-Archiv fuer Testkauf-Flow."
+      draft: false
+      prerelease: true
+    status_code: [201, 409, 422]
+  register: release_results
+  loop: "{{ seed_products }}"
+
+- name: "Release-ID ermitteln"
+  ansible.builtin.uri:
+    url: "http://localhost:3000/api/v1/repos/{{ factory_org }}/{{ item.repo }}/releases/tags/{{ item.tag }}"
+    method: GET
+    headers:
+      Authorization: "token {{ forgejo_api_token }}"
+    status_code: [200]
+  register: release_info
+  loop: "{{ seed_products }}"
+
+- name: "Tarball an Release anhaengen"
+  ansible.builtin.shell: |
+    set -euo pipefail
+    RELEASE_ID="{{ (release_info.results[idx] | default({})).json.id }}"
+    ASSET_NAME="{{ item.repo }}-{{ item.tag }}-src.tar.gz"
+    TARBALL="/tmp/${ASSET_NAME}"
+
+    # Pruefen ob Asset bereits existiert
+    EXISTING=$(curl -s -H "Authorization: token {{ forgejo_api_token }}" \
+      "http://localhost:3000/api/v1/repos/{{ factory_org }}/{{ item.repo }}/releases/${RELEASE_ID}/assets" \
+      | grep -c "$ASSET_NAME" || true)
+
+    if [ "$EXISTING" -gt 0 ]; then
+      echo "Asset bereits vorhanden, ueberspringe"
+    else
+      curl -s -X POST \
+        -H "Authorization: token {{ forgejo_api_token }}" \
+        -H "Content-Type: application/gzip" \
+        --data-binary "@${TARBALL}" \
+        "http://localhost:3000/api/v1/repos/{{ factory_org }}/{{ item.repo }}/releases/${RELEASE_ID}/assets?name=${ASSET_NAME}"
+      echo "Asset hochgeladen"
+    fi
+  args:
+    executable: /bin/bash
+  loop: "{{ seed_products }}"
+  loop_control:
+    index_var: idx
+
+- name: "Temporaere Dateien aufraeumen"
+  ansible.builtin.file:
+    path: "/tmp/seed-{{ item.repo }}"
+    state: absent
+  loop: "{{ seed_products }}"
+
+- name: "Tarball aufraeumen"
+  ansible.builtin.file:
+    path: "/tmp/{{ item.repo }}-{{ item.tag }}-src.tar.gz"
+    state: absent
+  loop: "{{ seed_products }}"

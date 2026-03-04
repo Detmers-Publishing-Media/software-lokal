@@ -1,0 +1,11 @@
+-- Migration v0.5.6: mitglieder-simple Produkt-Seed
+
+INSERT INTO products (id, name, description, price_cents, status, forgejo_repo)
+VALUES (
+  'mitglieder-simple',
+  'MitgliederSimple',
+  'Mitgliederverwaltung fuer Vereine — einfach, offline, DSGVO-konform',
+  4900,
+  'active',
+  'factory/mitglieder-simple'
+) ON CONFLICT (id) DO NOTHING;

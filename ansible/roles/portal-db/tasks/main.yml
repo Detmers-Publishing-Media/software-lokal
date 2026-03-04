@@ -18,6 +18,39 @@
   ansible.builtin.debug:
     msg: "{{ db_init_result.stdout_lines[-5:] }}"
 
+- name: "v0.5.0 Migration in Container kopieren"
+  ansible.builtin.shell: docker cp {{ portal_docker_compose_dir }}/src/db/migrate-v050.sql portal-db:/tmp/migrate-v050.sql
+
+- name: "v0.5.0 Migration ausfuehren"
+  ansible.builtin.shell: docker exec portal-db psql -U portal -d portal -f /tmp/migrate-v050.sql
+  register: migration_result
+
+- name: "Migration Ergebnis"
+  ansible.builtin.debug:
+    msg: "{{ migration_result.stdout_lines[-5:] }}"
+
+- name: "v0.5.5 Migration in Container kopieren"
+  ansible.builtin.shell: docker cp {{ portal_docker_compose_dir }}/src/db/migrate-v055.sql portal-db:/tmp/migrate-v055.sql
+
+- name: "v0.5.5 Migration ausfuehren"
+  ansible.builtin.shell: docker exec portal-db psql -U portal -d portal -f /tmp/migrate-v055.sql
+  register: migration_v055_result
+
+- name: "v0.5.5 Migration Ergebnis"
+  ansible.builtin.debug:
+    msg: "{{ migration_v055_result.stdout_lines[-5:] }}"
+
+- name: "v0.5.6 Migration in Container kopieren"
+  ansible.builtin.shell: docker cp {{ portal_docker_compose_dir }}/src/db/migrate-v056.sql portal-db:/tmp/migrate-v056.sql
+
+- name: "v0.5.6 Migration ausfuehren"
+  ansible.builtin.shell: docker exec portal-db psql -U portal -d portal -f /tmp/migrate-v056.sql
+  register: migration_v056_result
+
+- name: "v0.5.6 Migration Ergebnis"
+  ansible.builtin.debug:
+    msg: "{{ migration_v056_result.stdout_lines[-5:] }}"
+
 - name: "PROD-Server-Info in prod_status speichern"
   ansible.builtin.shell: |
     docker exec portal-db psql -U portal -d portal -c "

@@ -1,0 +1,74 @@
+schema_version: 1
+product_id: "vereins-shared"
+name: "VereinsShared"
+tagline: "Geteilte Svelte-Komponenten und Helfer fuer Vereins-Apps"
+version: "0.1.0"
+license: "MIT"
+type: "library"
+tech_stack: "svelte"
+bundles: ["B-05-verein-ehrenamt"]
+platforms: ["linux", "windows", "macos"]
+
+description:
+  short: "Wiederverwendbare Svelte-Komponenten, SQLite-Helfer und Lizenz-Validierung"
+  long: |
+    VereinsShared stellt gemeinsam genutzte UI-Komponenten (DataTable, SearchBar,
+    ExportButton), einen SQLite-Wrapper und Offline-Lizenzvalidierung bereit.
+    Wird als npm-Paket von allen Vereins-Apps eingebunden.
+  benefits:
+    - "Einheitliches UI ueber alle Vereins-Apps"
+    - "SQLite-Abstraktionsschicht fuer Tauri"
+    - "Offline-Lizenzvalidierung (kein Server noetig)"
+    - "Svelte 5 kompatibel"
+  target_audience: "Interne Nutzung durch Code-Fabrik Produkte"
+
+pricing:
+  model: "eingebettet"
+  price_cents: 0
+  includes:
+    - "Teil des Vereins-Bundle-Oekosystems"
+
+features:
+  - id: "data-table"
+    name: "DataTable Komponente"
+    description: "Sortierbare, filterbare Tabelle fuer Datenlisten"
+    status: "implemented"
+  - id: "search-bar"
+    name: "SearchBar Komponente"
+    description: "Suchfeld mit Debounce und Filter-Callback"
+    status: "implemented"
+  - id: "export-button"
+    name: "ExportButton Komponente"
+    description: "CSV-Export mit konfigurierbaren Spalten"
+    status: "implemented"
+  - id: "license-validation"
+    name: "Lizenz-Validierung"
+    description: "Offline Key-Format-Pruefung (XXXX-XXXX-XXXX-XXXX)"
+    status: "implemented"
+  - id: "db-wrapper"
+    name: "SQLite Wrapper"
+    description: "Tauri SQL Plugin Abstraktion (openDb, migrate, query, execute)"
+    status: "implemented"
+
+faq:
+  - question: "Kann ich VereinsShared eigenstaendig nutzen?"
+    answer: "VereinsShared ist eine Library und wird als npm-Paket in andere Apps eingebunden. Sie hat keine eigene Oberflaeche."
+  - question: "Welche Svelte-Version wird benoetigt?"
+    answer: "Svelte 5 (^5.0.0) als peerDependency."
+
+installation:
+  prerequisites:
+    - "Node.js 18+"
+    - "Svelte 5 Projekt"
+    - "@tauri-apps/plugin-sql (fuer DB-Modul)"
+  steps:
+    - "npm install @codefabrik/vereins-shared"
+    - "Import: import { DataTable } from '@codefabrik/vereins-shared/components'"
+    - "Import: import { openDb } from '@codefabrik/vereins-shared/db'"
+  notes: "Publiziert ueber die Forgejo npm Registry."
+
+architecture:
+  frontend: "Svelte 5 Komponenten"
+  backend: "N/A (Library)"
+  database: "Tauri SQL Plugin Wrapper"
+  shared_lib: "N/A (ist die shared lib)"

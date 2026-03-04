@@ -1,0 +1,25 @@
+{
+  "name": "@codefabrik/mitglieder-simple",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "description": "Einfache Mitgliederverwaltung fuer Vereine — Tauri + Svelte Desktop-App",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "tauri": "tauri"
+  },
+  "dependencies": {
+    "@codefabrik/vereins-shared": "^0.1.0",
+    "@tauri-apps/api": "^2.0.0",
+    "@tauri-apps/plugin-sql": "^2.0.0"
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^4.0.0",
+    "@tauri-apps/cli": "^2.0.0",
+    "svelte": "^5.0.0",
+    "vite": "^6.0.0"
+  }
+}

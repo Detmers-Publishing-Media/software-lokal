@@ -1,3 +1,4 @@
 {{ portal_domain }} {
+    tls /etc/caddy/certs/origin.pem /etc/caddy/certs/origin-key.pem
     reverse_proxy portal-app:3200
 }

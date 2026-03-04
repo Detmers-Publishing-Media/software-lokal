@@ -1,0 +1,5 @@
+---
+seed_products:
+  - repo: mitglieder-simple
+    tag: v0.1.0-alpha
+    public: true

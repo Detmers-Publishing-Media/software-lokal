@@ -1,0 +1,51 @@
+#!/bin/bash
+# Fährt Code-Fabrik Nacht-Pause ein (Docker stoppen, Kill Switch)
+set -euo pipefail
+
+PSQL="docker exec factory-postgres psql -U forgejo -d forgejo -tAq"
+
+log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] [nightstop] $*" | systemd-cat -t codefabrik -p info; }
+err() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] [nightstop] ERROR: $*" | systemd-cat -t codefabrik -p err; }
+
+# 1. Prüfe ob Nacht-Stopp manuell deaktiviert wurde (reason='nightstop-disabled')
+REASON=$($PSQL -c "SELECT reason FROM runtime_control WHERE env_name='prod'" 2>/dev/null | tr -d '[:space:]')
+if [ "$REASON" = "nightstop-disabled" ]; then
+  log "Nacht-Stopp manuell deaktiviert (reason=nightstop-disabled). Überspringe."
+  exit 0
+fi
+
+# 2. Kill Switch setzen
+log "Setze Kill Switch (jobs_enabled=false, mode=MAINTENANCE)"
+$PSQL -c "
+  UPDATE runtime_control SET
+    jobs_enabled=false,
+    mode='MAINTENANCE',
+    reason='Nacht-Stopp',
+    updated_by='nightstop',
+    updated_at=NOW()
+  WHERE env_name='prod';" || err "Kill Switch setzen fehlgeschlagen"
+
+# 3. Warte auf laufende Poller-Instanz (max 5 Min)
+log "Warte auf laufende Poller..."
+for i in $(seq 1 30); do
+  if [ ! -f /tmp/openclaw-poller.lock ]; then
+    log "Kein Poller aktiv."
+    break
+  fi
+  OLD_PID=$(cat /tmp/openclaw-poller.lock 2>/dev/null || echo "0")
+  if ! kill -0 "$OLD_PID" 2>/dev/null; then
+    log "Poller-Lock veraltet (PID $OLD_PID tot)."
+    break
+  fi
+  if [ "$i" = "30" ]; then
+    err "Timeout: Poller (PID $OLD_PID) nach 5 Min noch aktiv. Stoppe trotzdem."
+  fi
+  sleep 10
+done
+
+# 4. Docker Stack stoppen (außer Postgres — brauchen wir für den Morning-Check)
+log "Stoppe Docker Services..."
+cd /opt/codefabrik
+docker compose stop forgejo openclaw caddy gateway || err "Docker compose stop fehlgeschlagen"
+
+log "Nacht-Stopp abgeschlossen."

@@ -1,0 +1,59 @@
+---
+- name: "Portal Upgrade"
+  hosts: factory-portal
+  vars_files:
+    - ../inventory/group_vars/all/vars.yml
+  tasks:
+    - name: "Portal-Code synchronisieren"
+      ansible.posix.synchronize:
+        src: "{{ playbook_dir }}/../../portal/"
+        dest: "{{ portal_docker_compose_dir }}/"
+        delete: false
+        rsync_opts:
+          - "--exclude=node_modules"
+          - "--exclude=.git"
+
+    - name: "Portal Container rebuilden"
+      ansible.builtin.shell: |
+        cd {{ portal_docker_compose_dir }}
+        docker compose up -d --build portal-app portal-dispatcher
+      register: rebuild_result
+
+    - name: "Rebuild Ergebnis"
+      ansible.builtin.debug:
+        msg: "{{ rebuild_result.stdout_lines[-5:] }}"
+
+    - name: "Warte auf Container-Start"
+      ansible.builtin.pause:
+        seconds: 15
+
+    - name: "Warte auf PostgreSQL"
+      ansible.builtin.shell: docker exec portal-db pg_isready -U portal
+      register: pg_ready
+      retries: 15
+      delay: 3
+      until: pg_ready.rc == 0
+      changed_when: false
+
+    - name: "v0.5.5 Migration ausfuehren"
+      ansible.builtin.shell: |
+        docker cp {{ portal_docker_compose_dir }}/src/db/migrate-v055.sql portal-db:/tmp/migrate-v055.sql
+        docker exec portal-db psql -U portal -d portal -f /tmp/migrate-v055.sql
+
+    - name: "v0.5.6 Migration ausfuehren"
+      ansible.builtin.shell: |
+        docker cp {{ portal_docker_compose_dir }}/src/db/migrate-v056.sql portal-db:/tmp/migrate-v056.sql
+        docker exec portal-db psql -U portal -d portal -f /tmp/migrate-v056.sql
+
+    - name: "Portal Health-Check"
+      ansible.builtin.uri:
+        url: "http://localhost:3200/api/products"
+        return_content: true
+      register: health
+      retries: 5
+      delay: 3
+      until: health.status == 200
+
+    - name: "Produkte pruefen"
+      ansible.builtin.debug:
+        msg: "{{ health.content }}"

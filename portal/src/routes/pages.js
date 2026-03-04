@@ -14,5 +14,10 @@ router.get('/ideas/:idea_number', (req, res) => res.sendFile(path.join(publicDir
 router.get('/request', (req, res) => res.sendFile(path.join(publicDir, 'request.html')));
 router.get('/request/:request_number', (req, res) => res.sendFile(path.join(publicDir, 'request.html')));
 router.get('/status', (req, res) => res.sendFile(path.join(publicDir, 'status.html')));
+router.get('/download', (req, res) => res.sendFile(path.join(publicDir, 'download.html')));
+router.get('/product/:id', (req, res) => res.sendFile(path.join(publicDir, 'product.html')));
+router.get('/product/:id/faq', (req, res) => res.sendFile(path.join(publicDir, 'product.html')));
+router.get('/product/:id/install', (req, res) => res.sendFile(path.join(publicDir, 'product.html')));
+router.get('/product/:id/releases', (req, res) => res.sendFile(path.join(publicDir, 'product.html')));
 
 module.exports = router;

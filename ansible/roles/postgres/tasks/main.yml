@@ -51,3 +51,64 @@
         commit_hash TEXT DEFAULT '',
         updated_at  TIMESTAMPTZ DEFAULT NOW()
     );"
+
+- name: "poller_events Tabelle erstellen"
+  ansible.builtin.shell: |
+    docker exec factory-postgres psql -U forgejo -d forgejo -tAq -c "
+    CREATE TABLE IF NOT EXISTS poller_events (
+        id          SERIAL PRIMARY KEY,
+        object_id   TEXT NOT NULL,
+        event       TEXT NOT NULL,
+        details     TEXT,
+        created_at  TIMESTAMPTZ DEFAULT NOW()
+    );
+    CREATE INDEX IF NOT EXISTS idx_poller_events_obj
+      ON poller_events (object_id, created_at DESC);"
+
+- name: "pipeline_metrics Tabelle erstellen"
+  ansible.builtin.shell: |
+    docker exec factory-postgres psql -U forgejo -d forgejo -tAq -c "
+    CREATE TABLE IF NOT EXISTS pipeline_metrics (
+        id                      SERIAL PRIMARY KEY,
+        object_id               TEXT NOT NULL UNIQUE,
+        product                 TEXT,
+        dispatched_at           TIMESTAMPTZ,
+        in_progress_at          TIMESTAMPTZ,
+        pr_created_at           TIMESTAMPTZ,
+        merged_at               TIMESTAMPTZ,
+        blocked_at              TIMESTAMPTZ,
+        total_duration_minutes  INTEGER,
+        dev_duration_minutes    INTEGER,
+        retry_count             INTEGER DEFAULT 0,
+        blocked_reason          TEXT
+    );"
+
+- name: "pipeline_metrics Review-Spalten (v0.5.5)"
+  ansible.builtin.shell: |
+    docker exec factory-postgres psql -U forgejo -d forgejo -tAq -c "
+    ALTER TABLE pipeline_metrics
+      ADD COLUMN IF NOT EXISTS review_iterations INTEGER DEFAULT 0,
+      ADD COLUMN IF NOT EXISTS review_started_at TIMESTAMPTZ,
+      ADD COLUMN IF NOT EXISTS review_completed_at TIMESTAMPTZ,
+      ADD COLUMN IF NOT EXISTS review_verdict TEXT;"
+
+- name: "pipeline_metrics Dauer-Trigger"
+  ansible.builtin.shell: |
+    docker exec factory-postgres psql -U forgejo -d forgejo -tAq -c "
+    CREATE OR REPLACE FUNCTION update_pipeline_durations()
+    RETURNS TRIGGER AS \$\$
+    BEGIN
+      IF NEW.merged_at IS NOT NULL AND NEW.dispatched_at IS NOT NULL THEN
+        NEW.total_duration_minutes := EXTRACT(EPOCH FROM (NEW.merged_at - NEW.dispatched_at)) / 60;
+      END IF;
+      IF NEW.pr_created_at IS NOT NULL AND NEW.in_progress_at IS NOT NULL THEN
+        NEW.dev_duration_minutes := EXTRACT(EPOCH FROM (NEW.pr_created_at - NEW.in_progress_at)) / 60;
+      END IF;
+      RETURN NEW;
+    END;
+    \$\$ LANGUAGE plpgsql;
+
+    DROP TRIGGER IF EXISTS trg_pipeline_durations ON pipeline_metrics;
+    CREATE TRIGGER trg_pipeline_durations
+      BEFORE INSERT OR UPDATE ON pipeline_metrics
+      FOR EACH ROW EXECUTE FUNCTION update_pipeline_durations();"

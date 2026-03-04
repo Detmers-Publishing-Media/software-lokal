@@ -1,0 +1,4 @@
+---
+impl_model: "claude-sonnet-4-6"
+review_model: "claude-opus-4-6"
+max_review_iterations: 3

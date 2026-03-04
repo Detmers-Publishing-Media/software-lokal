@@ -1,0 +1,11 @@
+kunden_nr;kunden_name;vertrags_nr;zinsbindungsende;darlehensbetrag;zinssatz;bankname;notizen
+K001;Müller Hans;V001;2028-06-15;180000;2,35;Commerzbank;Erstfinanzierung EFH
+K002;Schmidt Eva;V002;2026-11-15;250000;1,89;Sparkasse Köln;Anschlussfinanzierung fällig
+K003;Weber GmbH;V003;2026-07-01;320000;2,10;VR-Bank;Gewerbekredit Lager
+K004;Fischer Petra;V004;2026-04-30;195000;1,75;Volksbank Rhein;Dringend kontaktieren
+K005;Schneider AG;V005;2025-12-31;410000;2,55;ING DiBa;ÜBERFÄLLIG - sofort klären
+K006;Becker Thomas;V006;;220000;2,15;Postbank;Zinsbindungsende unbekannt
+K007;Wagner Söhne OHG;V007;nicht bekannt;175000;1,95;HVB;Datum aus Altakte fehlt
+K008;Schulz Christine;V008a;2026-08-01;290000;2,25;Deutsche Bank;Vertrag 1 von 2
+K008;Schulz Christine;V008b;2026-04-15;140000;1,65;Sparkasse;Vertrag 2 von 2 - prioritär
+K009;Hoffmann Import KG;V009;2220-01-01;500000;3,00;DKB;Datumseingabe prüfen

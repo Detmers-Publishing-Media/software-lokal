@@ -32,6 +32,9 @@
 
       # Auth
       ADMIN_TOKEN={{ admin_token }}
+
+      # Digistore24 IPN
+      DIGISTORE_IPN_PASSPHRASE={{ vault_digistore_ipn_passphrase }}
     dest: "{{ portal_docker_compose_dir }}/.env"
     mode: '0600'
 
@@ -39,6 +42,24 @@
   ansible.builtin.template:
     src: ../templates/portal-docker-compose.yml.j2
     dest: "{{ portal_docker_compose_dir }}/docker-compose.yml"
+
+- name: "Certs-Verzeichnis erstellen"
+  ansible.builtin.file:
+    path: "{{ portal_docker_compose_dir }}/certs"
+    state: directory
+    mode: '0700'
+
+- name: "Origin CA Cert deployen"
+  ansible.builtin.copy:
+    content: "{{ vault_origin_ca_cert }}"
+    dest: "{{ portal_docker_compose_dir }}/certs/origin.pem"
+    mode: '0600'
+
+- name: "Origin CA Key deployen"
+  ansible.builtin.copy:
+    content: "{{ vault_origin_ca_key }}"
+    dest: "{{ portal_docker_compose_dir }}/certs/origin-key.pem"
+    mode: '0600'
 
 - name: "Caddyfile deployen"
   ansible.builtin.template:

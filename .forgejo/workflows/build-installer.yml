@@ -1,0 +1,41 @@
+name: Build Installer
+on:
+  push:
+    tags: ['v*']
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Paket bauen
+        run: |
+          mkdir -p /tmp/codefabrik
+          cp -r ansible portal .gitignore teardown-remote.sh /tmp/codefabrik/
+          rm -f /tmp/codefabrik/ansible/inventory/group_vars/all/vault.yml
+          rm -f /tmp/codefabrik/ansible/inventory/*/group_vars/all/vault.yml
+          cd /tmp && tar czf codefabrik.tar.gz codefabrik/
+          cp $GITHUB_WORKSPACE/scripts/install.sh /tmp/install.sh
+
+      - name: Release erstellen
+        run: |
+          TAG="${GITHUB_REF#refs/tags/}"
+          # Forgejo Release API
+          RELEASE=$(curl -s -X POST \
+            "${GITHUB_SERVER_URL}/api/v1/repos/${GITHUB_REPOSITORY}/releases" \
+            -H "Authorization: token ${GITHUB_TOKEN}" \
+            -H "Content-Type: application/json" \
+            -d "{\"tag_name\":\"${TAG}\",\"name\":\"${TAG}\",\"body\":\"Installer Release ${TAG}\"}")
+          RELEASE_ID=$(echo "$RELEASE" | jq -r '.id')
+
+          # Assets hochladen
+          for file in /tmp/codefabrik.tar.gz /tmp/install.sh; do
+            filename=$(basename "$file")
+            curl -s -X POST \
+              "${GITHUB_SERVER_URL}/api/v1/repos/${GITHUB_REPOSITORY}/releases/${RELEASE_ID}/assets?name=${filename}" \
+              -H "Authorization: token ${GITHUB_TOKEN}" \
+              -H "Content-Type: application/octet-stream" \
+              --data-binary "@${file}"
+          done
+          echo "Release ${TAG} erstellt mit Assets"

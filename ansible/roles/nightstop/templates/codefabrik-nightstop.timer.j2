@@ -1,0 +1,9 @@
+[Unit]
+Description=Code-Fabrik Nacht-Stopp ({{ nightstop_hour }}:00)
+
+[Timer]
+OnCalendar=*-*-* {{ nightstop_hour }}:00:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target

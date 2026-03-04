@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Download - Code-Fabrik</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1><a href="/">Code-Fabrik</a></h1>
+      <nav>
+        <a href="/support">Support</a>
+        <a href="/ideas">Ideen</a>
+        <a href="/request">Anforderung</a>
+        <a href="/status">Status</a>
+      </nav>
+    </div>
+  </header>
+  <div class="container">
+    <div id="loading" style="display:none"><p>Lizenz wird geprueft...</p></div>
+    <div id="key-form">
+      <h2>Produkt herunterladen</h2>
+      <div class="card">
+        <p style="margin-bottom:1rem">Geben Sie Ihren Lizenzkey ein, um Ihr Produkt herunterzuladen.</p>
+        <form id="keyForm">
+          <label for="license_key">Lizenzkey</label>
+          <input type="text" id="license_key" required placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
+          <button type="submit" class="btn">Weiter</button>
+        </form>
+      </div>
+    </div>
+    <div id="product-view" style="display:none">
+      <h2 id="productName"></h2>
+      <div class="card">
+        <p id="productDesc"></p>
+        <p style="margin-top:0.8rem">
+          Version: <span class="badge badge-green" id="productVersion"></span>
+        </p>
+        <p style="margin-top:1rem">
+          <a id="downloadBtn" href="#" class="btn">Download</a>
+        </p>
+      </div>
+      <div class="card" style="background:#f8fafc">
+        <p style="font-size:0.9rem;color:#555">
+          Ihr Lizenzkey: <code id="displayKey"></code>
+        </p>
+        <p style="font-size:0.85rem;color:#888;margin-top:0.3rem">
+          Bitte bewahren Sie Ihren Lizenzkey sicher auf. Sie benoetigen ihn fuer Support und Updates.
+        </p>
+        <p style="margin-top:0.8rem;font-size:0.9rem">
+          <a href="#" id="supportLink">Support</a> &middot;
+          <a href="#" id="requestLink">Feature-Anforderung</a>
+        </p>
+      </div>
+    </div>
+    <div id="no-download" style="display:none">
+      <h2>Lizenz aktiv</h2>
+      <div class="card">
+        <p><span class="badge badge-green">Aktiv</span> <strong id="noDownloadProduct"></strong></p>
+        <p style="margin-top:0.5rem;color:#555">Fuer dieses Produkt steht kein Download zur Verfuegung.</p>
+      </div>
+    </div>
+    <div id="error-view" style="display:none">
+      <h2>Lizenz ungueltig</h2>
+      <div class="error">
+        <p id="errorMsg"></p>
+      </div>
+      <p style="margin-top:1rem">
+        <a href="/support">Support kontaktieren</a> &middot;
+        <a href="/download">Erneut versuchen</a>
+      </p>
+    </div>
+  </div>
+  <footer>Code-Fabrik v0.5.7</footer>
+  <script>
+    function esc(s) { if (!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+    const params = new URLSearchParams(location.search);
+    const key = params.get('key');
+
+    if (key) {
+      document.getElementById('key-form').style.display = 'none';
+      document.getElementById('loading').style.display = 'block';
+
+      fetch(`/api/license/${encodeURIComponent(key)}`).then(async (res) => {
+        document.getElementById('loading').style.display = 'none';
+        if (!res.ok) {
+          const data = await res.json();
+          document.getElementById('errorMsg').textContent = data.error || 'Unbekannter Fehler';
+          document.getElementById('error-view').style.display = 'block';
+          return;
+        }
+        const data = await res.json();
+        if (data.download_url) {
+          document.getElementById('productName').textContent = data.product.name;
+          document.getElementById('productDesc').textContent = data.product.description || '';
+          document.getElementById('productVersion').textContent = data.latest_version || 'n/a';
+          document.getElementById('downloadBtn').href = data.download_url;
+          document.getElementById('displayKey').textContent = data.license_key;
+          document.getElementById('supportLink').href = `/support?key=${encodeURIComponent(key)}`;
+          document.getElementById('requestLink').href = `/request?key=${encodeURIComponent(key)}`;
+          document.getElementById('product-view').style.display = 'block';
+        } else {
+          document.getElementById('noDownloadProduct').textContent = data.product.name;
+          document.getElementById('no-download').style.display = 'block';
+        }
+      }).catch(() => {
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('errorMsg').textContent = 'Verbindungsfehler. Bitte versuchen Sie es spaeter erneut.';
+        document.getElementById('error-view').style.display = 'block';
+      });
+    }
+
+    document.getElementById('keyForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const val = document.getElementById('license_key').value.trim();
+      if (val) location.href = `/download?key=${encodeURIComponent(val)}`;
+    });
+  </script>
+</body>
+</html>

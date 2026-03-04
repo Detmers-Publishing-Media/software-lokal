@@ -1,0 +1,11 @@
+---
+- name: "Produkt-Repos + Releases in Forgejo erstellen"
+  hosts: factory-prod
+  vars_files:
+    - ../inventory/group_vars/all/vars.yml
+  vars_prompt:
+    - name: forgejo_api_token
+      prompt: "Forgejo API-Token (aus KeePass: forgejo-admin → API-Token)"
+      private: true
+  roles:
+    - product-seed

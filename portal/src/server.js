@@ -9,12 +9,14 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
 app.use(require('./routes/api-buy'));
+app.use(require('./routes/api-digistore-ipn'));
 app.use(require('./routes/api-support'));
 app.use(require('./routes/api-ideas'));
 app.use(require('./routes/api-requests'));
 app.use(require('./routes/api-status'));
+app.use(require('./routes/api-texts'));
 app.use(require('./routes/pages'));
 
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Portal v0.4.1 on :${PORT}`);
+  console.log(`Portal v0.5.7 on :${PORT}`);
 });

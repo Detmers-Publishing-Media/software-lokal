@@ -2,6 +2,8 @@ const { Router } = require('express');
 const pool = require('../db/pool');
 const license = require('../services/license');
 const forgejo = require('../services/forgejo');
+const adminAuth = require('../middleware/admin-auth');
+const digistoreApi = require('../services/digistore-api');
 
 const router = Router();
 
@@ -59,6 +61,38 @@ router.post('/api/buy', async (req, res) => {
   }
 });
 
+router.get('/api/license/:key', async (req, res) => {
+  try {
+    const lic = await license.validateLicense(req.params.key);
+    if (!lic) return res.status(403).json({ error: 'Lizenzkey ungueltig oder abgelaufen' });
+
+    const { rows } = await pool.query('SELECT description FROM products WHERE id = $1', [lic.product_id]);
+    let latestVersion = null;
+    if (lic.forgejo_repo) {
+      const release = await forgejo.getLatestRelease(lic.forgejo_repo);
+      if (release) latestVersion = release.tag_name;
+    }
+
+    res.json({
+      license_key: lic.license_key,
+      status: 'active',
+      product: {
+        id: lic.product_id,
+        name: lic.product_name,
+        description: rows[0]?.description || ''
+      },
+      latest_version: latestVersion,
+      download_url: lic.forgejo_repo
+        ? `/api/download/${lic.product_id}?key=${lic.license_key}`
+        : null,
+      issued_at: lic.issued_at,
+      expires_at: lic.expires_at
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 router.get('/api/download/:product_id', async (req, res) => {
   try {
     const { key } = req.query;
@@ -82,6 +116,47 @@ router.get('/api/download/:product_id', async (req, res) => {
 
     const releaseUrl = `${process.env.FORGEJO_URL}/${products[0].forgejo_repo}/releases/tag/${release.tag_name}`;
     res.redirect(302, releaseUrl);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/api/products', adminAuth, async (req, res) => {
+  try {
+    const { id, name, description, price_cents, forgejo_repo } = req.body;
+    if (!id || !name) {
+      return res.status(400).json({ error: 'id und name sind Pflicht' });
+    }
+
+    // Duplikat pruefen
+    const { rows: existing } = await pool.query('SELECT id FROM products WHERE id = $1', [id]);
+    if (existing.length) {
+      return res.status(409).json({ error: 'Produkt-ID existiert bereits' });
+    }
+
+    // In Portal-DB anlegen
+    const { rows: [product] } = await pool.query(
+      `INSERT INTO products (id, name, description, price_cents, forgejo_repo)
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING *`,
+      [id, name, description || null, price_cents || 0, forgejo_repo || null]
+    );
+
+    // Digistore24 Sync
+    let digistoreProductId = null;
+    try {
+      digistoreProductId = await digistoreApi.createProduct({ name, description });
+      await pool.query(
+        'UPDATE products SET digistore_product_id = $1, updated_at = NOW() WHERE id = $2',
+        [digistoreProductId, id]
+      );
+      product.digistore_product_id = digistoreProductId;
+    } catch (syncErr) {
+      console.error(`Digistore24 Sync fehlgeschlagen fuer ${id}:`, syncErr.message);
+      product.digistore_sync_error = syncErr.message;
+    }
+
+    res.status(201).json(product);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
