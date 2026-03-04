@@ -64,7 +64,7 @@ Kein Release ohne bestandene Tests in allen 7 Kategorien:
 
 - Tests: siehe `docs/test-conventions.md`
 - Gesamtkonzept: siehe `docs/konzept/gesamtkonzept-v3.md`
-- Produktspec MitgliederSimple: siehe `docs/konzept/mitgliederverwaltung-produktspec.md`
+- Produktspec MitgliederSimple: siehe `products/mitglieder-simple/docs/produktspec.md`
 
 ## Tech-Stack
 
