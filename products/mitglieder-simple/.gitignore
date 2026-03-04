@@ -1,3 +1,6 @@
 test-results/
 node_modules/
 dist/
+demo/output/*.mp4
+demo/output/*.png
+demo/output/*.webm
