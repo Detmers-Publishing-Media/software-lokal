@@ -12,6 +12,7 @@ export default defineConfig({
     strictPort: true,
   },
   resolve: {
+    conditions: ['browser', 'import', 'module'],
     alias: {
       // Replace Tauri SQL backend with sql.js browser mock
       '@codefabrik/vereins-shared/db': path.join(demoDir, 'browser-db-mock.js'),

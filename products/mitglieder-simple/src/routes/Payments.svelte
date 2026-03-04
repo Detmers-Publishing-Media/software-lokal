@@ -192,7 +192,7 @@
             </td>
             <td>
               {#if expectedCents(row) > 0 && (row.paid_cents ?? 0) < expectedCents(row)}
-                <button class="btn-small" onclick|stopPropagation={() => openPaymentForm(row)}>Zahlung</button>
+                <button class="btn-small" onclick={(e) => { e.stopPropagation(); openPaymentForm(row); }}>Zahlung</button>
               {/if}
             </td>
           </tr>
@@ -228,7 +228,7 @@
 
   {#if showForm}
     <div class="modal-overlay" onclick={() => showForm = false}>
-      <div class="modal" onclick|stopPropagation>
+      <div class="modal" onclick={(e) => e.stopPropagation()}>
         <h2>Zahlung erfassen</h2>
         <p class="form-member">{formMemberName} — {selectedYear}</p>
         <form onsubmit={e => { e.preventDefault(); handleSave(); }}>

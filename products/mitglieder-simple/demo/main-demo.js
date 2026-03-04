@@ -1,31 +1,35 @@
 /**
  * Demo entry point — replaces src/main.js for demo recording.
- * Mounts the app and seeds test data into the sql.js database.
  *
- * The seed runs BEFORE the Svelte app mounts, so onMount() in App.svelte
- * will find data already present when initDb() + getMembers() runs.
- *
- * We achieve this by calling initDb() + seed ourselves, then mounting the app.
+ * Registers a post-init hook in the DB mock that seeds test data,
+ * then loads the original app. When App.svelte calls initDb() in onMount,
+ * the migrations run on the sql.js mock. Afterwards we seed the demo data.
  */
 
-import { initDb } from '../src/lib/db.js';
+import { setPostInitHook, firePostInitHook } from './browser-db-mock.js';
 import { seedDemoData } from './seed-data.js';
-import App from '../src/App.svelte';
-import { mount } from 'svelte';
 
-async function start() {
-  // Initialize DB (runs all migrations via the sql.js mock)
-  await initDb();
+// Register seed hook — will fire after initDb() completes
+setPostInitHook(seedDemoData);
 
-  // Seed demo data (members, payments, club profile)
-  await seedDemoData();
+// Patch initDb to fire our hook after it runs
+const origInitDb = (await import('../src/lib/db.js')).initDb;
+const dbModule = await import('../src/lib/db.js');
 
-  // Mount the Svelte app — its onMount will call initDb() again (idempotent)
-  // and find the seeded data
-  mount(App, { target: document.getElementById('app') });
-}
+// Override initDb — run original, then fire seed hook
+const patchedInitDb = async function() {
+  await origInitDb();
+  await firePostInitHook();
+};
 
-start().catch(err => {
-  console.error('Demo start failed:', err);
-  document.body.innerHTML = `<pre style="color:red;padding:2rem">${err.stack ?? err}</pre>`;
-});
+// Replace the export (works because ES modules export live bindings from re-exports,
+// but db.js exports its own function — so we patch at the call site instead)
+// We'll use a different approach: patch via the db module's internal state
+
+// Simpler: just run initDb + seed now, then load the app.
+// The app's onMount will call initDb() again, which is idempotent.
+await origInitDb();
+await firePostInitHook();
+
+// Now dynamically import the original main.js which calls mount()
+await import('../src/main.js');
