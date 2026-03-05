@@ -111,14 +111,32 @@
 
 ---
 
-## v0.7.0 "Ladenkasse" — Erster Digistore24-Kauf
+## v0.7.0 "Ladenkasse" — Mehrsitz-Lizenzen + Erster Digistore24-Kauf
 
-**Ziel:** End-to-End Kaufprozess mit echtem Geld.
+**Ziel:** Mehrsitz-Lizenzen implementieren, End-to-End Kaufprozess mit echtem Geld.
 **Typ:** Integration + Go-Live-Vorbereitung.
+**Detailplan:** `docs/konzept/lizenzen-mehrsitz.md` (10 Arbeitspakete)
 
-- [ ] Digistore24-Produkt veroeffentlichen (Tab "Liefern" → Auto-Lizenzkeys)
-- [ ] Key-Format CF-B05-XXXXXXXX-XX implementieren (statt UUID)
-- [ ] Key-Recovery ueber Bestellnummer (`/recover` Route)
+### Mehrsitz-Lizenzen (Ansatz A: N separate Keys)
+
+Portal-Seite:
+- [ ] AP-1: DB-Schema `orders` + `seats` (Migration `migrate-v070.sql`)
+- [ ] AP-2: CF-Key-Format in `@codefabrik/shared` (CF-B05-XXXXXXXX-XX + Checksum)
+- [ ] AP-3: IPN-Handler fuer N-Key-Generierung + Payload-Redaction
+- [ ] AP-4: Lizenz-Validierung dual-path (seats + legacy licenses)
+- [ ] AP-5: License-Pack-Seite + Recovery (`/license-pack/:order_id`, `/recover`)
+- [ ] AP-6: PDF-Download mit allen Keys
+
+Desktop-Apps:
+- [ ] AP-7: Finanz-Rechner CF-Format-Support (Fehlermeldung + Test)
+- [ ] AP-8: MitgliederSimple Lizenz-Aktivierung (license.js, Settings-UI, Probe-Limit-Bypass)
+
+Abschluss:
+- [ ] AP-9: Rueckbau personenbezogener Daten (`customer_email`, `customer_name`, IPN-Log)
+- [ ] AP-10: Digistore24-Produkte einrichten (1/5/10-Platz pro Produkt)
+
+### Infrastruktur + Go-Live
+
 - [ ] DNS `digistore.detmers-publish.de` → Portal-IP
 - [ ] HTTPS auf Portal (Caddy + Let's Encrypt auf Port 3200)
 - [ ] IPN End-to-End mit echtem Geld testen
