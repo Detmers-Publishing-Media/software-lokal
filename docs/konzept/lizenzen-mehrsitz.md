@@ -308,7 +308,106 @@ export function normalizeLicenseKey(key) {
 
 ---
 
-## 7. Key-Uebergabe UX
+## 7. Desktop-App-Integration
+
+Beide Produkte muessen das neue CF-Key-Format akzeptieren und Lizenzen aktivieren koennen.
+Da `@codefabrik/shared/license` die Validierung uebernimmt (AP-2), profitieren beide Apps
+automatisch — aber die Integrationstiefe unterscheidet sich stark.
+
+### Finanz-Rechner (v0.1) — Anpassung
+
+Ist-Zustand: Volle Lizenz-Aktivierung via `localStorage`, nutzt `@codefabrik/shared/license`.
+
+Aenderungen:
+- Fehlermeldung aktualisieren: `'Ungueltiges Format (XXXX-XXXX-XXXX-XXXX)'` →
+  `'Ungueltiges Format'` (beide Formate gelten)
+- `activateLicense()` akzeptiert automatisch CF-Format (da `validateLicenseFormat`
+  aus Shared Library kommt → keine Code-Aenderung noetig ausser Fehlermeldung)
+- Tests erweitern: CF-Key als gueltig validieren
+
+```javascript
+// products/finanz-rechner/src/lib/license.js — Aenderung
+export function activateLicense(key) {
+  const normalized = normalizeLicenseKey(key);
+  if (!validateLicenseFormat(normalized)) {
+    return { valid: false, error: 'Ungueltiges Lizenzschluessel-Format' };
+    //                               ^^^ Format-neutral, nicht mehr "XXXX-XXXX-..."
+  }
+  // ... Rest bleibt gleich
+}
+```
+
+### MitgliederSimple (v0.4) — Neue Funktion
+
+Ist-Zustand: Nur Probe-Limit (30 Mitglieder), `hasLicenseKey()` gibt immer `false` zurueck.
+Keine Lizenz-Aktivierung, keine UI dafuer.
+
+Aenderungen:
+
+**1. `license.js` — Lizenz-Aktivierung einbauen:**
+
+```javascript
+// products/mitglieder-simple/src/lib/license.js
+import { validateLicenseFormat, normalizeLicenseKey } from '@codefabrik/vereins-shared/license';
+import { getActiveMemberCount } from './db.js';
+
+const PROBE_LIMIT = 30;
+let _licenseKey = null;
+
+export async function checkMemberLimit() {
+  if (_licenseKey) return { allowed: true, count: 0, limit: Infinity };
+  const count = await getActiveMemberCount();
+  return { allowed: count < PROBE_LIMIT, count, limit: PROBE_LIMIT };
+}
+
+export function hasLicenseKey() {
+  return _licenseKey !== null;
+}
+
+export function activateLicense(key) {
+  const normalized = normalizeLicenseKey(key);
+  if (!validateLicenseFormat(normalized)) {
+    return { valid: false, error: 'Ungueltiges Lizenzschluessel-Format' };
+  }
+  _licenseKey = normalized;
+  try {
+    localStorage.setItem('mitglieder-simple-license', normalized);
+  } catch (_) { /* Tauri: localStorage evtl. nicht verfuegbar */ }
+  return { valid: true };
+}
+
+export function loadStoredLicense() {
+  try {
+    const stored = localStorage.getItem('mitglieder-simple-license');
+    if (stored && validateLicenseFormat(stored)) {
+      _licenseKey = stored;
+    }
+  } catch (_) { /* */ }
+}
+```
+
+**2. `Settings.svelte` — Lizenz-Aktivierung UI:**
+
+- Neuer Abschnitt "Lizenz" in den Einstellungen
+- Eingabefeld fuer Key + "Aktivieren"-Button
+- Status-Anzeige: "Probe-Version (max. 30 Mitglieder)" oder "Lizenziert"
+- Bei Fehler: Fehlermeldung unter dem Eingabefeld
+
+**3. `App.svelte` — Lizenz laden bei Start:**
+
+- `loadStoredLicense()` beim App-Start aufrufen
+- Wenn lizenziert: Probe-Limit-Check ueberspringen
+- Settings-Seite erhaelt Callback `onLicenseChange` (wie beim Finanz-Rechner)
+
+**4. Speicherort:**
+
+- v0.4 MVP: `localStorage` (wie Finanz-Rechner, einfachste Loesung)
+- Spaeter (v0.5+): In `_schema_meta` oder eigene `license`-Tabelle in SQLite
+  (besser fuer Tauri, da localStorage in WebView instabil sein kann)
+
+---
+
+## 8. Key-Uebergabe UX
 
 ### Danke-Seite (Custom Thank-you-Page von Digistore24)
 
@@ -348,7 +447,7 @@ Inhalt:
 
 ---
 
-## 8. Rueckbau personenbezogener Daten
+## 9. Rueckbau personenbezogener Daten
 
 ### Problem
 
@@ -370,11 +469,12 @@ Teil des Mehrsitz-Umbaus (nicht vorher, um bestehende Funktionalitaet nicht zu b
 
 ---
 
-## 9. Arbeitspakete
+## 10. Arbeitspakete
 
 Jedes Paket ist einzeln testbar. Reihenfolge ist verbindlich.
+AP-1 bis AP-6 = Portal-Seite, AP-7/AP-8 = Desktop-Apps, AP-9/AP-10 = Abschluss.
 
-### AP-1: DB-Schema erweitern
+### AP-1: DB-Schema erweitern (Portal)
 
 - Neue Tabellen `orders` + `seats` anlegen (Migration `migrate-v070.sql`)
 - Spalte `seat_count` in `products`
@@ -387,24 +487,27 @@ Jedes Paket ist einzeln testbar. Reihenfolge ist verbindlich.
 - `validateLicenseFormat(key)` fuer beide Formate
 - `normalizeLicenseKey(key)` fuer beide Formate
 - `computeChecksum(raw)` als interne Hilfsfunktion
+- **Dateien**: `products/shared/src/license/index.js`
 - **Test**: Unit-Tests fuer Generierung, Validierung, Checksum, Normalisierung
 
-### AP-3: IPN-Handler fuer N-Key-Generierung
+### AP-3: IPN-Handler fuer N-Key-Generierung (Portal)
 
 - `activateMultiSeatFromIPN()` implementieren
 - `redactPayload()` fuer IPN-Audit-Log
 - Seat-Count aus `products.seat_count` lesen
 - Revoke/Expire auf Seat-Ebene
 - Legacy-Pfad (`activateFromIPN`) bleibt fuer bestehende Einzelplatz-Keys
+- **Dateien**: `portal/src/services/license.js`, `portal/src/routes/api-digistore-ipn.js`
 - **Test**: IPN mit verschiedenen Seat-Counts, Idempotenz, Revoke
 
-### AP-4: Lizenz-Validierung dual-path
+### AP-4: Lizenz-Validierung dual-path (Portal)
 
 - `validateLicense(key)` prueft erst `seats`, dann `licenses`
 - Beide Schemata gleichzeitig aktiv
+- **Dateien**: `portal/src/services/license.js`
 - **Test**: Validierung fuer Legacy-Keys und neue CF-Keys
 
-### AP-5: License-Pack-Seite + Recovery
+### AP-5: License-Pack-Seite + Recovery (Portal)
 
 - `GET /license-pack/:order_id` — rendert alle Keys
 - `GET /recover` — Eingabefeld fuer order_id
@@ -412,13 +515,36 @@ Jedes Paket ist einzeln testbar. Reihenfolge ist verbindlich.
 - Gelber Banner mit "Erledigt"-Checkbox
 - **Test**: Seite zeigt N Keys, Recovery funktioniert
 
-### AP-6: PDF-Download
+### AP-6: PDF-Download (Portal)
 
 - `GET /api/license-pack/:order_id/pdf` — PDF mit allen Keys
 - Inhalt: Produktname, Datum, Bestellnummer, N Keys, Warntext, Kurzanleitung
 - **Test**: PDF wird generiert, enthaelt korrekte Daten
 
-### AP-7: Rueckbau personenbezogener Daten
+### AP-7: Finanz-Rechner CF-Format-Support
+
+- Fehlermeldung in `activateLicense()` format-neutral machen
+- Tests erweitern: CF-Key als gueltig validieren
+- **Dateien**: `products/finanz-rechner/src/lib/license.js`,
+  `products/finanz-rechner/tests/test_license.js`
+- **Test**: Bestehende Tests gruen + neuer Test mit CF-Key
+- **Aufwand**: Klein (Shared Library macht die eigentliche Arbeit)
+
+### AP-8: MitgliederSimple Lizenz-Aktivierung
+
+- `license.js`: `activateLicense()`, `loadStoredLicense()` einbauen (siehe Abschnitt 7)
+- `hasLicenseKey()` an `_licenseKey` koppeln (nicht mehr hardcoded `false`)
+- `checkMemberLimit()`: Probe-Limit ueberspringen wenn lizenziert
+- `Settings.svelte`: Lizenz-Abschnitt mit Eingabefeld + Status-Anzeige
+- `App.svelte`: `loadStoredLicense()` beim Start, `onLicenseChange`-Callback
+- Speicherort: `localStorage` (MVP), spaeter SQLite
+- **Dateien**: `products/mitglieder-simple/src/lib/license.js`,
+  `products/mitglieder-simple/src/routes/Settings.svelte`,
+  `products/mitglieder-simple/src/App.svelte`
+- **Test**: Unit-Tests fuer Aktivierung + Probe-Limit-Bypass,
+  Smoke-Test: Key eingeben → Limit aufgehoben
+
+### AP-9: Rueckbau personenbezogener Daten (Portal)
 
 - `customer_email` nullable setzen + bestehende Werte NULL
 - `customer_name` bestehende Werte NULL
@@ -427,7 +553,7 @@ Jedes Paket ist einzeln testbar. Reihenfolge ist verbindlich.
 - Tests anpassen
 - **Test**: Keine personenbezogenen Daten in DB, IPN funktioniert weiterhin
 
-### AP-8: Digistore24-Produkte einrichten
+### AP-10: Digistore24-Produkte einrichten
 
 - Neue Produkte in Digistore24 anlegen (1-Platz, 5-Platz, 10-Platz)
 - `products`-Tabelle seeden mit Seat-Counts
@@ -524,7 +650,7 @@ Kunde kauft "5-Platz-Lizenz" bei Digistore24
 ### A.6 Identifizierte Risiken
 
 1. **Personenbezogene Daten in Portal-DB (KRITISCH)** — `customer_email` (NOT NULL)
-   und `customer_name` widersprechen "Strict No-Email" → Rueckbau in AP-7
+   und `customer_name` widersprechen "Strict No-Email" → Rueckbau in AP-9
 2. **Revoke funktioniert offline nicht** — bewusst akzeptiertes Geschaeftsrisiko
 3. **Thank-you-Page = Single Point of Failure** — Recovery per `order_id` als Absicherung
 4. **Key-Leaks** — nicht boesartig, sondern durch Vereins-Organisation →
