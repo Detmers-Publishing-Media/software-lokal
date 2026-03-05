@@ -1,31 +1,170 @@
 ---
+- name: "Phase 0: Installationsmodus"
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: "UpCloud: Pruefe ob codefabrik-prod existiert"
+      ansible.builtin.uri:
+        url: "https://api.upcloud.com/1.3/server"
+        method: GET
+        headers:
+          Authorization: "Bearer {{ vault_upcloud_api_token }}"
+        status_code: [200]
+      register: upcloud_servers
+
+    - name: "Bestehenden Server finden"
+      ansible.builtin.set_fact:
+        existing_servers: "{{ upcloud_servers.json.servers.server | selectattr('title', 'eq', 'codefabrik-prod') | list }}"
+
+    - name: "Server-Existenz pruefen"
+      ansible.builtin.set_fact:
+        server_exists: "{{ existing_servers | length > 0 }}"
+        server_uuid: "{{ (existing_servers | first).uuid | default('') }}"
+
+    - name: "Installationsmodus abfragen"
+      ansible.builtin.pause:
+        prompt: |
+
+          {% if server_exists | bool %}Server 'codefabrik-prod' existiert ({{ server_uuid }}) — wird abgerissen.{% else %}Kein Server gefunden — Neuinstallation.{% endif %}
+
+            1) Neuinstallation (bestehenden Server abreissen falls vorhanden)
+            2) Update (Server bleibt stehen, nur bei bestehendem Server)
+            3) Abbrechen
+          Auswahl
+      register: install_mode
+
+    - name: "Abbrechen"
+      ansible.builtin.fail:
+        msg: "Installation abgebrochen."
+      when: install_mode.user_input | trim == "3"
+
+    - name: "Update ohne Server nicht moeglich"
+      ansible.builtin.fail:
+        msg: "Update nicht moeglich — kein bestehender Server gefunden."
+      when: install_mode.user_input | trim == "2" and not (server_exists | bool)
+
+    - name: "Modus setzen"
+      ansible.builtin.set_fact:
+        install_type: "{{ 'update' if install_mode.user_input | trim == '2' else 'fresh' }}"
+
+    # --- Aufraeum-Block: Loescht bestehenden Server falls vorhanden ---
+    - name: "Aufraeumen: Server stoppen"
+      ansible.builtin.uri:
+        url: "https://api.upcloud.com/1.3/server/{{ server_uuid }}/stop"
+        method: POST
+        headers:
+          Authorization: "Bearer {{ vault_upcloud_api_token }}"
+          Content-Type: "application/json"
+        body_format: json
+        body:
+          stop_server:
+            stop_type: hard
+            timeout: 60
+        status_code: [200, 409]
+      ignore_errors: true
+      when: install_type == 'fresh' and server_exists | bool
+
+    - name: "Aufraeumen: Warte auf Stop (30s)"
+      ansible.builtin.pause:
+        seconds: 30
+      when: install_type == 'fresh' and server_exists | bool
+
+    - name: "Aufraeumen: Server loeschen"
+      ansible.builtin.uri:
+        url: "https://api.upcloud.com/1.3/server/{{ server_uuid }}/?storages=1&backups=delete"
+        method: DELETE
+        headers:
+          Authorization: "Bearer {{ vault_upcloud_api_token }}"
+          Content-Type: "application/json"
+        status_code: [200, 204]
+      ignore_errors: true
+      when: install_type == 'fresh' and server_exists | bool
+
+    - name: "Aufraeumen: Warte auf Loeschung (30s)"
+      ansible.builtin.pause:
+        seconds: 30
+      when: install_type == 'fresh' and server_exists | bool
+
+    - name: "Aufraeumen: DNS-Records entfernen"
+      ansible.builtin.include_tasks: "{{ playbook_dir }}/../roles/dns/tasks/cleanup.yml"
+      ignore_errors: true
+      when: install_type == 'fresh' and server_exists | bool
+
+    - name: "Aufraeumen: Lokale Dateien entfernen"
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - "/output/.server-env"
+        - "/output/.tokens-env"
+        - "/output/.factory-passwords.env"
+      when: install_type == 'fresh'
+
+    - name: "install_type in Datei speichern"
+      ansible.builtin.copy:
+        content: "{{ install_type }}"
+        dest: "/output/.install-type"
+
+    - name: "Kein Server vorhanden — ueberspringe Aufraeumen"
+      ansible.builtin.debug:
+        msg: "Kein bestehender Server gefunden. Starte Neuinstallation."
+      when: install_type == 'fresh' and not (server_exists | bool)
+
+    - name: "Update: Server-Details von UpCloud laden"
+      ansible.builtin.uri:
+        url: "https://api.upcloud.com/1.3/server/{{ server_uuid }}"
+        method: GET
+        headers:
+          Authorization: "Bearer {{ vault_upcloud_api_token }}"
+        status_code: [200]
+        timeout: 120
+      register: server_details
+      when: install_type == 'update'
+
+    - name: "Update: Bestehenden Server ins Inventory aufnehmen"
+      ansible.builtin.add_host:
+        name: factory-prod
+        ansible_host: "{{ server_details.json.server.ip_addresses.ip_address | selectattr('access', 'eq', 'public') | selectattr('family', 'eq', 'IPv4') | map(attribute='address') | first }}"
+        ansible_user: root
+        ansible_ssh_private_key_file: "~/.ssh/codefabrik_deploy"
+        groups: [prod]
+      when: install_type == 'update'
+
 - name: "Phase 1: Server provisionieren"
   hosts: localhost
   connection: local
   gather_facts: false
   vars:
     server_role: prod
+    install_type: "{{ lookup('file', '/output/.install-type') }}"
   roles:
-    - server
+    - role: server
+      when: install_type != 'update'
 
 - name: "Phase 1b: DNS erstellen"
   hosts: localhost
   connection: local
   gather_facts: false
+  vars:
+    install_type: "{{ lookup('file', '/output/.install-type') }}"
   tasks:
     - name: "Server-Variablen aus .server-env laden"
       ansible.builtin.shell: |
         cat /output/.server-env
       register: server_env_raw
       delegate_to: localhost
+      when: install_type != 'update'
 
     - name: "server_ip aus .server-env setzen"
       ansible.builtin.set_fact:
         server_ip: "{{ (server_env_raw.stdout | regex_search('SERVER_IP=(.+)', '\\1'))[0] }}"
+      when: install_type != 'update'
 
     - name: "DNS-Records erstellen"
       ansible.builtin.include_role:
         name: dns
+      when: install_type != 'update'
 
 - name: "Phase 2: Server konfigurieren"
   hosts: factory-prod

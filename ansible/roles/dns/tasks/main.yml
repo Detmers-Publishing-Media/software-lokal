@@ -13,7 +13,7 @@
       name: "{{ item.name }}"
       content: "{{ server_ip }}"
       ttl: 1
-      proxied: true
+      proxied: "{{ item.proxied | default(true) }}"
     status_code: [200, 201, 409]
   loop: "{{ dns_records }}"
   ignore_errors: true

@@ -21,7 +21,8 @@ Stand: 2026-03-04
 | v0.6.1 | Mitglieder v0.2 | MitgliederSimple nach Referenzkunden-Feedback | Geplant |
 | v0.6.2 | Pruefstand | Azure Testing + EXE-Erstellung | **Aktuell** |
 | — | MitgliederSimple v0.3 "Protokoll" | Event-Log, Hash-Kette, Schema-Meta, 7 Testkategorien | Done |
-| v0.6.3 | Taschenrechner | Finanz-Rechner MVP — 5 Makler-Rechner (Bundle B-24) | Vorgemerkt |
+| — | MitgliederSimple v0.4 "Beitrag" | Beitragsverwaltung, Zahlungen, Mahnbriefe | Done |
+| v0.6.3 | Taschenrechner | Finanz-Rechner v0.1.0 — 5 Makler-Rechner (Bundle B-24) | **Aktuell** |
 
 ---
 
@@ -58,3 +59,12 @@ Stand: 2026-03-04
 - **Digistore24:** Testprodukt konfiguriert, IPN-Anbindung `detmers-publish-dev`
 - **UpCloud:** Managed PostgreSQL 16 (de-fra1)
 - **Cloudflare:** SSL Full (Strict), Origin CA Wildcard
+
+### Bekannte Luecken
+- **Managed PostgreSQL wird nicht abgerissen:** Teardown loescht nur Server, nicht die DB.
+  → TODO: Optionaler Task mit Sicherheitsabfrage
+- **Kein DB-Backup im Installer:** Vor Teardown/Umzug muss DB manuell gesichert werden.
+  → TODO: `backup`-Playbook + Menue-Option (pg_dump → USB-Stick)
+- **Kein DB-Restore:** Nach Neuinstallation keine automatische Wiederherstellung.
+  → TODO: `restore`-Playbook das Dumps aus `/output/backup/` einspielt
+- Siehe `docs/konzept/fabrik-im-koffer.md` Abschnitt "DB-Backup + Umzug"

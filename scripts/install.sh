@@ -5,7 +5,7 @@ set -euo pipefail
 
 # --- Konfiguration ---
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-KEEPASS_DB="${KEEPASS_DB:-$SCRIPT_DIR/vault.kdbx}"
+KEEPASS_DB="${KEEPASS_DB:-}"
 TARBALL="${TARBALL:-$SCRIPT_DIR/codefabrik.tar.gz}"
 SHM_BASE="/dev/shm/codefabrik-secrets"
 SHM_SECRETS="$SHM_BASE/secrets"
@@ -61,7 +61,14 @@ check_cmd() {
 preflight() {
     echo "=== Preflight ==="
     check_cmd keepassxc-cli python3 docker
-    [ -f "$KEEPASS_DB" ] || die "KeePass-DB nicht gefunden: $KEEPASS_DB"
+
+    # KeePass-DB: Pfad abfragen falls nicht gesetzt
+    if [ -z "$KEEPASS_DB" ] || [ ! -f "$KEEPASS_DB" ]; then
+        echo ""
+        read -rp "Pfad zur KeePass-Datenbank (vault.kdbx): " KEEPASS_DB
+        [ -f "$KEEPASS_DB" ] || die "KeePass-DB nicht gefunden: $KEEPASS_DB"
+    fi
+
     [ -f "$TARBALL" ] || die "Tarball nicht gefunden: $TARBALL"
     docker info &>/dev/null || die "Docker laeuft nicht"
     echo "OK"
@@ -266,15 +273,16 @@ build_docker() {
 
 # --- [7] Menue ---
 show_menu() {
-    echo ""
-    echo "=== Code-Fabrik Installer ==="
-    echo "  1) install          — PROD installieren"
-    echo "  2) install-portal   — Portal installieren"
-    echo "  3) teardown         — PROD abreissen"
-    echo "  4) teardown-portal  — Portal abreissen"
-    echo "  5) status           — Docker + Connectivity pruefen"
-    echo "  q) Beenden"
-    echo ""
+    echo "" >&2
+    echo "=== Code-Fabrik Installer ===" >&2
+    echo "  1) install          — Alles installieren (PROD + Portal + Seed)" >&2
+    echo "  2) upgrade-portal   — Portal aktualisieren" >&2
+    echo "  3) fabrik           — PROD Status abfragen" >&2
+    echo "  4) nacht-stopp      — Jobs-Verarbeitung stoppen" >&2
+    echo "  5) teardown         — Alles abreissen (PROD + Portal)" >&2
+    echo "  9) status           — Lokalen Docker-Status pruefen" >&2
+    echo "  q) Beenden" >&2
+    echo "" >&2
     read -rp "Auswahl: " choice
     echo "$choice"
 }
@@ -295,7 +303,7 @@ run_ansible() {
         portal_mount=(-v "$portal_dir:/portal:ro")
     fi
 
-    docker run --rm \
+    docker run --rm -it \
         --network host \
         -v "$ansible_dir:/ansible:ro" \
         -v "$SHM_SECRETS/deploy_key:/root/.ssh/codefabrik_deploy:ro" \
@@ -334,13 +342,30 @@ writeback_runtime() {
     echo "Writeback abgeschlossen."
 }
 
-# --- Playbook-Mapping ---
+# --- Komplett-Installation (PROD + Portal + Seed) ---
+run_full_install() {
+    run_ansible "playbooks/install.yml"
+    writeback_runtime
+    run_ansible "playbooks/install-portal.yml"
+    writeback_runtime
+    run_ansible "playbooks/seed-products.yml"
+    writeback_runtime
+}
+
+# --- Komplett-Teardown (Portal + PROD) ---
+run_full_teardown() {
+    run_ansible "playbooks/teardown-portal.yml"
+    writeback_runtime
+    run_ansible "playbooks/teardown.yml"
+    writeback_runtime
+}
+
+# --- Playbook-Mapping (Einzelaktionen) ---
 playbook_for() {
     case "$1" in
-        1|install)          echo "playbooks/install.yml" ;;
-        2|install-portal)   echo "playbooks/install-portal.yml" ;;
-        3|teardown)         echo "playbooks/teardown.yml" ;;
-        4|teardown-portal)  echo "playbooks/teardown-portal.yml" ;;
+        2|upgrade-portal)   echo "playbooks/upgrade-portal.yml" ;;
+        3|fabrik)           echo "playbooks/fabrik.yml" ;;
+        4|nacht-stopp)      echo "playbooks/nacht-stopp.yml" ;;
         *) return 1 ;;
     esac
 }
@@ -373,9 +398,9 @@ build_docker
 if [ -n "$ACTION" ]; then
     # Direkt-Modus: ./install.sh install
     case "$ACTION" in
-        status)
-            run_status
-            ;;
+        1|install)   run_full_install ;;
+        5|teardown)  run_full_teardown ;;
+        status)      run_status ;;
         *)
             playbook=$(playbook_for "$ACTION") || die "Unbekannte Aktion: $ACTION"
             run_ansible "$playbook"
@@ -388,7 +413,9 @@ else
         choice=$(show_menu)
         case "$choice" in
             q|Q) break ;;
-            5|status) run_status ;;
+            1)  run_full_install ;;
+            5)  run_full_teardown ;;
+            9|status) run_status ;;
             *)
                 playbook=$(playbook_for "$choice") || { echo "Ungueltige Auswahl"; continue; }
                 run_ansible "$playbook"

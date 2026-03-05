@@ -1,4 +1,12 @@
 ---
+- name: "Warte auf dpkg-Lock (unattended-upgrades)"
+  ansible.builtin.shell: |
+    while fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1; do
+      echo "dpkg-Lock belegt, warte 10s..."
+      sleep 10
+    done
+  changed_when: false
+
 - name: "APT aktualisieren"
   ansible.builtin.apt:
     update_cache: yes

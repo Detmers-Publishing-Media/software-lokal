@@ -30,6 +30,7 @@
                   size: "{{ upcloud_os_storage }}"
                   tier: "{{ upcloud_storage_tier }}"
         status_code: [200, 201, 202]
+        timeout: 120
       register: server_result
 
     - name: "Server-UUID und IP speichern"
