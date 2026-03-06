@@ -1,20 +1,30 @@
 #!/bin/bash
 # build-installer.sh — Paketiert das komplette Repo fuer "Fabrik im Koffer"
-# Ergebnis: dist/install.sh + dist/codefabrik.tar.gz
+# Ergebnis: dist/install.sh + dist/codefabrik-vX.Y.Z.tar.gz
 # Zusammen mit vault.kdbx reicht das fuer einen kompletten Neuaufbau.
+# Jeder Tarball ist ein vollstaendiger Snapshot — beliebiger Release-Stand wiederherstellbar.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 DIST_DIR="$PROJECT_DIR/dist"
 
-echo "=== Code-Fabrik Installer bauen ==="
+# Version aus VERSION-Datei lesen
+VERSION_FILE="$PROJECT_DIR/VERSION"
+if [ ! -f "$VERSION_FILE" ]; then
+    echo "FEHLER: VERSION-Datei nicht gefunden" >&2
+    exit 1
+fi
+VERSION="$(cat "$VERSION_FILE" | tr -d '[:space:]')"
+TARBALL_NAME="codefabrik-v${VERSION}.tar.gz"
+
+echo "=== Code-Fabrik Installer bauen (v${VERSION}) ==="
 
 mkdir -p "$DIST_DIR"
 
 # Tarball erstellen: komplettes Repo ohne Secrets, temporaere Dateien und Build-Artefakte
 echo "Tarball erstellen..."
-tar czf "$DIST_DIR/codefabrik.tar.gz" \
+tar czf "$DIST_DIR/$TARBALL_NAME" \
     -C "$PROJECT_DIR" \
     --exclude='dist' \
     --exclude='.git' \
@@ -36,6 +46,9 @@ tar czf "$DIST_DIR/codefabrik.tar.gz" \
     --exclude='*.sqlite-wal' \
     .
 
+# Symlink codefabrik.tar.gz → aktuellen Release (damit install.sh ihn findet)
+ln -sf "$TARBALL_NAME" "$DIST_DIR/codefabrik.tar.gz"
+
 # install.sh kopieren
 cp "$SCRIPT_DIR/install.sh" "$DIST_DIR/install.sh"
 chmod +x "$DIST_DIR/install.sh"
@@ -43,7 +56,8 @@ chmod +x "$DIST_DIR/install.sh"
 echo ""
 echo "Fertig:"
 echo "  $DIST_DIR/install.sh"
-echo "  $DIST_DIR/codefabrik.tar.gz ($(du -h "$DIST_DIR/codefabrik.tar.gz" | cut -f1))"
+echo "  $DIST_DIR/$TARBALL_NAME ($(du -h "$DIST_DIR/$TARBALL_NAME" | cut -f1))"
+echo "  $DIST_DIR/codefabrik.tar.gz → $TARBALL_NAME"
 echo ""
-echo "Fabrik im Koffer:"
-echo "  install.sh + codefabrik.tar.gz + vault.kdbx = kompletter Neuaufbau"
+echo "Fabrik im Koffer (v${VERSION}):"
+echo "  install.sh + $TARBALL_NAME + vault.kdbx = kompletter Neuaufbau"
