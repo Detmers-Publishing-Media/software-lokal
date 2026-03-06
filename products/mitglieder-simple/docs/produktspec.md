@@ -111,6 +111,10 @@ Stufe 5 hebt die Satzungsverwaltung von einem Dokumentenarchiv auf eine aktive S
 | Einwilligung Foto (oeffentlich) | ✓ | ✓ | ✓ | ✓ | ✓ |
 | Widerruf mit Datum dokumentieren | ✓ | ✓ | ✓ | ✓ | ✓ |
 | Hinweis bei Exporten (Filter) | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Datenauskunft PDF/JSON (Art. 15) | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Mitglied loeschen/anonymisieren (Art. 17) | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Faellige Loeschungen anzeigen | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Datenportabilitaet JSON (Art. 20) | ✓ | ✓ | ✓ | ✓ | ✓ |
 | **LISTEN & DRUCKEN** | | | | | |
 | Mitgliederliste (komplett/gefiltert) | ✓ | ✓ | ✓ | ✓ | ✓ |
 | Telefonliste (mit Einwilligung) | ✓ | ✓ | ✓ | ✓ | ✓ |
@@ -264,7 +268,80 @@ Die Software ist als lokal-first Anwendung konzipiert. Alle Daten verbleiben auf
 | Zahlungsdaten | Art. 6 I lit. b DSGVO | 10 Jahre (HGB) | Buchungsbelege |
 | Gesundheitsdaten | NICHT GESPEICHERT | - | Keine Gesundheitsdaten in dieser Software |
 
-### 6.3 Disclaimer
+### 6.3 DSGVO-Funktionen im Tool
+
+Die folgenden Funktionen muessen im Tool implementiert sein, um die Betroffenenrechte
+der DSGVO abzubilden. **Auskunft und Loeschung sind Pflicht vor dem ersten Kunden.**
+
+#### 6.3.1 Datenauskunft (Art. 15 DSGVO)
+
+Jedes Vereinsmitglied hat das Recht zu erfahren, welche Daten ueber es gespeichert sind.
+
+**Funktion:** Mitglied-Detailansicht → Button "Datenauskunft (DSGVO)"
+
+Erzeugt einen Bericht (PDF oder Bildschirm) mit:
+
+1. **Stammdaten** — Alle gespeicherten Felder (Name, Adresse, Kontakt, Geburtsdatum etc.)
+2. **Aenderungsprotokoll** — Alle Events die dieses Mitglied betreffen
+   (wer hat wann was geaendert)
+3. **Beitraege** — Beitragsverlauf mit Zahlungsstatus
+4. **Einwilligungen** — Erteilte und widerrufene Einwilligungen mit Datum
+5. **SEPA-Mandate** — Falls vorhanden (ab Stufe 3)
+6. **Verarbeitungszweck** — Standardtext: "Mitgliederverwaltung gemaess
+   Vereinssatzung, Beitragsverwaltung, Kommunikation"
+7. **Speicherdauer** — "Bis Austritt + gesetzliche Aufbewahrungsfrist (3-10 Jahre)
+   oder auf Verlangen des Mitglieds"
+8. **Empfaenger** — "Keine Weitergabe an Dritte" (oder Liste falls konfiguriert)
+
+**Export-Formate:**
+- **PDF** — fuer Aushaendigung an das Mitglied (bevorzugt)
+- **JSON** — maschinenlesbar (Art. 20 DSGVO, Datenportabilitaet)
+
+#### 6.3.2 Recht auf Loeschung (Art. 17 DSGVO)
+
+Mitglied verlangt Loeschung aller personenbezogenen Daten.
+
+**Funktion:** Mitglied-Detailansicht → "Mitglied loeschen (DSGVO)"
+
+Ablauf:
+1. **Pruefung Aufbewahrungspflichten** — Tool prüft ob steuerrechtliche Fristen
+   (6-10 Jahre fuer Beitrags-/Zahlungsdaten) noch laufen
+2. **Personenbezogene Daten loeschen** — Name, Adresse, Kontaktdaten, Geburtsdatum
+3. **Finanzdaten anonymisieren** — Name → "Geloeschtes Mitglied #42",
+   Beitrags- und Zahlungsdaten bleiben fuer Steuerrecht erhalten
+4. **Event-Log redacten** — Personenbezogene Felder in Events ersetzen durch
+   "[GELOESCHT]". Redaction wird als eigenes Event protokolliert.
+   Original-Hash-Kette bleibt verifizierbar (Redaction-Event referenziert
+   Original-Hash, ersetzt ihn nicht)
+5. **Einwilligungen loeschen** — Alle Einwilligungsdaten entfernen
+6. **SEPA-Mandate loeschen** — IBAN und Mandatsdaten entfernen
+
+**Sicherheitsabfrage:** "Achtung: Diese Aktion kann nicht rueckgaengig gemacht werden.
+Personenbezogene Daten werden unwiderruflich geloescht. Finanzdaten werden anonymisiert
+und bleiben fuer die steuerrechtliche Aufbewahrungsfrist erhalten."
+
+#### 6.3.3 Datenportabilitaet (Art. 20 DSGVO)
+
+JSON-Export aller Daten eines Mitglieds. Ermoeglicht Umzug zu anderem Vereinstool.
+Abgedeckt durch den JSON-Export der Auskunftsfunktion (6.3.1).
+
+#### 6.3.4 Recht auf Berichtigung (Art. 16 DSGVO)
+
+Abgedeckt durch die normale Bearbeitungsfunktion. Event-Log dokumentiert
+die Korrektur automatisch.
+
+#### 6.3.5 Faellige Loeschungen anzeigen
+
+**Funktion:** Dashboard-Widget "DSGVO: Faellige Loeschungen"
+
+Zeigt Mitglieder an, deren Aufbewahrungsfrist abgelaufen ist:
+- Ausgetreten + 3 Jahre (Stammdaten)
+- Letzter Zahlungsvorgang + 10 Jahre (Finanzdaten)
+
+Der Verein wird erinnert, die Loeschung durchzufuehren — die Software
+loescht nicht automatisch.
+
+### 6.4 Disclaimer
 
 Diese Software ist ein organisatorisches Hilfsmittel. Sie ersetzt keine Rechts- oder Datenschutzberatung. Der Verein ist fuer die ordnungsgemaesse Umsetzung der DSGVO-Pflichten selbst verantwortlich. Bei Unsicherheiten empfehlen wir die Beratung durch einen Datenschutzbeauftragten oder Rechtsanwalt.
 
@@ -294,6 +371,9 @@ Folgende Punkte muessen vor dem ersten Verkauf erfuellt sein:
 - Probe-Lizenz (bis 30 Mitglieder) und Vollversion (Lizenzpruefung) funktionsfaehig
 - Portal-Integration: Kauf → Key → Download durchgetestet
 - Impressum, Datenschutzerklaerung, Disclaimer in Software sichtbar
+- DSGVO-Datenauskunft (Art. 15): PDF-Export aller Daten eines Mitglieds
+- DSGVO-Loeschung (Art. 17): Mitglied loeschen mit Anonymisierung der Finanzdaten
+- DSGVO-Faellige Loeschungen: Dashboard-Widget zeigt abgelaufene Aufbewahrungsfristen
 
 ### 7.3 Nicht im MVP (spaetere Versionen)
 

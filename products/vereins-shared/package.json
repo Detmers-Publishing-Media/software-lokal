@@ -9,6 +9,9 @@
     "./db": "./src/db/index.js",
     "./license": "./src/license/index.js"
   },
+  "dependencies": {
+    "@codefabrik/shared": "file:../shared"
+  },
   "peerDependencies": {
     "svelte": "^5.0.0",
     "@tauri-apps/plugin-sql": "^2.0.0"

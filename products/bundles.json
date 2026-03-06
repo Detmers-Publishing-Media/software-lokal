@@ -18,6 +18,18 @@
           "description": "Geteilte Komponenten und Helfer"
         }
       ]
+    },
+    "B-24-finanz-rechner": {
+      "name": "Finanz-Rechner Starterpaket",
+      "description": "5 Rechner-Tools fuer Versicherungsmakler",
+      "target": "Mehrsparten-Versicherungsmakler",
+      "products": [
+        {
+          "repo": "finanz-rechner",
+          "type": "app",
+          "description": "5 Finanzrechner fuer den Makleralltag"
+        }
+      ]
     }
   },
   "products": {
@@ -32,6 +44,18 @@
       "type": "library",
       "tech": "npm-package",
       "forgejo_repo": "factory-admin/vereins-shared"
+    },
+    "shared": {
+      "bundles": [],
+      "type": "library",
+      "tech": "npm-package",
+      "forgejo_repo": "factory-admin/shared"
+    },
+    "finanz-rechner": {
+      "bundles": ["B-24-finanz-rechner"],
+      "type": "app",
+      "tech": "tauri-svelte",
+      "forgejo_repo": "factory-admin/finanz-rechner"
     },
     "fruehwarnreport": {
       "bundles": [],
