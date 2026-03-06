@@ -1,0 +1,22 @@
+---
+# Alle bestehenden codefabrik-portal Server aufraeumen
+# Verhindert dass sich Portal-Server ansammeln (IP-Limit)
+
+- name: "Portal-Server stoppen und loeschen"
+  ansible.builtin.include_tasks: cleanup-one.yml
+  loop: "{{ existing_portals }}"
+  loop_control:
+    loop_var: portal_server
+
+- name: "Warte auf Loeschung (30s)"
+  ansible.builtin.pause:
+    seconds: 30
+  when: existing_portals | length > 0
+
+- name: "Alte Portal-Dateien entfernen"
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - "/output/.portal-env"
+    - "/output/.portal-passwords.env"

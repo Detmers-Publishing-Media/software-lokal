@@ -1,10 +1,45 @@
 ---
+- name: "Inventory laden"
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: "Server-IP aus .server-env laden"
+      ansible.builtin.shell: cat /output/.server-env
+      register: server_env_raw
+
+    - name: "factory-prod registrieren"
+      ansible.builtin.add_host:
+        name: factory-prod
+        ansible_host: "{{ (server_env_raw.stdout | regex_search('SERVER_IP=(.+)', '\\1'))[0] }}"
+        ansible_user: root
+        ansible_ssh_private_key_file: "~/.ssh/codefabrik_deploy"
+        groups: [prod]
+
+- name: "Preflight: Docker-Services sicherstellen"
+  hosts: factory-prod
+  gather_facts: false
+  tasks:
+    - name: "Docker Stack starten falls noetig"
+      ansible.builtin.shell: |
+        cd /opt/codefabrik && docker compose up -d
+      changed_when: false
+
+    - name: "Warte auf Forgejo (max 60s)"
+      ansible.builtin.uri:
+        url: "http://localhost:3000/api/v1/version"
+        method: GET
+        status_code: [200]
+      register: forgejo_health
+      retries: 12
+      delay: 5
+      until: forgejo_health.status == 200
+
 # Phase 3+4: Services konfigurieren (Server bereits vorhanden)
 - name: "Phase 3: Services konfigurieren"
   hosts: factory-prod
   gather_facts: false
   vars:
-    server_ip: "212.147.230.92"
     forgejo_admin_password: "{{ lookup('ini', 'forgejo_admin_password type=properties file=/output/.factory-passwords.env') }}"
     postgres_password: "{{ lookup('ini', 'postgres_password type=properties file=/output/.factory-passwords.env') }}"
     jwt_secret: "{{ lookup('ini', 'jwt_secret type=properties file=/output/.factory-passwords.env') }}"

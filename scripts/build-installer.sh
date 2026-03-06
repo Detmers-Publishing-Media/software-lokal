@@ -28,7 +28,8 @@ tar czf "$DIST_DIR/codefabrik.tar.gz" \
     --exclude='scripts' \
     --exclude='node_modules' \
     --exclude='__pycache__' \
-    ansible/ portal/ .gitignore teardown-remote.sh
+    --exclude='target' \
+    ansible/ portal/ products/ .gitignore teardown-remote.sh
 
 # install.sh kopieren
 cp "$SCRIPT_DIR/install.sh" "$DIST_DIR/install.sh"

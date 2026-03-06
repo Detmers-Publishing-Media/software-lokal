@@ -122,13 +122,27 @@
       register: server_details
       when: install_type == 'update'
 
+    - name: "Update: Server-IP extrahieren"
+      ansible.builtin.set_fact:
+        update_server_ip: "{{ server_details.json.server.ip_addresses.ip_address | selectattr('access', 'eq', 'public') | selectattr('family', 'eq', 'IPv4') | map(attribute='address') | first }}"
+      when: install_type == 'update'
+
     - name: "Update: Bestehenden Server ins Inventory aufnehmen"
       ansible.builtin.add_host:
         name: factory-prod
-        ansible_host: "{{ server_details.json.server.ip_addresses.ip_address | selectattr('access', 'eq', 'public') | selectattr('family', 'eq', 'IPv4') | map(attribute='address') | first }}"
+        ansible_host: "{{ update_server_ip }}"
         ansible_user: root
         ansible_ssh_private_key_file: "~/.ssh/codefabrik_deploy"
         groups: [prod]
+      when: install_type == 'update'
+
+    - name: "Update: .server-env schreiben (fuer Portal + Seed)"
+      ansible.builtin.copy:
+        content: |
+          SERVER_UUID={{ server_uuid }}
+          SERVER_IP={{ update_server_ip }}
+        dest: /output/.server-env
+        mode: '0600'
       when: install_type == 'update'
 
 - name: "Phase 1: Server provisionieren"

@@ -63,6 +63,7 @@
     method: POST
     body_format: json
     body:
+      license_key: "{{ buy_result.json.license_key }}"
       title: "Smoke-Test Idee"
       description: "Automatische Smoke-Test Idee"
     status_code: 201

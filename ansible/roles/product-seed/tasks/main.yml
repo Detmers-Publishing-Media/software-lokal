@@ -15,14 +15,10 @@
   loop: "{{ seed_products }}"
 
 - name: "Produkt-Source auf Server kopieren"
-  ansible.posix.synchronize:
-    src: "{{ playbook_dir }}/../../products/{{ item.repo }}/"
+  ansible.builtin.copy:
+    src: "/products/{{ item.repo }}/"
     dest: "/tmp/seed-{{ item.repo }}/"
-    delete: true
-    rsync_opts:
-      - "--exclude=node_modules"
-      - "--exclude=.git"
-      - "--exclude=target"
+    mode: preserve
   loop: "{{ seed_products }}"
 
 - name: "Produkt-Source in Forgejo pushen"

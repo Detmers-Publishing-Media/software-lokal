@@ -25,6 +25,10 @@ declare -A SECRET_MAP=(
     [ollama-host]=vault_ollama_host
     [ollama-model]=vault_ollama_model
     [digistore-ipn-passphrase]=vault_digistore_ipn_passphrase
+    [cloudflare-origin-ca-cert]=vault_origin_ca_cert
+    [cloudflare-origin-ca-key]=vault_origin_ca_key
+    [circleci-api-token]=vault_circleci_api_token
+    [github-push-token]=vault_github_push_token
 )
 
 # Runtime-Eintraege → Dateinamen
@@ -117,6 +121,10 @@ SECRET_MAP = {
     "ollama-host": "vault_ollama_host",
     "ollama-model": "vault_ollama_model",
     "digistore-ipn-passphrase": "vault_digistore_ipn_passphrase",
+    "cloudflare-origin-ca-cert": "vault_origin_ca_cert",
+    "cloudflare-origin-ca-key": "vault_origin_ca_key",
+    "circleci-api-token": "vault_circleci_api_token",
+    "github-push-token": "vault_github_push_token",
 }
 
 # Runtime-Mapping
@@ -220,14 +228,22 @@ runtime_parts = runtime_path.split("/")
 rt_group = find_group(db_root, runtime_parts)
 
 # Runtime-Dateien laden (falls Reinstall)
+# Writeback speichert Dateien als Base64 (keepassxc-cli -p liest nur 1 Zeile)
+import base64
+
 if rt_group is not None:
     for kp_name, filename in RUNTIME_MAP.items():
         content = get_entry_password(rt_group, kp_name)
         if content:
+            # Base64-Decode versuchen, Fallback auf Rohinhalt
+            try:
+                decoded = base64.b64decode(content).decode("utf-8")
+            except Exception:
+                decoded = content
             out_file = os.path.join(output_dir, filename)
             with open(out_file, "w") as f:
-                f.write(content)
-                if not content.endswith("\n"):
+                f.write(decoded)
+                if not decoded.endswith("\n"):
                     f.write("\n")
             os.chmod(out_file, 0o600)
             print(f"  OK: Runtime/{kp_name} -> {out_file}")
@@ -303,6 +319,13 @@ run_ansible() {
         portal_mount=(-v "$portal_dir:/portal:ro")
     fi
 
+    # Products-Mount vorbereiten (fuer seed-products)
+    local products_mount=()
+    local products_dir="$SHM_WORKSPACE/products"
+    if [ -d "$products_dir" ]; then
+        products_mount=(-v "$products_dir:/products:ro")
+    fi
+
     docker run --rm -it \
         --network host \
         -v "$ansible_dir:/ansible:ro" \
@@ -311,8 +334,12 @@ run_ansible() {
         -v "$SHM_SECRETS/secrets.yml:/root/secrets.yml:ro" \
         -v "$SHM_OUTPUT:/output:rw" \
         "${portal_mount[@]}" \
+        "${products_mount[@]}" \
         "$DOCKER_IMAGE" \
         "$playbook" -e @/root/secrets.yml
+
+    # Docker schreibt als root — Output-Dateien fuer User lesbar machen
+    chmod -R a+r "$SHM_OUTPUT" 2>/dev/null || true
 }
 
 # --- [9] Writeback: Runtime-Secrets → KeePass ---
@@ -323,17 +350,18 @@ writeback_runtime() {
     for entry in "${!RUNTIME_MAP[@]}"; do
         local filename="${RUNTIME_MAP[$entry]}"
         local filepath="$SHM_OUTPUT/$filename"
-        if [ -f "$filepath" ]; then
-            local content
-            content=$(cat "$filepath")
+        if [ -f "$filepath" ] && [ -r "$filepath" ]; then
+            # Base64-Encoding: keepassxc-cli -p liest nur 1 Zeile als Passwort,
+            # aber Runtime-Dateien sind mehrzeilig. Base64 macht sie einzeilig.
+            local encoded
+            encoded=$(base64 -w0 < "$filepath") || { echo "  WARNUNG: $filename nicht lesbar"; continue; }
             echo "  $filename → $RUNTIME_GROUP/$entry (YubiKey beruehren falls noetig)"
             # Versuche add, bei Fehler edit (Eintrag existiert schon)
-            if ! echo "$KEEPASS_PASS" | keepassxc-cli add "$KEEPASS_DB" \
-                    "$RUNTIME_GROUP/$entry" --password-prompt --no-password \
-                    2>/dev/null <<< "$content"; then
-                echo "$KEEPASS_PASS" | keepassxc-cli edit "$KEEPASS_DB" \
-                    "$RUNTIME_GROUP/$entry" --password-prompt --no-password \
-                    2>/dev/null <<< "$content" || \
+            # printf sendet DB-Passwort + Base64-Inhalt ueber eine Pipe (kein stdin-Konflikt)
+            if ! printf '%s\n%s' "$KEEPASS_PASS" "$encoded" | keepassxc-cli add "$KEEPASS_DB" \
+                    "$RUNTIME_GROUP/$entry" -p 2>/dev/null; then
+                printf '%s\n%s' "$KEEPASS_PASS" "$encoded" | keepassxc-cli edit "$KEEPASS_DB" \
+                    "$RUNTIME_GROUP/$entry" -p 2>/dev/null || \
                 echo "  WARNUNG: Konnte $entry nicht schreiben"
             fi
         fi

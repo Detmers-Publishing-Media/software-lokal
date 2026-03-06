@@ -18,6 +18,14 @@
       --must-change-password=false 2>&1 || true
   register: admin_result
 
+- name: "Admin-Passwort erzwingen (idempotent bei Reinstall)"
+  ansible.builtin.shell: |
+    docker exec -u git factory-forgejo forgejo admin user change-password \
+      --username factory-admin \
+      --password "{{ forgejo_admin_password }}" \
+      --must-change-password=false 2>&1
+  changed_when: true
+
 - name: "Bestehenden API-Token löschen (idempotent)"
   ansible.builtin.shell: |
     TOKEN_ID=$(curl -sf \

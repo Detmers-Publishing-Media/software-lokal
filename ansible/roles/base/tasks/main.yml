@@ -1,9 +1,12 @@
 ---
-- name: "Warte auf dpkg-Lock (unattended-upgrades)"
+- name: "unattended-upgrades stoppen und deaktivieren"
   ansible.builtin.shell: |
+    systemctl stop unattended-upgrades 2>/dev/null || true
+    systemctl disable unattended-upgrades 2>/dev/null || true
+    killall -9 unattended-upgr 2>/dev/null || true
     while fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1; do
-      echo "dpkg-Lock belegt, warte 10s..."
-      sleep 10
+      echo "dpkg-Lock belegt, warte 5s..."
+      sleep 5
     done
   changed_when: false
 

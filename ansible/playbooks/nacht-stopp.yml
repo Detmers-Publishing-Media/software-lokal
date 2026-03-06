@@ -1,5 +1,22 @@
 ---
-# Schaltet Jobs-Verarbeitung ab (Kill Switch) — für Nacht-Pause
+- name: "Inventory laden"
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: "Server-IP aus .server-env laden"
+      ansible.builtin.shell: cat /output/.server-env
+      register: server_env_raw
+
+    - name: "factory-prod registrieren"
+      ansible.builtin.add_host:
+        name: factory-prod
+        ansible_host: "{{ (server_env_raw.stdout | regex_search('SERVER_IP=(.+)', '\\1'))[0] }}"
+        ansible_user: root
+        ansible_ssh_private_key_file: "~/.ssh/codefabrik_deploy"
+        groups: [prod]
+
+# Schaltet Jobs-Verarbeitung ab (Kill Switch) — fuer Nacht-Pause
 - name: "Code-Fabrik Nacht-Stopp"
   hosts: factory-prod
   gather_facts: false
@@ -14,7 +31,7 @@
           updated_at=NOW()
         WHERE env_name='prod';"
 
-    - name: "Status prüfen"
+    - name: "Status pruefen"
       ansible.builtin.shell: |
         docker exec factory-postgres psql -U forgejo -d forgejo -tAq -c \
           "SELECT env_name, mode, jobs_enabled, reason FROM runtime_control WHERE env_name='prod'"

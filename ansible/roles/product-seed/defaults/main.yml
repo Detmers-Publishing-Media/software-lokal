@@ -1,5 +1,14 @@
 ---
 seed_products:
+  - repo: shared
+    tag: v0.1.0-alpha
+    public: true
+  - repo: vereins-shared
+    tag: v0.1.0-alpha
+    public: true
   - repo: mitglieder-simple
+    tag: v0.4.0-alpha
+    public: true
+  - repo: finanz-rechner
     tag: v0.1.0-alpha
     public: true

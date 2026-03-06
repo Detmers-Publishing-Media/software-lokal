@@ -1,8 +1,24 @@
 ---
+- name: "Inventory laden"
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: "Portal-IP aus .portal-env laden"
+      ansible.builtin.shell: cat /output/.portal-env
+      register: portal_env_raw
+
+    - name: "factory-portal registrieren"
+      ansible.builtin.add_host:
+        name: factory-portal
+        ansible_host: "{{ (portal_env_raw.stdout | regex_search('PORTAL_IP=(.+)', '\\1'))[0] }}"
+        ansible_user: root
+        ansible_ssh_private_key_file: "~/.ssh/codefabrik_deploy"
+        groups: [portal]
+
 - name: "Portal Upgrade"
   hosts: factory-portal
-  vars_files:
-    - ../inventory/group_vars/all/vars.yml
+  gather_facts: false
   tasks:
     - name: "Portal-Code synchronisieren"
       ansible.posix.synchronize:

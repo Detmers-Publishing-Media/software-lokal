@@ -2,6 +2,32 @@
 # Code-Fabrik v0.4.1 — Portal Installation
 # Voraussetzung: PROD muss installiert sein (.server-env + .tokens-env vorhanden)
 
+- name: "Phase 0: Bestehenden Portal-Server pruefen"
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: "UpCloud: Pruefe ob codefabrik-portal existiert"
+      ansible.builtin.uri:
+        url: "https://api.upcloud.com/1.3/server"
+        method: GET
+        headers:
+          Authorization: "Bearer {{ vault_upcloud_api_token }}"
+        status_code: [200]
+      register: upcloud_servers
+
+    - name: "Bestehende Portal-Server finden"
+      ansible.builtin.set_fact:
+        existing_portals: "{{ upcloud_servers.json.servers.server | selectattr('title', 'eq', 'codefabrik-portal') | list }}"
+
+    - name: "Portal-Server-Existenz pruefen"
+      ansible.builtin.set_fact:
+        portal_exists: "{{ existing_portals | length > 0 }}"
+
+    - name: "Alte Portal-Server aufraeumen"
+      ansible.builtin.include_tasks: "{{ playbook_dir }}/../roles/portal-server/tasks/cleanup.yml"
+      when: portal_exists | bool
+
 - name: "Phase 1: Portal-Server provisionieren"
   hosts: localhost
   connection: local
