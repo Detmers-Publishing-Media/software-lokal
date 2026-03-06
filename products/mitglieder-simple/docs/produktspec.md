@@ -7,16 +7,16 @@
 
 ## 1. Produkt-Vision
 
-Die Vereins-Mitgliederverwaltung von Code-Fabrik ist eine lokal installierte Desktop-Software fuer kleine bis mittelgrosse Vereine. Sie ersetzt Excel-Tabellen und Karteikarten durch eine strukturierte, DSGVO-konforme Loesung — ohne Cloud-Zwang, ohne Abo-Falle fuer Basisnutzer, ohne unnoetige Komplexitaet.
+Die Vereins-Mitgliederverwaltung von Code-Fabrik ist eine lokal installierte Desktop-Software fuer kleine bis mittelgrosse Vereine. Sie ersetzt Excel-Tabellen und Karteikarten durch eine strukturierte, DSGVO-konforme Loesung — ohne Cloud-Zwang, ohne unnoetige Komplexitaet.
 
-Das Produkt ist als Stufen-Modell konzipiert: Jede Stufe ist in sich vollstaendig nutzbar. Der Verein zahlt nur fuer das was er wirklich braucht — und waechst mit der Software wenn Anforderungen steigen.
+Die Software ist vollstaendig Open Source unter der GPL 3.0 Lizenz. Alle Features sind frei verfuegbar — ohne kuenstliche Einschraenkungen, ohne Mitglieder-Limits, ohne Freischaltcodes. Das Stufen-Modell dient als Entwicklungs-Fahrplan: Es beschreibt in welcher Reihenfolge Features gebaut werden, nicht was der Verein bezahlen muss.
 
 ### 1.1 Zielgruppe
 
-- Foerdervereine, Dorfgemeinschaften, Elternbeiraete (Stufe 1-2)
-- Sportvereine, Kulturvereine mit Beitragseinzug (Stufe 3)
-- Multi-Sparten-Vereine mit komplexer Struktur (Stufe 4)
-- Grosse Vereine mit aktiver Satzungspflege und Vorstandshaftung (Stufe 5 Premium)
+- Foerdervereine, Dorfgemeinschaften, Elternbeiraete (Basisfunktionen)
+- Sportvereine, Kulturvereine mit Beitragseinzug (SEPA-Plugin)
+- Multi-Sparten-Vereine mit komplexer Struktur (Sparten + Statistik)
+- Grosse Vereine mit aktiver Satzungspflege und Vorstandshaftung (Satzungsverwaltung)
 
 ### 1.2 Abgrenzung
 
@@ -29,7 +29,7 @@ Das Produkt ist als Stufen-Modell konzipiert: Jede Stufe ist in sich vollstaendi
 
 ## 2. Produkt-Stufen im Ueberblick
 
-Das Stufen-Modell folgt dem Prinzip: Jede Stufe baut additiv auf der vorherigen auf. Kein Feature wird beim Upgrade entfernt oder veraendert. Kundendaten bleiben bei jedem Upgrade vollstaendig erhalten.
+Die Stufen beschreiben die Entwicklungsreihenfolge: Welche Features werden in welchem Sprint gebaut? Jede Stufe baut additiv auf der vorherigen auf. Im fertigen Produkt sind alle Stufen fuer jeden Nutzer verfuegbar — es gibt keine Freischaltung und keine Bezahlschranke zwischen den Stufen.
 
 ### 2.1 Stufe 1 — Papier
 
@@ -91,7 +91,9 @@ Stufe 5 hebt die Satzungsverwaltung von einem Dokumentenarchiv auf eine aktive S
 
 ---
 
-## 3. Produktvergleich — Feature-Uebersicht
+## 3. Feature-Uebersicht nach Entwicklungsstufe
+
+Die Tabelle zeigt, in welcher Entwicklungsstufe (Sprint) jedes Feature hinzukommt. Im fertigen Produkt sind alle Features fuer jeden Nutzer verfuegbar.
 
 | Funktion | Stufe 1 Papier | Stufe 2 Komm. | Stufe 3 Einzug | Stufe 4 Komplett | Stufe 5 Premium |
 |----------|:-:|:-:|:-:|:-:|:-:|
@@ -185,35 +187,33 @@ Stufe 5 hebt die Satzungsverwaltung von einem Dokumentenarchiv auf eine aktive S
 
 ## 4. Lizenz- & Preismodell
 
-Alle Preise gelten pro Jahr inklusive Updates und Bugfixes. Support ist in allen bezahlten Stufen enthalten. Upgrades sind jederzeit moeglich, Downgrades zum naechsten Verlaengerungsdatum.
+### 4.1 Software-Lizenz
 
-### 4.1 Jahrespreise je Stufe
+Die Software steht unter der **GPL 3.0** und ist vollstaendig Open Source. Alle Features sind kostenlos nutzbar — ohne Mitglieder-Limit, ohne Stufen-Einschraenkung, ohne Freischaltung. Der Quellcode ist oeffentlich auf GitHub verfuegbar.
 
-| Mitgliederzahl | Stufe 1 Papier | Stufe 2 Komm. | Stufe 3 Einzug | Stufe 4 Komplett | Stufe 5 Premium |
-|----------------|:-:|:-:|:-:|:-:|:-:|
-| bis 100 Mitglieder | 29 EUR/J. | 39 EUR/J. | 59 EUR/J. | 79 EUR/J. | 109 EUR/J. |
-| bis 300 Mitglieder | 49 EUR/J. | 59 EUR/J. | 89 EUR/J. | 119 EUR/J. | 159 EUR/J. |
-| unbegrenzt | 69 EUR/J. | 89 EUR/J. | 129 EUR/J. | 169 EUR/J. | 219 EUR/J. |
+### 4.2 Support-Abo (optional)
 
-### 4.2 Upgrade-Pfad
+Das Support-Abo schaltet Service-Features frei, die ueber die reine Software hinausgehen:
 
-| Upgrade | Was passiert mit den Daten | Was wird freigeschaltet |
-|---------|---------------------------|------------------------|
-| Stufe 1 → 2 | Keine Migration noetig | Plugin wird freigeschaltet, Einwilligungen sofort genutzt |
-| Stufe 2 → 3 | Keine Migration noetig | SEPA-Felder erscheinen, IBANs nach und nach ergaenzen |
-| Stufe 3 → 4 | Keine Migration noetig | Zweite Sparte anlegen, Mitglieder zuordnen |
-| Stufe 4 → 5 | Keine Migration noetig | Satzung hinterlegen, Parameter aktivieren — sofort aktiv |
+| Leistung | Ohne Abo | Mit Support-Abo |
+|----------|:-:|:-:|
+| Alle Software-Features (Stufe 1-5) | ✓ | ✓ |
+| Updates & Bugfixes (selbst installiert) | ✓ | ✓ |
+| Community-Support (GitHub Issues) | ✓ | ✓ |
+| Update-Checker (automatische Benachrichtigung) | – | ✓ |
+| Vorlagen-Bibliothek (Spendenquittung, Mahnbrief, Satzung) | – | ✓ |
+| PDF-Briefkopf ohne Wasserzeichen | – | ✓ |
+| E-Mail-Support (Antwort innerhalb 48h) | – | ✓ |
+| Cloud-Backup (verschluesselt, optional) | – | ✓ |
 
-### 4.3 Probe-Lizenz
+**Preise:**
 
-- Kostenlose Probe-Lizenz: Stufe 1 mit bis zu 30 Mitgliedern — zeitlich unbegrenzt
-- Keine Kreditkarte noetig, kein Ablaufdatum
-- Wasserzeichen auf PDF-Ausdrucken: "Erstellt mit Probe-Version — codefabrik.de"
-- Upgrade auf Vollversion jederzeit: Daten bleiben vollstaendig erhalten
+- **Support-Abo**: 29 EUR/Jahr (automatische Verlaengerung, jederzeit kuendbar)
+- **Einmalkauf**: 39 EUR fuer 12 Monate Service-Zugang (keine automatische Verlaengerung)
 
-### 4.4 Positionierung
+### 4.3 Positionierung
 
-Wer seine Mitgliederdaten einmal eingepflegt hat wechselt nicht mehr — das ist der staerkste Retentions-Faktor dieser Software-Kategorie. Der niedrige Einstiegspreis (29 EUR/Jahr) senkt die Huerde fuer den ersten Kauf. Der natuerliche Wachstumspfad (Kommunikation → Einzug → Komplett → Premium) erzeugt wiederkehrenden Umsatz ohne aggressives Upselling.
+Die Software ist frei — der Support ist das Produkt. Wer seine Mitgliederdaten einmal eingepflegt hat wechselt nicht mehr — das ist der staerkste Retentions-Faktor dieser Software-Kategorie. Der kostenlose Einstieg ohne jede Einschraenkung senkt die Huerde auf Null. Die optionalen Service-Features (Update-Checker, Templates, Support) erzeugen wiederkehrenden Umsatz ohne kuenstliche Limitierungen.
 
 ---
 
@@ -361,15 +361,15 @@ Diese Software ist ein organisatorisches Hilfsmittel. Sie ersetzt keine Rechts- 
 
 ### 7.2 MVP-Kriterien Stufe 1
 
-Folgende Punkte muessen vor dem ersten Verkauf erfuellt sein:
+Folgende Punkte muessen vor dem ersten oeffentlichen Release erfuellt sein:
 
 - Mitgliederstammdaten vollstaendig erfassbar
 - Alle Pflicht-Listen als druckfertige PDFs generierbar
 - Spendenquittung (Einzel + Sammel) nach amtlichem Muster
 - Teilnahmeliste Hauptversammlung mit Quorum-Anzeige
 - DSGVO-Einwilligungen erfassbar und beim Druck gefiltert
-- Probe-Lizenz (bis 30 Mitglieder) und Vollversion (Lizenzpruefung) funktionsfaehig
-- Portal-Integration: Kauf → Key → Download durchgetestet
+- GitHub-Repository oeffentlich (GPL 3.0)
+- Portal-Integration: Download-Seite + optionaler Support-Abo-Kauf durchgetestet
 - Impressum, Datenschutzerklaerung, Disclaimer in Software sichtbar
 - DSGVO-Datenauskunft (Art. 15): PDF-Export aller Daten eines Mitglieds
 - DSGVO-Loeschung (Art. 17): Mitglied loeschen mit Anonymisierung der Finanzdaten
@@ -389,7 +389,7 @@ Folgende Punkte muessen vor dem ersten Verkauf erfuellt sein:
 - Lokale SQLite-Datenbank (kein Server noetig)
 - PDF-Generierung lokal (keine Cloud-Abhaengigkeit)
 - SEPA-XML-Export: pain.008.003.02 (Bankstandard Deutschland/SEPA-Raum)
-- Lizenzpruefung: Online beim Start (einmalig, Offline-Modus nach 30 Tagen moeglich)
+- Optionale Key-Validierung: Online-Pruefung beim Start nur fuer Service-Features (Update-Checker, Templates, Cloud-Backup). Lokale Features funktionieren immer ohne Netzwerk.
 
 ---
 
@@ -398,8 +398,6 @@ Folgende Punkte muessen vor dem ersten Verkauf erfuellt sein:
 ### 8.1 Zu entscheiden
 
 - Plattform: Electron (cross-platform) oder .NET/WPF (Windows-only)? — Betrifft Entwicklungsaufwand und macOS-Support
-- Probe-Lizenz: 30 Mitglieder oder zeitlich befristet (60 Tage)? — Empfehlung: Mitglieder-Limit ist benutzerfreundlicher
-- Einzelkauf einzelner Stufen-Upgrades oder nur Jahres-Abo? — Empfehlung: Jahres-Abo (Updates bei SEPA-Formaten wichtig)
 - Erstes Pilotprodukt: Foerderverein aus bekanntem Umfeld als Beta-Tester?
 
 ### 8.2 Bewusste Nicht-Entscheidungen (vorerst)

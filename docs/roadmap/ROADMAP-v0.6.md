@@ -1,7 +1,7 @@
 # Code-Fabrik — Roadmap v0.5.8 bis v1.0
 
 *Reviewer-Vorschlag, Stand 2026-03-04*
-*Grundlage: Gesamtkonzept v3 (docs/konzept/gesamtkonzept-v3.md)*
+*Grundlage: Gesamtkonzept v3 (docs/konzept/gesamtkonzept-v3.md), Lizenzstrategie (docs/konzept/lizenzstrategie.md)*
 
 ---
 
@@ -46,23 +46,23 @@
 
 ---
 
-## v0.6.2 "Pruefstand" — CircleCI Windows-Builds + EXE-Erstellung
+## v0.6.2 "Pruefstand" — GitHub Actions Windows-Builds + EXE-Erstellung
 
 **Ziel:** Windows-EXE-Erstellung und CI/CD fuer Tauri-Apps.
 **Typ:** Infrastruktur + CI/CD + Produkt-Iteration.
 **Status:** **Aktuell**
-**CI-Entscheidung (Maerz 2026):** Azure DevOps gestrichen → **CircleCI**.
-Grund: Direkter Forgejo-Webhook, kein Mirror noetig, ~$30/Monat.
+**CI-Entscheidung (Maerz 2026):** GitHub Actions fuer oeffentliche Repos, Forgejo bleibt fuer interne Infra.
+Grund: Kostenlos fuer Public Repos, kein Mirror noetig, native Windows-Runner.
 **Prioritaet:** Naechster Schritt nach Abschluss der Tests — Ziel: echte EXE-Dateien.
-**Datentrennung:** CircleCI erhaelt nur Quellcode fuer Build + Test, keine persoenlichen
-Daten. Forgejo bleibt der fuehrende Git-Host. CircleCI ist ein reiner Build-Dienst
-(kompilieren, testen, EXE erstellen) — keine Kundendaten, keine Lizenzen, keine DB-Zugriffe.
+**Datentrennung:** GitHub Actions erhaelt nur Quellcode fuer Build + Test, keine persoenlichen
+Daten. Forgejo bleibt der fuehrende Git-Host fuer interne Infra. GitHub Actions ist ein reiner
+Build-Dienst (kompilieren, testen, EXE erstellen) — keine Kundendaten, keine Lizenzen, keine DB-Zugriffe.
 
-- [ ] CircleCI-Account einrichten + Forgejo-Webhook konfigurieren
-- [ ] Windows-Build-Pipeline (Tauri → EXE) in CircleCI
-- [ ] Phase-1-Tests: Windows-Installer-Validierung (CircleCI)
+- [ ] GitHub-Repos anlegen (Public, GPL 3.0 Lizenz)
+- [ ] GitHub Actions Workflow fuer Windows-Build (Tauri → EXE)
+- [ ] Phase-1-Tests: Windows-Installer-Validierung (GitHub Actions)
 - [ ] Installer-Smoke-Tests (EXE installiert, startet, Grundfunktion OK)
-- [ ] Build-Artefakte automatisch in Forgejo Release hochladen
+- [ ] Build-Artefakte automatisch als GitHub Release hochladen
 - [ ] Referenzkunden-Feedback auswerten (MitgliederSimple v0.2)
 - [ ] "So rechnet dieses Tool" Seite (lt. Gesamtkonzept Kap. 12.2)
 - [ ] Testbericht oeffentlich einsehbar (Anzahl Tests, Ergebnisse)
@@ -88,20 +88,20 @@ Daten. Forgejo bleibt der fuehrende Git-Host. CircleCI ist ein reiner Build-Dien
 **Konzept:** `docs/konzept/finanz-rechner-mvp.md`
 
 ### Kern-Deliverables
+- [ ] GitHub-Repos anlegen (GPL 3.0, alle Rechner einzeln)
+- [ ] Finanz-Toolbox als integrierte App (Key fuer Service-Features)
 - [ ] Tauri-Monorepo `products/finanz-rechner/` aufsetzen (Shared UI + Math-Engine)
-- [ ] BeitragsAnpassungsRechner (3 Tage) — kostenlos/Probe
-- [ ] StornoHaftungsRechner (4 Tage) — bezahlt
-- [ ] RatenzuschlagRechner (2 Tage) — kostenlos/Probe
-- [ ] CourtagenBarwertRechner (3 Tage) — bezahlt
-- [ ] SpartenDeckungsGrad (4 Tage) — bezahlt
+- [ ] BeitragsAnpassungsRechner (3 Tage)
+- [ ] StornoHaftungsRechner (4 Tage)
+- [ ] RatenzuschlagRechner (2 Tage)
+- [ ] CourtagenBarwertRechner (3 Tage)
+- [ ] SpartenDeckungsGrad (4 Tage)
 - [ ] Transparenz-Box in jedem Rechner (Formel + Disclaimer sichtbar neben Ergebnis)
-- [ ] PDF-Export fuer bezahlte Version
+- [ ] PDF-Export (Service-Feature, per Key freigeschaltet)
 
 ### Portal-Integration
 - [ ] Produkt B-24 in Portal-DB seeden
-- [ ] Probe-Lizenz-Typ implementieren (2 Rechner kostenlos, kein PDF, Wasserzeichen)
-- [ ] Bezahl-Key schaltet alle 5 Rechner + PDF-Export frei
-- [ ] Digistore24-Produkt "Finanz-Rechner-Toolbox" anlegen (39 EUR Einmalkauf)
+- [ ] Digistore24-Produkt "Finanz-Rechner-Toolbox" anlegen (Support-Abo)
 
 ### Qualitaet
 - [ ] Automatisierte Berechnungstests (Referenzwerte gegen Excel/Formelsammlung)
@@ -117,29 +117,23 @@ Daten. Forgejo bleibt der fuehrende Git-Host. CircleCI ist ein reiner Build-Dien
 
 ---
 
-## v0.7.0 "Ladenkasse" — Mehrsitz-Lizenzen + Erster Digistore24-Kauf
+## v0.7.0 "Ladenkasse" — Erster Digistore24-Kauf End-to-End
 
-**Ziel:** Mehrsitz-Lizenzen implementieren, End-to-End Kaufprozess mit echtem Geld.
+**Ziel:** End-to-End Kaufprozess mit echtem Geld. Key schaltet Service-Features frei (kein Seat-Modell).
 **Typ:** Integration + Go-Live-Vorbereitung.
-**Detailplan:** `docs/konzept/lizenzen-mehrsitz.md` (10 Arbeitspakete)
 
-### Mehrsitz-Lizenzen (Ansatz A: N separate Keys)
+### Portal-Integration
 
-Portal-Seite:
-- [ ] AP-1: DB-Schema `orders` + `seats` (Migration `migrate-v070.sql`)
-- [ ] AP-2: CF-Key-Format in `@codefabrik/shared` (CF-B05-XXXXXXXX-XX + Checksum)
-- [ ] AP-3: IPN-Handler fuer N-Key-Generierung + Payload-Redaction
-- [ ] AP-4: Lizenz-Validierung dual-path (seats + legacy licenses)
-- [ ] AP-5: License-Pack-Seite + Recovery (`/license-pack/:order_id`, `/recover`)
-- [ ] AP-6: PDF-Download mit allen Keys
+- [ ] DB-Schema `orders` (Migration `migrate-v070.sql`)
+- [ ] CF-Key-Format in `@codefabrik/shared` (CF-B05-XXXXXXXX-XX + Checksum)
+- [ ] IPN-Handler fuer Key-Generierung + Payload-Redaction
+- [ ] Lizenz-Validierung (Key → Service-Features freigeschaltet)
+- [ ] License-Seite + Recovery (`/license/:order_id`, `/recover`)
 
-Desktop-Apps:
-- [ ] AP-7: Finanz-Rechner CF-Format-Support (Fehlermeldung + Test)
-- [ ] AP-8: MitgliederSimple Lizenz-Aktivierung (license.js, Settings-UI, Probe-Limit-Bypass)
+### Desktop-Apps
 
-Abschluss:
-- [ ] AP-9: Rueckbau personenbezogener Daten (`customer_email`, `customer_name`, IPN-Log)
-- [ ] AP-10: Digistore24-Produkte einrichten (1/5/10-Platz pro Produkt)
+- [ ] Finanz-Rechner Key-Validierung (Service-Features freischalten)
+- [ ] MitgliederSimple Lizenz-Aktivierung (license.js, Settings-UI)
 
 ### Infrastruktur + Go-Live
 
@@ -188,8 +182,8 @@ Abschluss:
 - [ ] Min. 5 Tools in B-05 (Vereine)
 - [ ] Min. 3 Tools in B-24 (Finanz-Rechner)
 - [ ] Erster organischer Kunde (nicht Referenzkunde)
-- [ ] Delayed Open Source: erste Repos auf Forgejo oeffentlich (Tag 90+)
-- [ ] Optional: GitHub-Mirror fuer Sichtbarkeit
+- [ ] GitHub Organisation `codefabrik` — private Repos auf Public umschalten
+- [ ] Alle Produkt-Repos oeffentlich auf GitHub (GPL 3.0)
 
 ---
 
@@ -199,8 +193,9 @@ Abschluss:
 |---|-------|----------|-------------|--------|
 | 1 | Finanz-UI-Framework | Svelte vs. React | Svelte (Konsistenz) | Offen (v0.9.0) |
 | 2 | Digistore24 langfristig | Bleiben vs. Paddle/LemonSqueezy | Starten, nach 6 Mon. evaluieren | Offen (v1.0.0) |
-| 3 | GitHub-Mirror | Sofort vs. Tag 180 vs. nie | Ab Tag 180 | Offen (v1.0.0) |
+| 3 | GitHub-Veroeffentlichung | Sofort vs. ab v1.0 | Entschieden: Private Repos bis v1.0, dann Public | **Entschieden** |
 | 4 | Web-Versionen der Rechner | Ja (SEO) vs. Nein (Fokus) | Optional, nicht priorisiert | Offen (v1.0.0+) |
 | 5 | Einzelverkauf von Tools | Nur Bundle vs. auch Einzel | Nur Bundle | Offen (v0.7.0) |
 | 6 | PayPal neben Digistore24 | Fuer Ticket-Verkauf B-05 Events | Evaluieren bei Bedarf | Offen (v1.0.0+) |
-| 7 | **Windows CI/CD** | Azure vs. CircleCI vs. GitHub Actions | **CircleCI** (~$30/Mon, direkter Webhook) | **Entschieden** |
+| 7 | **Windows CI/CD** | Azure vs. CircleCI vs. GitHub Actions | **GitHub Actions** (Private Repos im Team-Plan, ab v1.0 kostenlos) | **Entschieden** |
+| 8 | **Lizenz-Modell** | MIT vs. GPL 3.0 | **GPL 3.0** + Support-Abo | **Entschieden** |

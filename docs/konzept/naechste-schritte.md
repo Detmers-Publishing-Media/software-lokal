@@ -1,27 +1,32 @@
 # Code-Fabrik — Naechste Schritte
 
-*Priorisierte Handlungsempfehlungen, Stand 2026-03-04 (aktualisiert fuer v0.6.0)*
-*Grundlage: Gesamtkonzept v3 (docs/konzept/gesamtkonzept-v3.md)*
+*Priorisierte Handlungsempfehlungen, Stand 2026-03-06 (aktualisiert fuer GPL 3.0 + Support-Abo)*
+*Grundlage: Gesamtkonzept v3 (docs/konzept/gesamtkonzept-v3.md), Lizenzstrategie (docs/konzept/lizenzstrategie.md)*
 
 ---
 
-## Sofort (v0.6.1 — Azure Testing vorbereiten)
+## Sofort (v0.6.1 — Private Repos + CI vorbereiten)
 
-**Ziel:** Windows-Builds fuer MitgliederSimple automatisieren.
+**Ziel:** Private Repos und CI-Pipeline in GitHub-Organisation aufbauen.
 
-1. **Azure Testing aufbauen**
+1. **GitHub Organisation `codefabrik` — Private Repos anlegen**
+   - Organisation ist angelegt (Team-Plan, bezahlt)
+   - Produkt-Repos als **Private Repos** anlegen (Public ab v1.0)
+   - GPL 3.0 LICENSE bereits jetzt in die Repos legen (Vorbereitung)
+
+2. **GitHub Actions aufbauen (Private Repos im Team-Plan)**
    - ADR-009 umsetzen (Test-Server oder Docker-Isolation)
    - Windows-Installer-Validierung automatisieren
-   - Tauri-Builds fuer Win/macOS/Linux via OpenClaw
+   - Tauri-Builds fuer Win/macOS/Linux
+   - Build-Artefakte als Actions Artifacts (intern, temporaer)
 
-2. **MitgliederSimple v0.1 an Referenzkunde ausliefern**
+4. **MitgliederSimple v0.1 an Referenzkunde ausliefern**
    - App lokal mit `cargo tauri dev` testen
    - An Referenzkunde per Mail schicken (Phase 1, lt. Gesamtkonzept Kap. 5.1)
    - Feedback-Schleife: Bug → Test (lt. Kap. 12.1)
 
-3. **Geschaeftsplan (v0.5.8, parallel)**
+5. **Geschaeftsplan (v0.5.8, parallel)**
    - Business-Plan ueberarbeiten (Marktanalyse, Finanzplanung)
-   - Preisstruktur finalisieren (39/59/79 EUR Staffelung)
    - Referenzkunden-Gespraechsleitfaden erstellen
 
 ---
@@ -39,9 +44,9 @@
    - CSV-Import Verbesserungen, UX-Optimierungen
    - "So rechnet dieses Tool" Seite (lt. Kap. 12.2)
 
-3. **Bundle B-05 Scope definieren**
-   - Welche 5-8 Tools kommen zum Launch?
-   - Weitere Tools nach Referenzkunden-Feedback planen
+3. **Service-Abo Scope definieren**
+   - Welche Support-Leistungen gehoeren zum Abo? (Updates, Hotline, Prioritaets-Tickets)
+   - Preisstruktur fuer Support-Abo festlegen (lt. lizenzstrategie.md)
 
 ---
 
@@ -49,11 +54,14 @@
 
 **Ziel:** Vom Prototyp zum kaufbaren Produkt.
 
-1. **Erster echter Kauf (v0.7.0)**
-   - Digistore24-Produkt veroeffentlichen
-   - Key-Format CF-B05-XXXXXXXX-XX
+1. **Digistore24 Support-Abo einrichten**
+   - Abo-Produkt in Digistore24 anlegen (monatlich/jaehrlich)
+   - IPN-Anbindung fuer Abo-Events (Zahlung, Kuendigung, Wiederaufnahme)
    - HTTPS auf Portal (Caddy + Let's Encrypt)
-   - Referenzkunde kauft ueber Digistore24 → "Geld fliesst" Moment (lt. Kap. 5.2)
+
+2. **Erster echter Kauf (v0.7.0)**
+   - Referenzkunde schliesst Support-Abo ab → "Geld fliesst" Moment (lt. Kap. 5.2)
+   - Software bleibt frei (GPL 3.0), Key schaltet Service frei
 
 ---
 
@@ -75,7 +83,8 @@
    - 24/7 Betrieb, Alerting, Credential-Rotation
    - Min. 5 Tools B-05 + 3 Tools B-24
    - Erster organischer Kunde
-   - Delayed Open Source: erste Repos oeffentlich (Tag 90+)
+   - GitHub Repos auf Public umschalten (GPL 3.0)
+   - Community-Feedback integriert
 
 ---
 
@@ -83,14 +92,14 @@
 
 Aus Gesamtkonzept Kap. 14 — muessen im Laufe der Roadmap getroffen werden:
 
-| # | Thema | Wann relevant |
-|---|-------|--------------|
-| 1 | **Finanz-UI-Framework:** Svelte vs. React | Vor v0.9.0 (B-24 Start) |
-| 2 | **Digistore24 langfristig:** Bleiben vs. Paddle/LemonSqueezy | Nach 6 Monaten Live-Betrieb |
-| 3 | **GitHub-Mirror:** Ab Tag 180 fuer Sichtbarkeit? | Vor v1.0.0 |
-| 4 | **Web-Versionen der Rechner:** SEO-Hebel vs. Fokus | Optional, nicht priorisiert |
-| 5 | **Einzelverkauf von Tools:** Nur Bundle vs. auch Einzel | Vor v0.7.0 (Preisstruktur) |
-| 6 | **PayPal neben Digistore24:** Fuer Event-Tickets (B-05) | Bei konkretem Bedarf |
+| # | Thema | Status |
+|---|-------|--------|
+| 1 | **Finanz-UI-Framework:** Svelte vs. React | Offen — vor v0.9.0 (B-24 Start) |
+| 2 | **Digistore24 langfristig:** Bleiben vs. Paddle/LemonSqueezy | Offen — nach 6 Monaten Live-Betrieb |
+| 3 | **GPL 3.0 Lizenz:** Software frei, Service kostenpflichtig | Entschieden — siehe lizenzstrategie.md |
+| 4 | **Web-Versionen der Rechner:** SEO-Hebel vs. Fokus | Offen — nicht priorisiert |
+| 5 | **GitHub Actions als CI:** Private Repos (Team-Plan), ab v1.0 kostenlos (Public) | Entschieden — sofort umsetzen |
+| 6 | **PayPal neben Digistore24:** Fuer Event-Tickets (B-05) | Offen — bei konkretem Bedarf |
 
 ---
 
@@ -101,3 +110,4 @@ Aus Gesamtkonzept Kap. 14 — muessen im Laufe der Roadmap getroffen werden:
 - **Referenzkunden validieren VOR dem Skalieren** (Risiko #2: kein Product-Market-Fit)
 - **"Geld fliesst" Moment so frueh wie moeglich** (Risiko #8: kein Umsatz in 6 Monaten)
 - **Nicht "50 Tools" versprechen, sondern verkaufen was da ist** (Risiko #3: Bundle-Erwartungsproblem)
+- **Alle lokalen Features frei — Key nur fuer Service** (Lizenzstrategie)

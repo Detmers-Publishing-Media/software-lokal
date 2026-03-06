@@ -1,6 +1,6 @@
 # Code-Fabrik — Release-Historie
 
-Stand: 2026-03-04
+Stand: 2026-03-06
 
 ---
 
@@ -19,19 +19,22 @@ Stand: 2026-03-04
 | v0.5.7 | Kompass | Gesamtkonzept, Roadmap, naechste Schritte (Dokumentation) | Done |
 | v0.6.0 | Mitglieder | MitgliederSimple v0.1 (CRUD + CSV-Export) | Done |
 | v0.6.1 | Mitglieder v0.2 | MitgliederSimple nach Referenzkunden-Feedback | Geplant |
-| v0.6.2 | Pruefstand | Azure Testing + EXE-Erstellung | **Aktuell** |
+| v0.6.2 | Pruefstand | GitHub Actions + EXE-Erstellung | **Aktuell** |
 | — | MitgliederSimple v0.3 "Protokoll" | Event-Log, Hash-Kette, Schema-Meta, 7 Testkategorien | Done |
 | — | MitgliederSimple v0.4 "Beitrag" | Beitragsverwaltung, Zahlungen, Mahnbriefe | Done |
 | v0.6.3 | Taschenrechner | Finanz-Rechner v0.1.0 — 5 Makler-Rechner (Bundle B-24) | **Aktuell** |
+| v0.6.4 | Fabrik im Koffer | Versioned Tarballs, Sichern-Funktion, install.sh Ueberarbeitung | Done |
+| v0.6.5 | Lizenzstrategie | GPL 3.0 + Support-Abo, Dokument-Ueberarbeitung | Done |
+| v0.6.6 | GitHub CI | Private Repos + GitHub Actions Workflows, Code gepusht | Done |
 
 ---
 
 ## Infrastruktur-Stand (v0.6.0)
 
 ### PROD-Server (UpCloud)
-- **IP:** 212.147.229.108
+- **IP:** 212.147.231.41
 - **Plan:** DEV-1xCPU-4GB, de-fra1
-- **SSH:** `ssh -i ~/.ssh/codefabrik_deploy root@212.147.229.108`
+- **SSH:** `ssh -i ~/.ssh/codefabrik_deploy root@212.147.231.41`
 - **Dienste:** Forgejo (:3000), Gateway (:3100), Poller (systemd Timer 30s), Nightstop
 
 ### Portal-Server (UpCloud)
@@ -40,6 +43,7 @@ Stand: 2026-03-04
 - **SSH:** `ssh -i ~/.ssh/codefabrik_deploy root@212.147.229.1`
 - **URL:** http://212.147.229.1:3200
 - **Dienste:** Portal-App, Dispatcher, Portal-DB (PostgreSQL), Caddy, Watchdog (5min Timer)
+- **Hinweis:** Portal-Server muss ggf. nach Teardown neu erstellt werden
 
 ### DNS (Cloudflare)
 - Zone: `detmers-publish.de`
@@ -49,10 +53,21 @@ Stand: 2026-03-04
 - **Ansible:** 5-Phasen `install.yml` (PROD), 7-Phasen `install-portal.yml` (Portal)
 - **Secrets:** KeePass (`Code-Fabrik-V1-0.kdbx`) + `.env`-Dateien auf Servern
 - **Teardown:** `teardown.yml` (PROD), `teardown-portal.yml` (Portal)
+- **CI/CD:** GitHub Actions (Private Repos im Team-Plan, ab v1.0 kostenlos), Forgejo fuer interne Infra
+
+### GitHub Organisation (ab v0.6.6)
+- **Org:** `Detmers-Publishing-Media` (Team-Plan)
+- **Account:** `detmerspublish`
+- **Repos (privat bis v1.0):**
+  - `Detmers-Publishing-Media/mitglieder-simple` — v0.4.0 gepusht
+  - `Detmers-Publishing-Media/finanz-rechner` — v0.1.0 gepusht
+- **CI/CD:** GitHub Actions Workflows (`build-windows.yml`) in beiden Repos
+- **Auth:** GitHub CLI (`gh`) + Classic PAT (`github-push-token`, Scopes: `repo`, `read:org`)
 
 ### Produkte
 - **fruehwarnreport** (Python) — Referenz-Implementierung, 24 pytest Tests
-- **mitglieder-simple** (SvelteKit + Tauri) — Seeded in Portal-DB
+- **mitglieder-simple** (SvelteKit + Tauri) — Seeded in Portal-DB, auf GitHub
+- **finanz-rechner** (SvelteKit + Tauri) — 5 Makler-Rechner, auf GitHub
 - **vereins-shared** (Tauri Library) — Shared Components
 
 ### Externe Dienste

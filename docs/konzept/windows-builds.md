@@ -1,7 +1,7 @@
 # Windows-Builds: GitHub Actions
 
-Stand: 2026-03-05
-Status: Entscheidung getroffen — Umsetzung steht bevor
+Stand: 2026-03-06
+Status: Eingerichtet — Workflows in beiden Produkt-Repos
 
 ---
 
@@ -11,7 +11,7 @@ Entscheidung (Maerz 2026): **GitHub Actions** fuer Windows-Builds (Tauri EXE/MSI
 Ersetzt fruehere Plaene mit CircleCI, Azure DevOps und AppVeyor.
 
 Ziel: Windows-EXE-Erstellung fuer Tauri-Apps (MitgliederSimple, Finanz-Rechner).
-Lizenzmodell: GPL (verzoegertes Open Source) — Code ist public auf GitHub.
+Lizenzmodell: GPL 3.0 — Private Repos bis v1.0, dann Public (siehe `docs/konzept/lizenzstrategie.md`).
 
 ---
 
@@ -41,53 +41,47 @@ Lizenzmodell: GPL (verzoegertes Open Source) — Code ist public auf GitHub.
 ### Ueberblick
 
 ```
-Forgejo (intern, privat)              GitHub (oeffentlich, GPL)
+Forgejo (intern, Fabrik-Infra)        GitHub (Produkt-Repos)
 ────────────────────────              ─────────────────────────
-factory/mitglieder-simple             Detmers-Publishing-Media/mitglieder-simple
-  - CI/CD Entwicklung                   - Release-Code
-  - Interne Branches                    - GitHub Actions → Windows EXE
-  - Experimente                         - Community-Zugang
-  - Forgejo Actions (Linux-Tests)       - Digistore Download-Quelle
+code-fabrik (Monorepo)                Detmers-Publishing-Media/mitglieder-simple
+  - Ansible, Portal, Scripts            - Privat bis v1.0, dann Public
+  - Infrastruktur-Code                  - GitHub Actions → Windows EXE
+  - Nicht auf GitHub                    - GPL 3.0 Lizenz
+                                      Detmers-Publishing-Media/finanz-rechner
+                                        - Privat bis v1.0, dann Public
+                                        - GitHub Actions → Windows EXE
+                                        - GPL 3.0 Lizenz
 ```
 
 ### Flow
 
 ```
-Forgejo (Entwicklung)
-  ↓  Release fertig, getestet
-release-push.sh (gezielter Push nach GitHub)
-  ↓
-GitHub (public, GPL)
+Lokale Entwicklung (code-fabrik/products/*)
+  ↓  Push nach GitHub (git push origin main)
+GitHub (privat bis v1.0)
   ↓  GitHub Actions triggert automatisch
-Windows VM baut EXE + MSI (kostenlos)
+Windows VM baut EXE + MSI
   ↓
-GitHub Release → EXE als Asset angehaengt
-  ↓
-Digistore-Kunde → Download-Link auf GitHub Release
-Community → klont von GitHub, kompiliert selbst
+Build-Artefakte → Actions Artifacts (intern, temporaer)
+  ↓  Bei Tag v*: GitHub Release
+Binaries → Portal-Download (mit Key) oder direkt an Referenzkunden
+
+Ab v1.0: Repos auf Public umschalten
+  → GitHub Actions kostenlos
+  → Community kann Quellcode einsehen und selbst kompilieren
 ```
 
 ### Was auf GitHub landet, was nicht
 
 | Was | GitHub | Forgejo |
 |-----|--------|---------|
-| Produktionscode (src/) | Ja | Ja |
+| Produktionscode (src/) | Ja | Ja (im Monorepo) |
 | Tests (tests/) | Ja | Ja |
 | CHANGELOG, README, LICENSE | Ja | Ja |
-| `.github/workflows/` | Ja | Ja |
-| `appveyor.yml` / `.forgejo/` | Nein | Ja |
-| Interne Infra-Scripts | Nein | Ja |
-| Work-in-Progress Branches | Nein | Ja |
-| Portal-Code, Ansible | Nein | Ja |
-
-### Verzoegertes Open Source
-
-Optional: immer eine Version zurueck veroeffentlichen.
-
-- v1.0 verkaufen als Binary (Digistore)
-- Gleichzeitig v0.9 Source auf GitHub veroeffentlichen
-- Community ist eine Version hinter zahlenden Kunden
-- GPL-konform solange Source irgendwann veroeffentlicht wird
+| `.github/workflows/` | Ja | Nein |
+| Infrastruktur (Ansible, Portal) | Nein | Ja |
+| Secrets, Env-Dateien | Nein | Nein (KeePass) |
+| Work-in-Progress Branches | Optional | Ja |
 
 ---
 
@@ -95,14 +89,15 @@ Optional: immer eine Version zurueck veroeffentlichen.
 
 ```
 github.com/detmerspublish                              ← Persoenlicher Account
-github.com/Detmers-Publishing-Media/                    ← Organisation
-  Detmers-Publishing-Media/mitglieder-simple            ← Public, GPL-3.0
-  Detmers-Publishing-Media/finanz-rechner               ← Public, GPL-3.0
+github.com/Detmers-Publishing-Media/                    ← Organisation (Team-Plan)
+  Detmers-Publishing-Media/mitglieder-simple            ← Privat (Public ab v1.0), GPL-3.0
+  Detmers-Publishing-Media/finanz-rechner               ← Privat (Public ab v1.0), GPL-3.0
 ```
 
 - `detmerspublish` als Owner der Org `Detmers-Publishing-Media`
-- Produkt-Repos public unter der Org (GPL-3.0)
-- Spaeter Contributor hinzufuegen falls noetig
+- Produkt-Repos privat bis v1.0, dann Public (GPL-3.0)
+- GitHub CLI (`gh`) als Credential-Helper konfiguriert
+- Token: `github-push-token` (Classic PAT, Scopes: `repo`, `read:org`)
 
 ---
 
@@ -242,29 +237,23 @@ git remote add github git@github.com:Detmers-Publishing-Media/mitglieder-simple.
 ### Voraussetzungen
 
 - [x] GitHub Org `Detmers-Publishing-Media` erstellt (unter `detmerspublish`)
-- [x] Repo `Detmers-Publishing-Media/mitglieder-simple` erstellt (public, GPL-3.0)
-- [x] Repo `Detmers-Publishing-Media/finanz-rechner` erstellt (public, GPL-3.0)
-- [ ] SSH-Key oder Token fuer Push von Forgejo nach GitHub
+- [x] Repo `Detmers-Publishing-Media/mitglieder-simple` erstellt (privat, GPL-3.0)
+- [x] Repo `Detmers-Publishing-Media/finanz-rechner` erstellt (privat, GPL-3.0)
+- [x] GitHub CLI (`gh`) installiert und authentifiziert
+- [x] `gh auth setup-git` — Credential-Helper konfiguriert
+- [x] Code gepusht (mitglieder-simple v0.4.0, finanz-rechner v0.1.0)
+- [x] `.github/workflows/build-windows.yml` in beiden Repos
 
-### Schritt 1: GitHub-Repo einrichten
+### Schritt 1: Erster Build-Test
 
-1. ~~GitHub Org + Repos erstellen~~ — erledigt
-2. In Forgejo: `git remote add github git@github.com:Detmers-Publishing-Media/mitglieder-simple.git`
-
-### Schritt 2: Workflow ins Repo
-
-1. `.github/workflows/build-windows.yml` erstellen (siehe Config oben)
-2. `Cargo.toml` pruefen: `bundled-sqlcipher-vendored-openssl` Feature aktiv
-3. Push nach GitHub → Actions triggert automatisch
-
-### Schritt 3: Erster Test
-
-1. Build in GitHub Actions verfolgen (Tab "Actions" im Repo)
-2. Logs pruefen: Rust-Cache, pnpm install, Tauri-Build
+1. Push nach GitHub → Actions triggert automatisch
+2. Build in GitHub Actions verfolgen (Tab "Actions" im Repo)
+3. Logs pruefen: Rust-Cache, pnpm install, Tests, Tauri-Build
 
 Erfolgskriterien:
 - [ ] GitHub Actions startet auf `windows-latest`
 - [ ] Rust + Node + pnpm korrekt installiert
+- [ ] Tests bestehen (`pnpm test`)
 - [ ] `pnpm tauri build` erzeugt `.exe` / `.msi`
 - [ ] Artefakt als Download im Actions-Run verfuegbar
 - [ ] Bei Tag-Push: GitHub Release mit EXE/MSI als Assets
@@ -282,25 +271,15 @@ Gleiche Struktur: `Detmers-Publishing-Media/finanz-rechner`, gleicher Workflow (
 
 ---
 
-## GPL + KI-Code: Lizenzstrategie
+## Lizenzstrategie
 
-### Warum GPL
+Siehe `docs/konzept/lizenzstrategie.md` fuer die vollstaendige GPL 3.0 + Support-Abo Strategie.
 
-1. **Urheberrecht bei KI-Code ungeklaert**: In Deutschland entsteht Urheberrecht nur
-   durch menschliche Schoepfung. KI-generierter Code hat moeglicherweise keinen
-   Urheberrechtsschutz. Bei GPL ist das egal — der Schutz basiert nicht auf
-   Code-Exklusivitaet, sondern auf dem Service-Geschaeftsmodell.
-2. **Transparenz**: Offener Code bei KI-Generierung schafft Vertrauen. Community kann
-   Qualitaet pruefen und Sicherheitsluecken finden.
-3. **Haftungsreduktion**: Offener Code → Fehler werden schneller gefunden.
-   Bei proprietaerem KI-Code traegt man das Qualitaetsrisiko alleine.
-
-### Geschaeftsmodell
-
-- **Binary-Verkauf** ueber Digistore (Convenience — fertige EXE, kein Kompilieren)
-- **Support-Vertrag** als eigenstaendiges Produkt
-- **Quellcode** frei verfuegbar (GPL) — jeder kann selbst kompilieren
-- **Wert**: Service + Integration + Support, nicht Code-Exklusivitaet
+Kurzfassung:
+- **GPL 3.0** — alle lokalen Features frei, Key nur fuer Service
+- **Private Repos bis v1.0** — dann Public auf GitHub
+- **Open-Core-Option** — proprietaere Zusatzmodule moeglich (spaeter)
+- **Binaries** nur ueber Portal (mit Key) oder direkt an Referenzkunden
 
 ---
 

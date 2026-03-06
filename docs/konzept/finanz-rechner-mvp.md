@@ -213,99 +213,127 @@ Du bekommst nicht: Keine Bedarfsanalyse. Die Liste fehlender Sparten ist keine T
 
 ---
 
-## 6. MVP-Strategie: Von kostenlos zu bezahlt
+## 6. MVP-Strategie: Open Source + Service-Abo
 
-### Stufe 1: Kostenlose Probe-Lizenz
+### Grundprinzip: Software frei, Service bezahlt
 
-| Rechner | Warum kostenlos? |
-|---------|-----------------|
-| RatenzuschlagRechner | Trivial, taeglich nuetzlich, macht neugierig auf mehr |
-| BeitragsAnpassungsRechner | Sofortiger Aha-Effekt im ersten Kundengespraech |
+Alle 5 Rechner sind vollstaendig funktionsfaehig, Open Source (GPL 3.0) und kostenlos auf GitHub verfuegbar. Jeder Rechner lebt in einem eigenen Repository und kann einzeln heruntergeladen, kompiliert und genutzt werden — inkl. PDF-Export.
 
-Warum genau diese zwei:
-- Beide in 2-3 Tagen entwickelt — wenig verschenkter Entwicklungsaufwand
-- Beide liefern sofort sichtbaren Nutzen im echten Kundengespraech
-- Keiner der beiden ist der "wertvollste" Rechner — der Nutzer merkt was fehlt
-- Kein DSGVO-Problem weil keine Kundendaten gespeichert werden
+Das bezahlte Produkt ist die **Finanz-Rechner-Toolbox**: eine integrierte App die alle Rechner unter einer Oberflaeche buendelt und Service-Features mitbringt die ueber den reinen Rechner hinausgehen.
 
-**Was die Probe-Lizenz nicht hat:**
-- Kein PDF-Export (nur Bildschirm-Anzeige)
-- Kein Speichern von Eingaben
-- Kein Support
-- Wasserzeichen auf Ausdrucken: "Erstellt mit Probe-Version — codefabrik.de"
+### Warum Open Source?
 
-### Stufe 2: Bezahl-Einstieg (39 EUR Einmalkauf)
+- **Vertrauen**: Makler koennen den Quellcode pruefen — wichtig bei Finanz-Tools
+- **Kein Risiko fuer den Nutzer**: Die Software gehoert ihm, nicht uns
+- **Community-Effekte**: Bug-Reports, Feature-Requests, evtl. Contributions
+- **Differenzierung**: Nicht die Software ist das Produkt, sondern der Service drumherum
+- **Kein Kopierschutz-Aufwand**: Keine Lizenzpruefung, kein DRM, kein Wasserzeichen
 
-| Rechner | Warum hinter der Paywall? |
-|---------|--------------------------|
-| StornoHaftungsRechner | Direkter finanzieller Nutzen fuer den Makler selbst |
-| CourtagenBarwertRechner | Strategischer Wert, nicht taeglich aber wichtig |
-| SpartenDeckungsGrad | Bruecke zum spaeteren Bestandsmanagement |
+### Community-Version (GitHub, GPL 3.0)
 
-Dazu: Die Probe-Rechner bekommen im Bezahl-Modus PDF-Export und Speicherung freigeschaltet.
+Jeder Rechner als eigenes GitHub-Repository:
 
-### Stufe 3: Spaeter (nach Feedback)
+| Repository | Inhalt |
+|-----------|--------|
+| `finanz-rechner-beitragsanpassung` | BeitragsAnpassungsRechner |
+| `finanz-rechner-stornohaftung` | StornoHaftungsRechner |
+| `finanz-rechner-ratenzuschlag` | RatenzuschlagRechner |
+| `finanz-rechner-courtagen-barwert` | CourtagenBarwertRechner |
+| `finanz-rechner-spartendeckung` | SpartenDeckungsGrad |
 
-- Einzelkauf einfuehren wenn Nutzer sagen "ich brauche nur den StornoRechner"
-- Einzelkauf: 14 EUR pro Rechner
-- Bundle: 39 EUR (guenstiger als 3 Einzelkaeufe)
-- Abo erst wenn B-21/B-23 fertig sind (genug Substanz)
+**Was jeder Community-Nutzer bekommt:**
+- Vollstaendige Funktionalitaet des jeweiligen Rechners
+- PDF-Export
+- Transparenz-Box mit Formeln
+- Disclaimer
+- Quellcode zum Selbstkompilieren
+- GitHub Releases (vorkompilierte Binaries)
 
-### Preismodell Start
+### Finanz-Rechner-Toolbox (bezahlt, mit Key)
+
+Die Toolbox ist das integrierte Produkt fuer Makler die keine Lust haben 5 einzelne Tools zu verwalten:
+
+| Feature | Community (GitHub) | Toolbox (mit Key) |
+|---------|-------------------|-------------------|
+| Alle 5 Rechner | Einzeln, je ein Repo | Integriert in einer App |
+| PDF-Export | Ja | Ja |
+| Fertige Installer (EXE/DMG) | Nein (selbst kompilieren oder GitHub Release) | Ja |
+| Update-Checker | Nein | Ja (neue Rechner automatisch) |
+| Gebrandete PDFs (Makler-Logo) | Nein | Ja |
+| Support via Portal (48h) | Nein (nur GitHub Issues) | Ja |
+| Feature-Voting | Nein | Ja |
+| Report-Vorlagen | Nein | Ja |
+
+### Preismodell
 
 ```
-Phase 1 (MVP):
-  Kostenlos:  RatenzuschlagRechner + BeitragsAnpassungsRechner
-              (ohne PDF, ohne Speichern)
+Community (GitHub, GPL 3.0):
+  Alle 5 Rechner einzeln als GitHub-Repos
+  Vollstaendige Funktionalitaet inkl. PDF-Export
+  Selbst kompilieren oder GitHub Release
 
-  Bezahlt:    39 EUR Einmalkauf → alle 5 Rechner
-              + PDF-Export
-              + Eingaben speichern
-              + 1 Jahr Updates
-              + Support via Portal
+Finanz-Toolbox (mit Key):
+  39 EUR Einmalkauf oder 29 EUR/Jahr Abo
+  Alle Rechner in einer integrierten App
+  Fertige Installer (EXE/DMG)
+  Update-Checker + neue Rechner automatisch
+  Gebrandete PDFs (Makler-Logo)
+  Support via Portal (48h)
+  Feature-Voting
 ```
 
 ### MVP-Checkliste
 
 **Muss fertig sein vor dem ersten Key-Verkauf:**
-- [ ] 2 kostenlose Rechner lauffaehig
-- [ ] 3 bezahlte Rechner lauffaehig
+- [ ] Alle 5 Rechner lauffaehig
 - [ ] PDF-Export funktioniert
+- [ ] GitHub-Repos angelegt (GPL 3.0)
+- [ ] Toolbox-App: alle Rechner integriert
 - [ ] Portal: Kauf → Key → Download funktioniert
-- [ ] Lizenzpruefung beim Start der Software
+- [ ] Installer (mind. EXE) funktioniert
 - [ ] Impressum + Datenschutzerklaerung
 - [ ] Disclaimer in jedem Rechner sichtbar
 
 **Kann spaeter:**
 - [ ] Eingaben speichern
-- [ ] Einzelkauf-Option
-- [ ] Wasserzeichen auf Probe-Ausdrucken
-- [ ] Update-Mechanismus
-- [ ] Support-Ticket im Portal
+- [ ] Gebrandete PDFs (Makler-Logo)
+- [ ] Update-Checker
+- [ ] Feature-Voting im Portal
+- [ ] Report-Vorlagen
+- [ ] DMG-Installer (macOS)
 
 ### Aufwand bis zum ersten verkaufbaren Key
 
 - 5 Rechner: ~3 Wochen
 - PDF-Export: ~3 Tage
+- Toolbox-Integration (eine App, alle Rechner): ~3 Tage
+- GitHub-Repos + GPL 3.0 Lizenz: ~1 Tag
 - Portal-Integration (Kauf → Key → Download): existiert bereits
-- Lizenzpruefung beim Start: ~2 Tage
-- **Realistisch: 4 Wochen bis zum ersten zahlenden Kunden**
+- Installer (EXE): ~2 Tage
+- **Realistisch: 4-5 Wochen bis zum ersten zahlenden Kunden**
 
 ### Break-Even Kalkulation
 
 ```
-Entwicklung (einmalig):     ~4 Wochen (160h bei 20h/Woche x2)
-Preis:                      39 EUR
+Entwicklung (einmalig):     ~5 Wochen (200h bei 20h/Woche x2)
+Preis Toolbox:              39 EUR Einmalkauf oder 29 EUR/Jahr
 
-Bei 50 EUR/h Opportunitaetskosten = 8.000 EUR Invest
-→ Break-Even bei 205 Kaeufern
+Bei 50 EUR/h Opportunitaetskosten = 10.000 EUR Invest
+→ Break-Even bei 257 Einmalkaeufern (oder 345 Jahres-Abos)
 
 Realistisch in 12 Monaten:
   0,1% von ~230.000 Vermittlern = 230 Kunden
-  230 × 39 EUR = 8.970 EUR
+  Mix 60/40 (Einmalkauf/Abo):
+    138 × 39 EUR = 5.382 EUR
+    92 × 29 EUR  = 2.668 EUR
+    Summe Jahr 1 = 8.050 EUR
+
+  Jahr 2 (Abo-Erneuerungen + Neukunden):
+    ~150 Abo-Kunden × 29 EUR = 4.350 EUR + Neukunden
 
 Solo kein grosses Geschaeft — aber als Fundament fuer B-21/B-23:
 Wer die Rechner kennt und schaetzt kauft spaeter die Suite.
+Open Source baut Vertrauen auf das spaeter in Umsatz konvertiert.
 ```
 
 ---

@@ -7,7 +7,7 @@
 
 ## 1. Was Code-Fabrik ist — in einem Absatz
 
-Code-Fabrik ist eine Software-Manufaktur, die fokussierte Micro-Tools für Nischenzielgruppen im DACH-Raum baut. Die Tools werden mit KI-Unterstützung entwickelt, aber die fertigen Tools enthalten keine KI — sie telefonieren nicht nach Hause, speichern keine Daten in der Cloud, und übertragen nichts. Der Quellcode ist offen (MIT-Lizenz). Verkauft wird über Digistore24 nicht die Software, sondern eine Dienstleistung: fertige Installer, automatische Updates, Support und Mitbestimmung bei neuen Features. Die Software selbst ist ein Geschenk. Der Key kauft Bequemlichkeit und Sicherheit. Code-Fabrik kennt weder Name noch E-Mail noch Adresse seiner Kunden — der Lizenzkey ist das einzige Identifikationsmerkmal, und die gesamte Kommunikation läuft darüber, wie eine Sendungsnummer bei der Paketverfolgung.
+Code-Fabrik ist eine Software-Manufaktur, die fokussierte Micro-Tools für Nischenzielgruppen im DACH-Raum baut. Die Tools werden mit KI-Unterstützung entwickelt, aber die fertigen Tools enthalten keine KI — sie telefonieren nicht nach Hause, speichern keine Daten in der Cloud, und übertragen nichts. Der Quellcode ist sofort öffentlich auf GitHub (GPL 3.0). Verkauft wird über Digistore24 nicht die Software, sondern ein Support-Abo: fertige Installer, automatische Updates, Support und Mitbestimmung bei neuen Features. Die Software selbst ist frei. Der Key ist ein Service-Zugangstoken — er schaltet keine lokalen Funktionen frei, sondern Service-Features wie Downloads, Updates und Support. Code-Fabrik kennt weder Name noch E-Mail noch Adresse seiner Kunden — der Key ist das einzige Identifikationsmerkmal, und die gesamte Kommunikation läuft darüber, wie eine Sendungsnummer bei der Paketverfolgung.
 
 ---
 
@@ -51,7 +51,7 @@ Die Tools werden mit KI-Unterstützung (Claude/Anthropic) gebaut und getestet. I
 
 **Was das konkret bedeutet:**
 - Datenexport in offenen Formaten (CSV, JSON, PDF) ist immer eingebaut
-- Der Quellcode ist MIT-lizenziert — jeder IT-Dienstleister kann die Software warten, auch wenn Code-Fabrik morgen verschwindet
+- Der Quellcode ist GPL-3.0-lizenziert — jeder IT-Dienstleister kann die Software warten, auch wenn Code-Fabrik morgen verschwindet
 - Kein Vendor Lock-in, kein proprietäres Datenformat
 - Der Nutzer kann jederzeit auf eine andere Software wechseln und seine Daten mitnehmen
 
@@ -163,13 +163,12 @@ Code-Fabrik speichert:                 Code-Fabrik speichert NICHT:
 
 | Nicht sagen | Stattdessen sagen |
 |---|---|
-| "MIT-Lizenz" | "Kein Geheimnis — der Code ist einsehbar" |
+| "GPL 3.0" | "Kein Geheimnis — der Code ist einsehbar" |
 | "Open Source" | "Nachprüfbar — Ihr Kassenprüfer kann reinschauen" |
 | "GitHub/Forgejo" | "Der Quellcode ist öffentlich verfügbar" |
 | "KI-entwickelt" | "Mit modernsten Methoden gebaut und automatisiert getestet" |
 | "Keine Gewährleistung" | "Organisatorisches Hilfsmittel — ersetzt keine Fachberatung" |
-| "MIT/Apache 2.0" | "Kein Käfig — Sie können jederzeit wechseln" |
-| "Delayed Open Source" | (Gar nicht erwähnen — internes Konzept) |
+| "GPL/Copyleft" | "Kein Käfig — Sie können jederzeit wechseln" |
 | "Digistore24" | "Sichere Bezahlung" |
 | "Wir speichern keine E-Mail" | "Kein Account nötig — Ihr Schlüssel ist Ihr Zugang" |
 | "DSGVO-konform" | "Wir haben Ihre Daten gar nicht erst" |
@@ -186,14 +185,15 @@ Die technischen Details (Lizenz, Repository, Build-Prozess) gehören auf eine se
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│  SOFTWARE (MIT-Lizenz)                                          │
+│  SOFTWARE (GPL 3.0)                                              │
 │                                                                  │
-│  → Rechtlich: Schenkung                                          │
-│  → Haftung: nur bei Vorsatz/arglistigem Verschweigen (§ 524 BGB) │
-│  → Auf GitHub/Forgejo frei verfügbar                             │
-│  → Kein Key-Check in der Software                                │
-│  → Kein DRM, kein Nag-Screen, keine Einschränkung               │
-│  → Volle Funktionalität auch ohne Key                            │
+│  → Rechtlich: Freie Software (Copyleft)                          │
+│  → Haftung: Haftungsausschluss gemaess GPL 3.0 (Sections 15-16) │
+│  → Auf GitHub (privat bis v1.0, dann oeffentlich)                │
+│  → Key-Check nur fuer Service-Features (Updates, Support,        │
+│    Templates, gebrandete PDFs) — NICHT fuer lokale Funktionen    │
+│  → Kein DRM, kein Nag-Screen, keine lokale Einschraenkung       │
+│  → Alle lokalen Funktionen auch ohne Key                         │
 └─────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────┐
@@ -205,11 +205,13 @@ Die technischen Details (Lizenz, Repository, Build-Prozess) gehören auf eine se
 │  → NICHT auf Software-Qualität                                   │
 │                                                                  │
 │  Key kauft:                        Key kauft NICHT:              │
-│  ✓ Fertige Installer (EXE/DMG)    ✗ Die Software selbst         │
+│  ✓ Fertige Installer (EXE/DMG)    ✗ Lokale Funktionen           │
 │  ✓ Auto-Update-Benachrichtigung   ✗ Exklusiven Zugang zum Code  │
 │  ✓ Support-Ticket (48h Antwort)   ✗ Telefon-Support             │
 │  ✓ Feature-Request + Voting       ✗ Garantie auf Ergebnisse     │
 │  ✓ Download-Portal-Zugang         ✗ DRM oder Kopierschutz       │
+│  ✓ Professionelle Templates       ✗ Die Software selbst         │
+│  ✓ Gebrandete PDF-Exporte                                       │
 └─────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────┐
@@ -220,21 +222,17 @@ Die technischen Details (Lizenz, Repository, Build-Prozess) gehören auf eine se
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-### 4.2 Preisstruktur — wächst mit dem Umfang
+### 4.2 Preisstruktur — ein Preis pro Bundle
 
-Nicht "50 Tools für 79 EUR" verkaufen wenn am Launch-Tag 7 Tools existieren. Stattdessen:
+Ein Preis, keine Staffelung. Wer heute kauft, bekommt alles was dazukommt.
 
 ```
-Launch (5-8 Tools):     39 EUR Einmalkauf / 29 EUR/Jahr Abo
-Ausbau (15-25 Tools):   59 EUR Einmalkauf / 39 EUR/Jahr Abo
-Voll (40-50 Tools):     79 EUR Einmalkauf / 49 EUR/Jahr Abo
+Pro Bundle:   29 EUR/Jahr (Abo)  oder  39 EUR (Einmalkauf)
 ```
-
-**Bestandskunden behalten ihren Preis.** Wer bei 39 EUR gekauft hat, zahlt nicht mehr — auch wenn das Bundle auf 50 Tools wächst. Das schafft Dringlichkeit ("jetzt kaufen, bevor es teurer wird") und belohnt Early Adopter.
 
 **Einmalkauf vs. Abo — klare Trennung:**
 
-| | Einmalkauf | Abo |
+| | Einmalkauf (39 EUR) | Abo (29 EUR/Jahr) |
 |---|---|---|
 | Was enthalten? | Aktueller Stand der Tools | Immer neueste Version |
 | Updates | 12 Monate ab Kauf | Solange Abo läuft |
@@ -253,7 +251,7 @@ Beschreibung:  "Aktuell 8 Tools, wächst monatlich. Fertige Installer,
                 automatische Updates, Support, Feature-Mitbestimmung.
                 Die Software ist Open Source — alle Daten bleiben auf
                 Ihrem Rechner."
-Preis:         39 EUR (Einmalkauf) oder 29 EUR/Jahr (Abo)
+Preis:         39 EUR (Einmalkauf) oder 29 EUR/Jahr (Abo-Support)
 ```
 
 Keine 50 Einzelprodukte. Kein Upsell-Funnel. Ein Produkt, ein Preis, fertig.
@@ -311,9 +309,10 @@ RANDOM  = 8 alphanumerische Zeichen (kryptographisch zufällig)
 CHECK   = 2-stellige Prüfsumme (Luhn-ähnlich, verhindert Tippfehler)
 ```
 
-**Die Software prüft den Key NICHT.** Der Key existiert nur für:
+**Die Software prüft den Key nur für Service-Features — nicht für lokale Funktionen.** Alle lokalen Features (Rechner, Export, Datenhaltung) laufen ohne Key. Der Key schaltet Service-Features frei:
 - Portal-Zugang (Download, Support-Tickets, Feature-Voting)
 - Update-Berechtigung prüfen (hat der Key noch aktives Abo?)
+- Professionelle Templates und gebrandete PDF-Exporte
 - Key-Recovery (über Digistore24-Bestellnummer)
 - Unterscheidung kostenlos/bezahlt (FREE-Key vs. Bundle-Key)
 
@@ -329,45 +328,54 @@ CHECK   = 2-stellige Prüfsumme (Luhn-ähnlich, verhindert Tippfehler)
 
 ## 6. Die Open-Source-Strategie
 
-### 6.1 Delayed Open Source
+### 6.1 GitHub-Strategie: Privat bis v1.0, dann Public
 
 ```
-Tag 0:    Tool fertig → Portal-Download für Key-Inhaber (neueste Version)
-Tag 90:   Quellcode auf Forgejo veröffentlichen (MIT, ältere stabile Version)
-Tag 180:  Optional GitHub-Mirror (Sichtbarkeit)
+Bis v1.0:  Private Repos in GitHub-Organisation (Team-Plan)
+           → GitHub Actions fuer CI/CD (Builds, Tests)
+           → Build-Artefakte intern (Actions Artifacts)
+           → Referenzkunden bekommen Builds direkt
 
-Portal hat immer die neueste Version.
-Forgejo/GitHub hinkt 1-2 Minor-Versionen hinterher.
-Keine Binaries auf GitHub/Forgejo — nur Quellcode.
-Fertige Installer nur über Portal (mit Key).
+Ab v1.0:   Repos auf Public umschalten (GPL 3.0)
+           → Quellcode fuer alle einsehbar
+           → GitHub Actions kostenlos (Public Repos)
+           → Fertige Installer (EXE/DMG) nur ueber Portal (mit Key)
+           → Keine Binaries auf GitHub — nur Quellcode
+           → Forgejo bleibt fuer interne Infrastruktur
 ```
 
 ### 6.2 Community-Modell
 
 ```
-OHNE Key (Open-Source-Nutzer):          MIT Key (Lizenzinhaber):
+OHNE Key (Open-Source-Nutzer):          MIT Key (Service-Abonnent):
 ───────────────────────────────         ────────────────────────────
-✓ Code lesen, forken, kompilieren      ✓ Alles links PLUS:
-✓ Bugs melden über Issues              ✓ Fertige Installer/EXEs
-✓ Pull Requests einreichen             ✓ Auto-Update-Benachrichtigung
-✗ Kein Support-Ticket                  ✓ Support-Tickets (48h Antwort)
-✗ Kein Feature-Voting                  ✓ Feature-Requests + Voting
-✗ Keine fertigen Downloads             ✓ Download-Portal
+✓ ALLE lokalen Funktionen              ✓ Alles links PLUS:
+✓ Code lesen, forken, kompilieren      ✓ Fertige Installer/EXEs
+✓ Bugs melden ueber Issues             ✓ Auto-Update-Benachrichtigung
+✓ Pull Requests einreichen             ✓ Support-Tickets (48h Antwort)
+✓ Selbst bauen und nutzen              ✓ Feature-Requests + Voting
+✗ Kein Support-Ticket                  ✓ Download-Portal
+✗ Kein Feature-Voting                  ✓ Professionelle Templates
+✗ Keine fertigen Downloads             ✓ Gebrandete PDF-Exporte
 ```
 
-### 6.3 Warum ein Vereinsvorstand trotzdem den Key kauft
+### 6.3 Warum Leute trotzdem den Key kaufen
 
-Ein typischer Vereinsvorstand (Kassenwart, 62 Jahre, Windows) wird niemals `cargo tauri build` ausführen. Der will auf "Download" klicken, eine .exe bekommen, und loslegen. 39 EUR/Jahr ist weniger als eine Vereinsfeier kostet. Der Support-Kanal ist das Sahnehäubchen.
+Der Code ist frei, alle lokalen Funktionen laufen ohne Key. Warum zahlt jemand trotzdem?
 
-Ein Versicherungsmakler (45, nutzt bereits Software für 50+ EUR/Monat) sieht 99 EUR/Jahr und denkt: "Das ist eine Monatsrate bei meinem aktuellen MVP." Wenn das Tool eine Lücke füllt die sein MVP nicht abdeckt, kauft er ohne zu zögern.
+**Bequemlichkeit:** Ein typischer Vereinsvorstand (Kassenwart, 62 Jahre, Windows) wird niemals `cargo tauri build` ausführen. Der will auf "Download" klicken, eine .exe bekommen, und loslegen. 29 EUR/Jahr ist weniger als eine Vereinsfeier kostet.
+
+**Professionelle Extras:** Gebrandete PDF-Exporte (mit Vereinslogo), professionelle Templates, automatische Update-Benachrichtigungen — das sind Service-Features, die nur mit Key funktionieren.
+
+**Support:** 48h-Reaktionszeit, Feature-Voting, direkter Draht. Für einen Makler (45, nutzt bereits Software für 50+ EUR/Monat) sind 29 EUR/Jahr irrelevant — der Support-Kanal allein ist das wert.
 
 ### 6.4 Fork-Risiko
 
-Jemand könnte den Code forken und ein Konkurrenzprodukt bauen. In der Praxis passiert das nicht, weil:
-- Die Nischen sind zu klein für große Anbieter (50 Vereins-Tools für 79 EUR — das lohnt sich nur für einen Solo-Entwickler)
-- Der Wert liegt im Service (Support, Updates, Voting), nicht im Code
+Jemand könnte den Code forken und ein Konkurrenzprodukt bauen. GPL 3.0 (Copyleft) bedeutet: jeder Fork muss ebenfalls unter GPL 3.0 stehen — proprietäre Forks sind ausgeschlossen. In der Praxis passiert auch ein GPL-Fork selten, weil:
+- Die Nischen sind zu klein für große Anbieter (50 Vereins-Tools für 29 EUR/Jahr — das lohnt sich nur für einen Solo-Entwickler)
+- Der Wert liegt im Service (Support, Updates, Voting, Templates, gebrandete PDFs), nicht im Code
 - Wer forken kann, braucht das Tool nicht zu kaufen — der baut es ohnehin selbst
-- Aber: wer es selbst baut, muss es auch selbst warten. Code-Fabrik übernimmt das für 39-99 EUR/Jahr.
+- Aber: wer es selbst baut, muss es auch selbst warten. Code-Fabrik übernimmt das für 29-39 EUR/Jahr.
 
 ---
 
@@ -429,12 +437,12 @@ Die Fabrik wird genau so weit gebaut wie nötig für das aktuelle Tool. Beim nä
 ```
 NICHT:                              STATTDESSEN:
 ─────                               ────────────
-✗ Landingpages mit Conversion-Funnel ✓ Gute README + Doku auf Forgejo/GitHub
+✗ Landingpages mit Conversion-Funnel ✓ Gute README + Doku auf GitHub
 ✗ Facebook/Google Ads                ✓ Paketmanager (winget, scoop)
 ✗ E-Mail-Marketing                   ✓ Fachforen: Hilfe anbieten, nicht verkaufen
 ✗ Influencer-Kampagnen               ✓ Mundpropaganda durch zufriedene Nutzer
 ✗ SEO-optimierte Landingpages        ✓ SEO indirekt: kostenlose Web-Rechner (optional)
-✗ Newsletter                         ✓ Release Notes auf Portal + Forgejo
+✗ Newsletter                         ✓ Release Notes auf Portal + GitHub
 ```
 
 ### 9.2 Vertriebsweg ohne Kundendaten
@@ -519,10 +527,14 @@ Die E-Mail-Adresse existiert, weil sie muss (Impressum-Pflicht). Aber sie ist ke
 ### 10.1 Infrastruktur
 
 ```
+GitHub (oeffentliche Repos):
+├── Produkt-Repositories (GPL 3.0, sofort oeffentlich)
+├── GitHub Actions (CI/CD fuer oeffentliche Repos, kostenlos)
+└── Community (Issues, Pull Requests, Discussions)
+
 PROD-Server (UpCloud, DEV-1xCPU-2GB):
-├── Forgejo (eigener Git-Server)
+├── Forgejo (interner Git-Server, Infra-Repos + Builds)
 ├── OpenClaw (Headless Tauri Builds)
-├── GitHub Actions Runner
 ├── Poller
 └── Nightstop (Auto-Shutdown nachts)
 
@@ -707,6 +719,9 @@ Nur Lizenzinhaber (inklusive Test-/Demo-Lizenzen) können Feature-Requests stell
 | E3 | Kundendaten bei Code-Fabrik | **Radikal minimal** | Nur Key, Bundle-ID, Timestamps, Support-Tickets. Kein Name, keine Mail, keine Adresse. |
 | E4 | KI im Tool | **Nein** | KI-entwickelt, aber KI-frei. Keine API-Calls, keine Cloud-Verbindung. |
 | E5 | Tools strict no mail | **Ja** | Tools versenden keine E-Mails, empfangen keine, benötigen keine Mail-Adresse. |
+| E6 | Lizenz | **GPL 3.0** | Copyleft schuetzt vor proprietaeren Forks. Open-Core-Option fuer Zusatzmodule. |
+| E7 | GitHub-Timing | **Privat bis v1.0, dann Public** | Private Repos im Team-Plan fuer Entwicklung, ab v1.0 oeffentlich. |
+| E8 | CI/CD | **GitHub Actions** | Private Repos im Team-Plan, ab v1.0 kostenlos (Public). Forgejo bleibt fuer interne Infra. |
 
 ### Offen
 
@@ -714,10 +729,9 @@ Nur Lizenzinhaber (inklusive Test-/Demo-Lizenzen) können Feature-Requests stell
 |---|-------------|----------|------------|--------|
 | 1 | Finanz-UI-Framework | Svelte vs. React | Svelte (Konsistenz mit Verein) | Offen |
 | 2 | Digistore24 langfristig? | Bleiben vs. Paddle/LemonSqueezy/eigene Rechnung | Starten mit DS24, nach 6 Monaten evaluieren | Offen |
-| 3 | GitHub-Mirror? | Sofort vs. ab Tag 180 vs. nie | Ab Tag 180 (Sichtbarkeit), Forgejo bleibt primär | Offen |
-| 4 | Web-Versionen der Rechner? | Ja (SEO) vs. Nein (Fokus) | Optional, nicht priorisiert | Offen |
-| 5 | Einzelverkauf von Tools? | Nur Bundle vs. auch Einzel | Nur Bundle (weniger Verwaltung) | Offen |
-| 6 | PayPal statt/neben Digistore24? | Für Ticket-Verkauf (B-05 Events) | Evaluieren wenn konkreter Bedarf | Offen |
+| 3 | Web-Versionen der Rechner? | Ja (SEO) vs. Nein (Fokus) | Optional, nicht priorisiert | Offen |
+| 4 | Einzelverkauf von Tools? | Nur Bundle vs. auch Einzel | Nur Bundle (weniger Verwaltung) | Offen |
+| 5 | PayPal statt/neben Digistore24? | Für Ticket-Verkauf (B-05 Events) | Evaluieren wenn konkreter Bedarf | Offen |
 
 ---
 
