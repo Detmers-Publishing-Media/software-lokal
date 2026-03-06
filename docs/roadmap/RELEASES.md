@@ -67,4 +67,6 @@ Stand: 2026-03-04
   → TODO: `backup`-Playbook + Menue-Option (pg_dump → USB-Stick)
 - **Kein DB-Restore:** Nach Neuinstallation keine automatische Wiederherstellung.
   → TODO: `restore`-Playbook das Dumps aus `/output/backup/` einspielt
-- Siehe `docs/konzept/fabrik-im-koffer.md` Abschnitt "DB-Backup + Umzug"
+- **Website offline bei Neuaufbau:** Install reisst alles ab inkl. Portal/Website.
+  → TODO: Separater Website-Server der beim Neuaufbau stehen bleibt
+- Siehe `docs/konzept/fabrik-im-koffer.md` fuer Details

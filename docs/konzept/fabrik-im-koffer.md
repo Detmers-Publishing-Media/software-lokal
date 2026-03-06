@@ -161,10 +161,79 @@ hat ein Pre-Play das die Server-IP dynamisch ermittelt:
 
 Keine hartcodierten IPs, kein statisches Inventory fuer Remote-Server.
 
+### Delegate-Regel: localhost vs. Server
+
+**Wichtig:** Ansible-Tasks die auf Server-Dienste (Forgejo, PostgreSQL, Gateway) zugreifen
+muessen **auf dem Server** laufen, NICHT mit `delegate_to: localhost`.
+
+Hintergrund: Der Ansible-Docker-Container laeuft auf dem lokalen Rechner (`--network host`).
+Port 3000 (Forgejo) ist auf dem Server per UFW blockiert (nur 22, 80, 443 offen).
+Ein `delegate_to: localhost`-Task kann `http://<server-ip>:3000` nicht erreichen.
+
+**Regel:**
+- Tasks die `localhost:3000` (Forgejo API) oder `localhost:5432` (PostgreSQL) brauchen →
+  auf dem Server ausfuehren (kein `delegate_to`)
+- Tasks die lokale Dateien lesen/schreiben (`/output/`, `/ansible/`) →
+  `delegate_to: localhost` (Ansible-Container)
+- Wenn beides noetig (z.B. push-infra: Dateien vom Container + Forgejo API auf Server) →
+  Dateien per `synchronize` auf den Server kopieren, dann dort ausfuehren
+
+**Beispiel (push-infra):**
+```yaml
+# Schritt 1: Dateien vom Ansible-Container auf den Server kopieren
+- name: "Ansible-Dateien auf Server kopieren"
+  ansible.builtin.synchronize:
+    src: /ansible/
+    dest: /tmp/infra-push/
+  delegate_to: localhost
+
+# Schritt 2: Auf dem Server gegen localhost:3000 pushen
+- name: "Nach Forgejo pushen"
+  ansible.builtin.shell: |
+    cd /tmp/infra-push
+    git push origin main
+```
+
+### Stateless-Passwort-Regel
+
+Bei jedem Install/Update werden Passwoerter idempotent erzwungen, unabhaengig vom
+Zustand der Volumes oder vorheriger Installationen:
+
+- **PostgreSQL:** `ALTER USER forgejo PASSWORD '...'` nach jedem Start
+  (in `roles/postgres/tasks/main.yml`)
+- **Forgejo Admin:** `forgejo admin user change-password --must-change-password=false`
+  nach jedem Start (in `roles/forgejo/tasks/main.yml`)
+- **Docker-Output:** `chmod -R a+r $SHM_OUTPUT` nach jedem `docker run`
+  (in `install.sh`, damit Writeback nach KeePass funktioniert)
+
+Grund: `POSTGRES_PASSWORD` wirkt nur beim ersten Start einer Volume.
+`forgejo admin user create` ueberspringt existierende User. Ohne explizites
+Erzwingen kommt es bei Reinstalls zu Passwort-Mismatch.
+
+### Base64-Regel fuer KeePass-Writeback
+
+Runtime-Dateien (`.factory-passwords.env`, `.server-env` etc.) sind mehrzeilig.
+`keepassxc-cli add -p` liest aber nur **eine Zeile** als Passwort aus stdin.
+
+**Loesung:** Writeback kodiert den Dateiinhalt als Base64 (einzeilig), Load dekodiert.
+
+```bash
+# Writeback (install.sh)
+encoded=$(base64 -w0 < "$filepath")
+printf '%s\n%s' "$KEEPASS_PASS" "$encoded" | keepassxc-cli add ... -p
+
+# Load (Python in install.sh)
+import base64
+decoded = base64.b64decode(content).decode("utf-8")
+```
+
+Rueckwaertskompatibel: Beim Laden wird `base64.b64decode()` versucht, bei Fehler
+wird der Rohinhalt genommen (fuer alte Eintraege, die noch nicht Base64-kodiert sind).
+
 ### Secrets-Handling in Playbooks
 
 - **Vault-Secrets** (API-Tokens etc.): via `-e @/root/secrets.yml` aus KeePass
-- **Runtime-Secrets** (Passwoerter, Server-IPs): aus `/output/.*.env` Dateien
+- **Runtime-Secrets** (Passwoerter, Server-IPs): aus `/output/.*.env` Dateien (Base64 in KeePass)
 - **Forgejo-Token**: aus `/output/.tokens-env`
 
 ## Tarball-Inhalt
@@ -180,6 +249,30 @@ codefabrik.tar.gz
 
 Ausgeschlossen: `node_modules/`, `target/`, `dist/`, `scripts/`, `.git/`,
 alle `*.env`-Dateien, Vault-Dateien.
+
+## Geplant: Website-Server (Always-On)
+
+Aktuell wird bei Option 1 (Install) alles abgerissen und neu aufgebaut — auch der
+Portal-Server mit der oeffentlichen Website. Das bedeutet: waehrend eines Neuaufbaus
+ist die Website offline.
+
+### Ziel
+
+Ein kleiner, guenstiger Server (z.B. DEV-1xCPU-1GB) der NUR die statische Website
+hostet und beim Neuaufbau stehen bleibt. Der Installer muss unterscheiden:
+
+- **PROD + Portal**: werden abgerissen und neu aufgebaut (wie bisher)
+- **Website-Server**: bleibt immer stehen, wird nur bei `upgrade-website` aktualisiert
+
+### Offene Fragen
+
+- Eigener Server oder Cloudflare Pages / GitHub Pages (kostenlos, kein Server noetig)?
+- Wenn eigener Server: eigenes Playbook `install-website.yml` + Teardown-Ausnahme
+- DNS: `codefabrik.de` / `detmers-publish.de` zeigt auf Website-Server, nicht auf Portal
+- Option 1 (Install) muss Website-Server explizit aussparen
+- Option 5 (Teardown) braucht Sicherheitsabfrage: "Website-Server auch abreissen?"
+
+---
 
 ## Geplant: DB-Backup + Umzug
 

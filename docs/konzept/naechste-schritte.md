@@ -1,73 +1,55 @@
 # Code-Fabrik — Naechste Schritte
 
-*Priorisierte Handlungsempfehlungen, Stand 2026-03-04*
+*Priorisierte Handlungsempfehlungen, Stand 2026-03-04 (aktualisiert fuer v0.6.0)*
 *Grundlage: Gesamtkonzept v3 (docs/konzept/gesamtkonzept-v3.md)*
 
 ---
 
-## Sofort (v0.5.8 — Geschaeftsplan)
+## Sofort (v0.6.1 — Azure Testing vorbereiten)
 
-**Ziel:** Entscheidungsgrundlage fuer den Launch schaffen.
+**Ziel:** Windows-Builds fuer MitgliederSimple automatisieren.
 
-1. **Business-Plan ueberarbeiten**
-   - Gesamtkonzept v3 als Basis nehmen
-   - Finanzplanung: Kosten (UpCloud, Digistore24-Gebuehren, Domain) vs. Einnahmen
-   - Break-Even-Rechnung: ab wie vielen Kunden/Monat lohnt es sich?
-
-2. **Bundle B-05 Scope definieren**
-   - Welche 5-8 Tools kommen zum Launch?
-   - Erstes Tool: Mitgliederverwaltung (MitgliederSimple) — bereits in Entwicklung
-   - Weitere Tools nach Referenzkunden-Feedback planen
-
-3. **Preisstruktur festlegen**
-   - 39/59/79 EUR Staffelung (lt. Gesamtkonzept Kap. 4.2)
-   - Einmalkauf vs. Abo: beide Varianten in Digistore24 anlegen?
-   - Bestandskunden-Garantie: "Ihr Preis bleibt"
-
-4. **Referenzkunden-Gespraeche planen**
-   - Verein: Gespraechsleitfaden erstellen (lt. Gesamtkonzept Kap. 11.2)
-   - Makler: Gespraechsleitfaden erstellen (lt. Gesamtkonzept Kap. 11.3)
-   - Termine vereinbaren
-
----
-
-## Kurzfristig (v0.6.0 — Mitgliederverwaltung)
-
-**Ziel:** Erstes fertiges Produkt an Referenzkunden ausliefern.
-
-1. **MitgliederSimple fertig bauen**
-   - Bestehendes Projekt `products/mitglieder-simple/` (SvelteKit + Tauri)
-   - Mitgliederliste, CRUD, Datenexport
-   - Phase-0-Tests (Forgejo Runner)
-   - MVP-Regel: 1 Kernfunktion + Export, max. 2 Wochen (lt. Risiko #1)
-
-2. **Referenzkunde einbinden**
-   - Tool per Mail schicken (Phase 1, lt. Gesamtkonzept Kap. 5.1)
-   - Feedback-Schleife: Bug → Test (lt. Kap. 12.1)
-   - "Nutzt du das wirklich?" → Signal fuer Phase 2
-
-3. **"So rechnet dieses Tool" schreiben**
-   - Verstaendliche Erklaerung der Berechnungslogik (lt. Kap. 12.2)
-   - Testbericht: Anzahl Tests, was getestet, Ergebnisse
-   - Muster fuer alle weiteren Tools setzen
-
----
-
-## Mittelfristig (v0.6.1 — v0.7.0)
-
-**Ziel:** Vom Prototyp zum kaufbaren Produkt.
-
-1. **Azure Testing aufbauen (v0.6.1)**
+1. **Azure Testing aufbauen**
    - ADR-009 umsetzen (Test-Server oder Docker-Isolation)
    - Windows-Installer-Validierung automatisieren
    - Tauri-Builds fuer Win/macOS/Linux via OpenClaw
 
-2. **Produktseite im Portal (v0.6.2)**
-   - Texte aus spec.yml (Text-Generator existiert bereits)
-   - Testbericht oeffentlich
-   - Erste echte "Verkaufsseite" (ohne Marketing-Sprache, lt. Kap. 3)
+2. **MitgliederSimple v0.1 an Referenzkunde ausliefern**
+   - App lokal mit `cargo tauri dev` testen
+   - An Referenzkunde per Mail schicken (Phase 1, lt. Gesamtkonzept Kap. 5.1)
+   - Feedback-Schleife: Bug → Test (lt. Kap. 12.1)
 
-3. **Erster echter Kauf (v0.7.0)**
+3. **Geschaeftsplan (v0.5.8, parallel)**
+   - Business-Plan ueberarbeiten (Marktanalyse, Finanzplanung)
+   - Preisstruktur finalisieren (39/59/79 EUR Staffelung)
+   - Referenzkunden-Gespraechsleitfaden erstellen
+
+---
+
+## Kurzfristig (v0.6.2 — MitgliederSimple v0.2 nach Feedback)
+
+**Ziel:** Produkt nach Referenzkunden-Feedback iterieren.
+
+1. **Referenzkunden-Feedback auswerten**
+   - "Nutzt du das wirklich?" → Signal fuer Phase 2
+   - Fehlende Features priorisieren
+
+2. **MitgliederSimple v0.2 bauen**
+   - Weitere Felder / Validierungen (je nach Feedback)
+   - CSV-Import Verbesserungen, UX-Optimierungen
+   - "So rechnet dieses Tool" Seite (lt. Kap. 12.2)
+
+3. **Bundle B-05 Scope definieren**
+   - Welche 5-8 Tools kommen zum Launch?
+   - Weitere Tools nach Referenzkunden-Feedback planen
+
+---
+
+## Mittelfristig (v0.7.0)
+
+**Ziel:** Vom Prototyp zum kaufbaren Produkt.
+
+1. **Erster echter Kauf (v0.7.0)**
    - Digistore24-Produkt veroeffentlichen
    - Key-Format CF-B05-XXXXXXXX-XX
    - HTTPS auf Portal (Caddy + Let's Encrypt)

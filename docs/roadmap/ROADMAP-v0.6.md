@@ -46,15 +46,21 @@
 
 ---
 
-## v0.6.2 "Pruefstand" — Azure Testing + EXE-Erstellung
+## v0.6.2 "Pruefstand" — CircleCI Windows-Builds + EXE-Erstellung
 
-**Ziel:** Azure Testing und Windows-EXE-Erstellung fuer MitgliederSimple.
+**Ziel:** Windows-EXE-Erstellung und CI/CD fuer Tauri-Apps.
 **Typ:** Infrastruktur + CI/CD + Produkt-Iteration.
 **Status:** **Aktuell**
+**CI-Entscheidung (Maerz 2026):** Azure DevOps gestrichen → **CircleCI**.
+Grund: Direkter Forgejo-Webhook, kein Mirror noetig, ~$30/Monat.
+**Prioritaet:** Naechster Schritt nach Abschluss der Tests — Ziel: echte EXE-Dateien.
+**Datentrennung:** CircleCI erhaelt nur Quellcode fuer Build + Test, keine persoenlichen
+Daten. Forgejo bleibt der fuehrende Git-Host. CircleCI ist ein reiner Build-Dienst
+(kompilieren, testen, EXE erstellen) — keine Kundendaten, keine Lizenzen, keine DB-Zugriffe.
 
-- [ ] ADR-009 umsetzen (Azure DevOps Pipeline)
-- [ ] Phase-1-Tests: Windows-Installer-Validierung (Azure)
-- [ ] Tauri-Build fuer Windows via OpenClaw → EXE erstellen
+- [ ] CircleCI-Account einrichten + Forgejo-Webhook konfigurieren
+- [ ] Windows-Build-Pipeline (Tauri → EXE) in CircleCI
+- [ ] Phase-1-Tests: Windows-Installer-Validierung (CircleCI)
 - [ ] Installer-Smoke-Tests (EXE installiert, startet, Grundfunktion OK)
 - [ ] Build-Artefakte automatisch in Forgejo Release hochladen
 - [ ] Referenzkunden-Feedback auswerten (MitgliederSimple v0.2)
@@ -189,11 +195,12 @@ Abschluss:
 
 ## Offene Entscheidungen (aus Gesamtkonzept Kap. 14)
 
-| # | Thema | Optionen | Empfehlung | Entscheidung bis |
-|---|-------|----------|------------|-----------------|
-| 1 | Finanz-UI-Framework | Svelte vs. React | Svelte (Konsistenz) | v0.9.0 |
-| 2 | Digistore24 langfristig | Bleiben vs. Paddle/LemonSqueezy | Starten, nach 6 Mon. evaluieren | v1.0.0 |
-| 3 | GitHub-Mirror | Sofort vs. Tag 180 vs. nie | Ab Tag 180 | v1.0.0 |
-| 4 | Web-Versionen der Rechner | Ja (SEO) vs. Nein (Fokus) | Optional, nicht priorisiert | v1.0.0+ |
-| 5 | Einzelverkauf von Tools | Nur Bundle vs. auch Einzel | Nur Bundle | v0.7.0 |
-| 6 | PayPal neben Digistore24 | Fuer Ticket-Verkauf B-05 Events | Evaluieren bei Bedarf | v1.0.0+ |
+| # | Thema | Optionen | Entscheidung | Status |
+|---|-------|----------|-------------|--------|
+| 1 | Finanz-UI-Framework | Svelte vs. React | Svelte (Konsistenz) | Offen (v0.9.0) |
+| 2 | Digistore24 langfristig | Bleiben vs. Paddle/LemonSqueezy | Starten, nach 6 Mon. evaluieren | Offen (v1.0.0) |
+| 3 | GitHub-Mirror | Sofort vs. Tag 180 vs. nie | Ab Tag 180 | Offen (v1.0.0) |
+| 4 | Web-Versionen der Rechner | Ja (SEO) vs. Nein (Fokus) | Optional, nicht priorisiert | Offen (v1.0.0+) |
+| 5 | Einzelverkauf von Tools | Nur Bundle vs. auch Einzel | Nur Bundle | Offen (v0.7.0) |
+| 6 | PayPal neben Digistore24 | Fuer Ticket-Verkauf B-05 Events | Evaluieren bei Bedarf | Offen (v1.0.0+) |
+| 7 | **Windows CI/CD** | Azure vs. CircleCI vs. GitHub Actions | **CircleCI** (~$30/Mon, direkter Webhook) | **Entschieden** |
