@@ -3,45 +3,24 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Code-Fabrik Portal</title>
+  <title>Code-Fabrik</title>
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
   <header>
     <div class="container">
       <h1><a href="/">Code-Fabrik</a></h1>
-      <nav>
-        <a href="/support">Support</a>
-        <a href="/ideas">Ideen</a>
-        <a href="/request">Anforderung</a>
-        <a href="/status">Status</a>
-      </nav>
     </div>
   </header>
-  <div class="container">
-    <h2>Produkte</h2>
-    <div id="products"><p>Lade Produkte...</p></div>
+  <div class="container" style="text-align:center; padding:4rem 1rem;">
+    <h2>Hier entsteht eine Internetpr&auml;senz</h2>
   </div>
-  <footer>Code-Fabrik v0.5.7</footer>
-  <script>
-    async function load() {
-      const res = await fetch('/api/products');
-      const products = await res.json();
-      const el = document.getElementById('products');
-      if (!products.length) { el.innerHTML = '<p>Keine Produkte verfuegbar.</p>'; return; }
-      el.innerHTML = products.map(p => `
-        <div class="card">
-          <h3>${esc(p.name)}</h3>
-          <p>${esc(p.description || '')}</p>
-          <p style="margin-top:0.5rem">
-            ${p.price_cents === 0 ? '<span class="badge badge-green">Kostenlos</span>' : (p.price_cents / 100).toFixed(2) + ' EUR'}
-          </p>
-          <a href="/buy/${esc(p.id)}" class="btn" style="margin-top:0.8rem;display:inline-block">Erwerben</a>
-        </div>
-      `).join('');
-    }
-    function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
-    load();
-  </script>
+  <footer>
+    <span>Code-Fabrik v0.6.0</span>
+    <span class="footer-links">
+      <a href="/impressum">Impressum</a>
+      <a href="/datenschutz">Datenschutz</a>
+    </span>
+  </footer>
 </body>
 </html>

@@ -7,7 +7,7 @@ const router = Router();
 router.post('/api/test-reports', async (req, res) => {
   try {
     const authHeader = req.headers.authorization;
-    if (!authHeader || authHeader !== `Bearer ${process.env.ADMIN_API_TOKEN}`) {
+    if (!authHeader || authHeader !== `Bearer ${process.env.ADMIN_TOKEN}`) {
       return res.status(401).json({ error: 'Nicht autorisiert' });
     }
 
