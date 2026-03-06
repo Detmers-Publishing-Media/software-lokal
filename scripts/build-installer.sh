@@ -1,5 +1,7 @@
 #!/bin/bash
-# build-installer.sh — Paketiert ansible/ + portal/ fuer USB-Stick
+# build-installer.sh — Paketiert das komplette Repo fuer "Fabrik im Koffer"
+# Ergebnis: dist/install.sh + dist/codefabrik.tar.gz
+# Zusammen mit vault.kdbx reicht das fuer einen kompletten Neuaufbau.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -10,26 +12,29 @@ echo "=== Code-Fabrik Installer bauen ==="
 
 mkdir -p "$DIST_DIR"
 
-# Tarball erstellen (ohne Secrets, ohne Git, ohne Logs)
+# Tarball erstellen: komplettes Repo ohne Secrets, temporaere Dateien und Build-Artefakte
 echo "Tarball erstellen..."
 tar czf "$DIST_DIR/codefabrik.tar.gz" \
     -C "$PROJECT_DIR" \
-    --exclude='vault.yml' \
+    --exclude='dist' \
     --exclude='.git' \
+    --exclude='node_modules' \
+    --exclude='__pycache__' \
+    --exclude='target' \
     --exclude='*.log' \
     --exclude='*.pid' \
+    --exclude='*.zip' \
     --exclude='.server-env' \
     --exclude='.tokens-env' \
     --exclude='.factory-passwords.env' \
     --exclude='.portal-env' \
     --exclude='.portal-passwords.env' \
     --exclude='.portal-smoke-results.env' \
-    --exclude='dist' \
-    --exclude='scripts' \
-    --exclude='node_modules' \
-    --exclude='__pycache__' \
-    --exclude='target' \
-    ansible/ portal/ products/ .gitignore teardown-remote.sh
+    --exclude='vault.yml' \
+    --exclude='vault.kdbx' \
+    --exclude='*.sqlite-shm' \
+    --exclude='*.sqlite-wal' \
+    .
 
 # install.sh kopieren
 cp "$SCRIPT_DIR/install.sh" "$DIST_DIR/install.sh"
@@ -40,6 +45,5 @@ echo "Fertig:"
 echo "  $DIST_DIR/install.sh"
 echo "  $DIST_DIR/codefabrik.tar.gz ($(du -h "$DIST_DIR/codefabrik.tar.gz" | cut -f1))"
 echo ""
-echo "USB-Stick bestücken:"
-echo "  cp $DIST_DIR/install.sh $DIST_DIR/codefabrik.tar.gz /mnt/usb/"
-echo "  cp <vault.kdbx> /mnt/usb/vault.kdbx"
+echo "Fabrik im Koffer:"
+echo "  install.sh + codefabrik.tar.gz + vault.kdbx = kompletter Neuaufbau"

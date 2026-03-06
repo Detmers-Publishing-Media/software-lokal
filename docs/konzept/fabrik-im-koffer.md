@@ -10,9 +10,40 @@ Code-Fabrik-Infrastruktur. Alles was man braucht: ein USB-Stick mit drei Dateien
 ```
 /mnt/usb/
   install.sh           — Installer-Script
-  codefabrik.tar.gz    — Ansible + Portal + Products
+  codefabrik.tar.gz    — Komplettes Repo (Source + Infra + Docs + Scripts)
   vault.kdbx           — KeePass-Datenbank (Secrets)
 ```
+
+Der Tarball enthaelt das gesamte Repository — Ansible-Rollen, Portal, Produkt-Quellcode,
+Dokumentation, Roadmap, Scripts und CLAUDE.md. Ausgeschlossen sind nur Secrets
+(`.env`-Dateien, `vault.yml`), Build-Artefakte (`dist/`, `target/`, `node_modules/`)
+und temporaere Dateien (Logs, PIDs, SQLite-WAL).
+
+Nach jeder Installation oder Aenderung wird ein neuer Tarball gebaut
+(`scripts/build-installer.sh`), sodass der USB-Stick immer den aktuellen Stand enthaelt.
+
+### Persistenter Drive (Binaries)
+
+Kompilierte Desktop-Apps (Tauri-Builds: EXE, DMG, AppImage) liegen separat
+auf einem persistenten Drive — nicht im Tarball:
+
+```
+/persistent/
+  binaries/
+    mitglieder-simple/
+      v0.4.0/
+        MitgliederSimple-0.4.0-setup.exe
+        MitgliederSimple-0.4.0.dmg
+        MitgliederSimple-0.4.0.AppImage
+    finanz-rechner/
+      v0.1.0/
+        FinanzRechner-0.1.0-setup.exe
+        ...
+```
+
+**Grund:** Binaries sind gross (50-100 MB pro Plattform) und aendern sich nur bei
+Releases. Der Tarball enthaelt den Quellcode — die Binaries koennen jederzeit
+aus dem Source neu gebaut werden (via CircleCI oder lokal mit `cargo tauri build`).
 
 ## Prinzipien
 
@@ -239,16 +270,21 @@ wird der Rohinhalt genommen (fuer alte Eintraege, die noch nicht Base64-kodiert 
 ## Tarball-Inhalt
 
 ```
-codefabrik.tar.gz
-  ansible/        — Playbooks, Roles, Templates
-  portal/         — Portal-Anwendung (Express.js)
-  products/       — Produkt-Quellcode (fuer seed-products)
+codefabrik.tar.gz          — Komplettes Repo
+  ansible/                 — Playbooks, Roles, Templates, Dockerfile
+  portal/                  — Portal-Anwendung (Express.js)
+  products/                — Produkt-Quellcode (fuer seed-products)
+  scripts/                 — Installer, Build-Scripts, KeePass-Tools
+  docs/                    — Konzepte, Runbooks, Roadmap, ADRs
+  CLAUDE.md                — Agent-Anweisungen
+  .forgejo/                — CI/CD Workflows
   .gitignore
   teardown-remote.sh
 ```
 
-Ausgeschlossen: `node_modules/`, `target/`, `dist/`, `scripts/`, `.git/`,
-alle `*.env`-Dateien, Vault-Dateien.
+Ausgeschlossen: `.git/`, `dist/`, `node_modules/`, `target/`, `__pycache__/`,
+alle `*.env`-Dateien, `vault.yml`, `vault.kdbx`, Logs, PIDs, `*.zip`,
+SQLite-WAL/SHM-Dateien.
 
 ## Geplant: Website-Server (Always-On)
 

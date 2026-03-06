@@ -296,6 +296,7 @@ show_menu() {
     echo "  3) fabrik           — PROD Status abfragen" >&2
     echo "  4) nacht-stopp      — Jobs-Verarbeitung stoppen" >&2
     echo "  5) teardown         — Alles abreissen (PROD + Portal)" >&2
+    echo "  6) sichern          — Aenderungen nach Forgejo + Tarball neu bauen" >&2
     echo "  9) status           — Lokalen Docker-Status pruefen" >&2
     echo "  q) Beenden" >&2
     echo "" >&2
@@ -378,6 +379,7 @@ run_full_install() {
     writeback_runtime
     run_ansible "playbooks/seed-products.yml"
     writeback_runtime
+    rebuild_tarball
 }
 
 # --- Komplett-Teardown (Portal + PROD) ---
@@ -396,6 +398,131 @@ playbook_for() {
         4|nacht-stopp)      echo "playbooks/nacht-stopp.yml" ;;
         *) return 1 ;;
     esac
+}
+
+# --- Tarball neu bauen ---
+rebuild_tarball() {
+    echo ""
+    echo "=== Tarball neu bauen ==="
+    local target_dir
+    target_dir="$(dirname "$TARBALL")"
+
+    tar czf "$TARBALL" \
+        -C "$SHM_WORKSPACE" \
+        --exclude='dist' \
+        --exclude='.git' \
+        --exclude='node_modules' \
+        --exclude='__pycache__' \
+        --exclude='target' \
+        --exclude='*.log' \
+        --exclude='*.pid' \
+        --exclude='*.zip' \
+        --exclude='.server-env' \
+        --exclude='.tokens-env' \
+        --exclude='.factory-passwords.env' \
+        --exclude='.portal-env' \
+        --exclude='.portal-passwords.env' \
+        --exclude='.portal-smoke-results.env' \
+        --exclude='vault.yml' \
+        --exclude='vault.kdbx' \
+        --exclude='*.sqlite-shm' \
+        --exclude='*.sqlite-wal' \
+        .
+
+    # install.sh auch aktualisieren
+    local src_install="$SHM_WORKSPACE/scripts/install.sh"
+    if [ -f "$src_install" ]; then
+        cp "$src_install" "$target_dir/install.sh"
+        chmod +x "$target_dir/install.sh"
+    fi
+
+    echo "Tarball aktualisiert: $TARBALL ($(du -h "$TARBALL" | cut -f1))"
+}
+
+# --- Sichern: Aenderungen nach Forgejo committen + Tarball neu bauen ---
+run_sichern() {
+    echo ""
+    echo "=== Sichern ==="
+
+    # Server-IP und Forgejo-Token aus Output laden
+    local server_ip forgejo_token
+    if [ -f "$SHM_OUTPUT/.server-env" ]; then
+        server_ip=$(grep SERVER_IP "$SHM_OUTPUT/.server-env" | cut -d= -f2)
+    fi
+    if [ -f "$SHM_OUTPUT/.tokens-env" ]; then
+        forgejo_token=$(grep FORGEJO_API_TOKEN "$SHM_OUTPUT/.tokens-env" | cut -d= -f2)
+    fi
+
+    if [ -z "${server_ip:-}" ] || [ -z "${forgejo_token:-}" ]; then
+        echo "FEHLER: Server-IP oder Forgejo-Token nicht verfuegbar."
+        echo "  Zuerst 'install' oder 'status' ausfuehren."
+        return 1
+    fi
+
+    # Commit-Nachricht abfragen
+    read -rp "Commit-Nachricht (leer = 'Sicherung'): " commit_msg
+    commit_msg="${commit_msg:-Sicherung}"
+
+    # Push via SSH auf den Server (Forgejo laeuft auf localhost:3000)
+    echo "Aenderungen nach Forgejo pushen..."
+    ssh -i "$SHM_SECRETS/deploy_key" -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new \
+        "root@${server_ip}" bash -s -- "$forgejo_token" "$commit_msg" << 'SSHEOF'
+set -euo pipefail
+FORGEJO_TOKEN="$1"
+COMMIT_MSG="$2"
+REPO_DIR="/tmp/infra-sichern"
+
+# Repo klonen falls noetig
+if [ ! -d "$REPO_DIR/.git" ]; then
+    git clone "http://forgejo-admin:${FORGEJO_TOKEN}@localhost:3000/factory/infra-local.git" "$REPO_DIR"
+else
+    cd "$REPO_DIR" && git pull origin main
+fi
+SSHEOF
+
+    # Lokale Dateien auf den Server kopieren und committen
+    echo "Dateien synchronisieren..."
+    rsync -az --delete \
+        --exclude='.git' \
+        --exclude='dist' \
+        --exclude='node_modules' \
+        --exclude='target' \
+        --exclude='__pycache__' \
+        --exclude='.server-env' \
+        --exclude='.tokens-env' \
+        --exclude='.factory-passwords.env' \
+        --exclude='.portal-env' \
+        --exclude='.portal-passwords.env' \
+        --exclude='.portal-smoke-results.env' \
+        --exclude='vault.yml' \
+        --exclude='vault.kdbx' \
+        --exclude='*.log' \
+        --exclude='*.pid' \
+        --exclude='*.zip' \
+        --exclude='*.sqlite-shm' \
+        --exclude='*.sqlite-wal' \
+        -e "ssh -i $SHM_SECRETS/deploy_key -o IdentitiesOnly=yes" \
+        "$SHM_WORKSPACE/" "root@${server_ip}:/tmp/infra-sichern/"
+
+    ssh -i "$SHM_SECRETS/deploy_key" -o IdentitiesOnly=yes \
+        "root@${server_ip}" bash -s -- "$commit_msg" << 'SSHEOF'
+set -euo pipefail
+COMMIT_MSG="$1"
+cd /tmp/infra-sichern
+git add -A
+if git diff --cached --quiet; then
+    echo "Keine Aenderungen — nichts zu committen."
+else
+    git commit -m "$COMMIT_MSG"
+    git push origin main
+    echo "Gesichert: $(git log --oneline -1)"
+fi
+SSHEOF
+
+    echo ""
+
+    # Tarball neu bauen
+    rebuild_tarball
 }
 
 # --- Status-Check ---
@@ -428,6 +555,7 @@ if [ -n "$ACTION" ]; then
     case "$ACTION" in
         1|install)   run_full_install ;;
         5|teardown)  run_full_teardown ;;
+        6|sichern)   run_sichern ;;
         status)      run_status ;;
         *)
             playbook=$(playbook_for "$ACTION") || die "Unbekannte Aktion: $ACTION"
@@ -443,6 +571,7 @@ else
             q|Q) break ;;
             1)  run_full_install ;;
             5)  run_full_teardown ;;
+            6)  run_sichern ;;
             9|status) run_status ;;
             *)
                 playbook=$(playbook_for "$choice") || { echo "Ungueltige Auswahl"; continue; }

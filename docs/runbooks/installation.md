@@ -69,16 +69,21 @@ dist/
 ### Tarball-Inhalt
 
 ```
-codefabrik.tar.gz
-  ansible/        — Playbooks, Roles, Templates, Dockerfile
-  portal/         — Portal-Anwendung (Express.js)
-  products/       — Produkt-Quellcode (fuer seed-products)
+codefabrik.tar.gz          — Komplettes Repo
+  ansible/                 — Playbooks, Roles, Templates, Dockerfile
+  portal/                  — Portal-Anwendung (Express.js)
+  products/                — Produkt-Quellcode (fuer seed-products)
+  scripts/                 — Installer, Build-Scripts, KeePass-Tools
+  docs/                    — Konzepte, Runbooks, Roadmap, ADRs
+  CLAUDE.md                — Agent-Anweisungen
+  .forgejo/                — CI/CD Workflows
   .gitignore
   teardown-remote.sh
 ```
 
-Ausgeschlossen: `node_modules/`, `target/`, `dist/`, `scripts/`, `.git/`,
-alle `*.env`-Dateien, Vault-Dateien, Logs.
+Ausgeschlossen: `.git/`, `dist/`, `node_modules/`, `target/`, `__pycache__/`,
+alle `*.env`-Dateien, `vault.yml`, `vault.kdbx`, Logs, PIDs, `*.zip`,
+SQLite-WAL/SHM-Dateien.
 
 ## Installation starten
 
