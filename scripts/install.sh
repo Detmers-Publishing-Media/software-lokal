@@ -471,10 +471,11 @@ set -euo pipefail
 FORGEJO_TOKEN="$1"
 COMMIT_MSG="$2"
 REPO_DIR="/tmp/infra-sichern"
+git config --global --add safe.directory "$REPO_DIR" 2>/dev/null || true
 
 # Repo klonen falls noetig
 if [ ! -d "$REPO_DIR/.git" ]; then
-    git clone "http://forgejo-admin:${FORGEJO_TOKEN}@localhost:3000/factory/infra-local.git" "$REPO_DIR"
+    git clone "http://factory-admin:${FORGEJO_TOKEN}@localhost:3000/factory/infra-local.git" "$REPO_DIR"
 else
     cd "$REPO_DIR" && git pull origin main
 fi
@@ -509,6 +510,9 @@ SSHEOF
 set -euo pipefail
 COMMIT_MSG="$1"
 cd /tmp/infra-sichern
+git config --global --add safe.directory /tmp/infra-sichern
+git config user.email "installer@codefabrik.local"
+git config user.name "Code-Fabrik Installer"
 git add -A
 if git diff --cached --quiet; then
     echo "Keine Aenderungen — nichts zu committen."
