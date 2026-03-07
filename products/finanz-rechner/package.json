@@ -42,6 +42,10 @@
       "target": ["nsis"],
       "icon": "assets/icons/icon.ico"
     },
+    "linux": {
+      "target": ["AppImage"],
+      "category": "Office"
+    },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,

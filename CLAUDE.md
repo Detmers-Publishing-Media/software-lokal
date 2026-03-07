@@ -5,7 +5,7 @@
 Code-Fabrik ist eine Software-Manufaktur fuer fokussierte Desktop-Tools.
 Monorepo mit Portal, Shared Packages, Produkten und Infrastruktur.
 
-**Version:** 0.7.0 (siehe `VERSION`)
+**Version:** 0.8.0 (siehe `VERSION`)
 
 ## Sprache
 
@@ -22,8 +22,8 @@ code-fabrik/
     vereins-shared/        Svelte 5 Shared Components + DB/License Utils
     shared/                Reine JS-Utils (Crypto, CSV, License-Format)
   products/
-    mitglieder-simple/     Vereinsverwaltung (Tauri/Electron + Svelte 5 + SQLite)
-    finanz-rechner/        Versicherungsrechner (Tauri/Electron + Svelte 5, kein DB)
+    mitglieder-simple/     Vereinsverwaltung (Electron + Svelte 5 + SQLite)
+    finanz-rechner/        Versicherungsrechner (Electron + Svelte 5, kein DB)
     fruehwarnreport/       Fruehwarnbericht (Python, eigenstaendig)
     bundles.json           Produkt-Bundle-Registry
   portal/                  Backend-API (Express.js + PostgreSQL)
@@ -44,13 +44,13 @@ Definiert in `pnpm-workspace.yaml`:
 
 | Schicht | Technologie |
 |---------|-------------|
-| Desktop | Tauri v2 (Rust) + Electron (Fallback) + Svelte 5 + SQLite |
+| Desktop | Electron + Svelte 5 + SQLite |
 | Portal | Express.js + PostgreSQL + Caddy |
 | Shared Components | `@codefabrik/vereins-shared` (Svelte 5) |
 | Shared Utils | `@codefabrik/shared` (Crypto, CSV, License) |
 | Plattform | `@codefabrik/electron-platform` (IPC, Backup, License, Support) |
 | Build | Vite, pnpm |
-| CI/CD | Forgejo Actions, Azure Pipelines (Windows), OpenClaw (Tauri Builds) |
+| CI/CD | Forgejo Actions, GitHub Actions (Windows), OpenClaw |
 | Tests | Node.js native `test` module (kein Jest, kein Mocha) |
 | Infra | Ansible, UpCloud (VPS), Cloudflare (DNS+SSL), Digistore24 (Payment) |
 
@@ -101,7 +101,7 @@ Reine JS-Utilities ohne Framework-Abhaengigkeit. ESM. Exports: `./license`, `./c
 
 ## Produkte
 
-### MitgliederSimple (v0.5.0)
+### Mitglieder lokal (v0.5.0)
 
 Vereinsverwaltung. Bundle: `B-05-verein-ehrenamt`. Hat eigene `CLAUDE.md`.
 
@@ -110,7 +110,7 @@ Vereinsverwaltung. Bundle: `B-05-verein-ehrenamt`. Hat eigene `CLAUDE.md`.
 **Stores:** members.js, navigation.js (String-basiert: 'list', 'payments', 'add', 'edit:ID', 'detail:ID', 'import', 'settings', 'support')
 **Tests:** 74 Tests in 7 Kategorien (Unit, Integration, Migration, Ketten, Replay, Integritaet, Smoke)
 
-### FinanzRechner (v0.2.0)
+### FinanzRechner lokal (v0.2.0)
 
 Versicherungsrechner. Bundle: `B-24-finanz-rechner`. **Kein DB, kein Event-Log.**
 
@@ -153,7 +153,7 @@ Backend-API. CommonJS (Express.js + PostgreSQL).
 ## Lizenz-System
 
 ### Key-Format
-`CFML-XXXX-XXXX-XXXX-XXXX` (MitgliederSimple) / `CFFR-...` (FinanzRechner)
+`CFML-XXXX-XXXX-XXXX-XXXX` (Mitglieder lokal) / `CFFR-...` (FinanzRechner lokal)
 - SAFE_ALPHABET: keine O/0/I/1/l (Verwechslungsgefahr)
 - Letzte 2 Zeichen: CRC-8 Pruefsumme
 - Prefix bestimmt Produkt
@@ -249,6 +249,26 @@ node --test portal/test/unit/*.test.js
 - Kein Over-Engineering. MVP = 1 Funktion + Export, max. 2 Wochen.
 - Keine Features auf Vorrat.
 - Jeder Bug wird zum automatisierten Test.
+
+## Pflege-Regeln
+
+- Jede Story die den Tech-Stack aendert, hat AC: "CLAUDE.md aktualisiert"
+- Bei Migration: `docs/governance/migration-checklist.md` als eigene Story abarbeiten
+- Vor jedem Minor-Release: `pnpm lint:unused`, `pnpm lint:ansible` und `pnpm lint:migrations` ausfuehren
+- Verwaiste Ansible-Rollen und ungenutzte Dependencies sofort entfernen
+- Bei jeder neuen Portal-Migration (`portal/src/db/migrate-v*.sql`): Ansible-Rolle `portal-db` wird automatisch erkannt (dynamische Schleife), aber `pnpm lint:migrations` prueft Konsistenz
+- `build-installer.sh` fuehrt Lint-Checks automatisch vor dem Tarball-Build aus
+
+### Release-Checkliste (bei jedem neuen Feature)
+
+Jedes Feature das eine Produkt-Funktion aendert oder hinzufuegt MUSS folgende Dateien aktualisieren:
+
+1. **`products/<produkt>/spec.yml`** — Feature-Eintrag (status: done, since: version), version hochzaehlen
+2. **`products/<produkt>/package.json`** — version hochzaehlen
+3. **`products/<produkt>/CLAUDE.md`** — Aktuelle Version + Feature-Liste
+4. **`CLAUDE.md` (Root)** — Produkt-Version + Testzahlen
+5. **Portal-DB-Migration** — Falls sich Produktname/Beschreibung/Preis aendert
+6. **`VERSION`** — Monorepo-Version bei Release-wuerdigem Aenderungsumfang
 
 ## Entwicklungsworkflow: Claude Code <-> OpenClaw
 

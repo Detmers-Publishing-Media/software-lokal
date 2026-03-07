@@ -24,8 +24,9 @@
       ansible.builtin.set_fact:
         portal_exists: "{{ existing_portals | length > 0 }}"
 
-    - name: "Alte Portal-Server aufraeumen"
-      ansible.builtin.include_tasks: "{{ playbook_dir }}/../roles/portal-server/tasks/cleanup.yml"
+    - name: "Neuinstallation: Portal-Server muss vorher bereinigt sein"
+      ansible.builtin.fail:
+        msg: "Portal-Server existiert noch. Bitte zuerst 'install.sh nuke' ausfuehren."
       when: portal_exists | bool
 
 - name: "Phase 1: Portal-Server provisionieren"

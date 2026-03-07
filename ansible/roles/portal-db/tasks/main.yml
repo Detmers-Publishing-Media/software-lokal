@@ -18,38 +18,40 @@
   ansible.builtin.debug:
     msg: "{{ db_init_result.stdout_lines[-5:] }}"
 
-- name: "v0.5.0 Migration in Container kopieren"
-  ansible.builtin.shell: docker cp {{ portal_docker_compose_dir }}/src/db/migrate-v050.sql portal-db:/tmp/migrate-v050.sql
+- name: "Migrations-Dateien finden"
+  ansible.builtin.find:
+    paths: "{{ portal_docker_compose_dir }}/src/db"
+    patterns: "migrate-v*.sql"
+  register: migration_files
 
-- name: "v0.5.0 Migration ausfuehren"
-  ansible.builtin.shell: docker exec portal-db psql -U portal -d portal -f /tmp/migrate-v050.sql
-  register: migration_result
+- name: "Migrationen sortiert in Container kopieren und ausfuehren"
+  ansible.builtin.shell: |
+    docker cp {{ item.path }} portal-db:/tmp/{{ item.path | basename }}
+    docker exec portal-db psql -U portal -d portal -f /tmp/{{ item.path | basename }} 2>&1
+  loop: "{{ migration_files.files | sort(attribute='path') }}"
+  loop_control:
+    label: "{{ item.path | basename }}"
+  register: migration_results
 
-- name: "Migration Ergebnis"
+- name: "Migrations-Ergebnisse"
   ansible.builtin.debug:
-    msg: "{{ migration_result.stdout_lines[-5:] }}"
+    msg: "{{ item.item.path | basename }}: {{ item.stdout_lines[-3:] | default(['OK']) }}"
+  loop: "{{ migration_results.results }}"
+  loop_control:
+    label: "{{ item.item.path | basename }}"
 
-- name: "v0.5.5 Migration in Container kopieren"
-  ansible.builtin.shell: docker cp {{ portal_docker_compose_dir }}/src/db/migrate-v055.sql portal-db:/tmp/migrate-v055.sql
+- name: "Schema-Validierung: Pflicht-Spalten pruefen"
+  ansible.builtin.shell: |
+    docker exec portal-db psql -U portal -d portal -tAq -c "
+    SELECT COUNT(*) FROM information_schema.columns
+    WHERE table_name = 'licenses' AND column_name IN ('license_hash', 'auto_renew', 'last_validated_at', 'note')
+    "
+  register: schema_check
+  failed_when: (schema_check.stdout | trim | int) < 4
 
-- name: "v0.5.5 Migration ausfuehren"
-  ansible.builtin.shell: docker exec portal-db psql -U portal -d portal -f /tmp/migrate-v055.sql
-  register: migration_v055_result
-
-- name: "v0.5.5 Migration Ergebnis"
+- name: "Schema-Validierung Ergebnis"
   ansible.builtin.debug:
-    msg: "{{ migration_v055_result.stdout_lines[-5:] }}"
-
-- name: "v0.5.6 Migration in Container kopieren"
-  ansible.builtin.shell: docker cp {{ portal_docker_compose_dir }}/src/db/migrate-v056.sql portal-db:/tmp/migrate-v056.sql
-
-- name: "v0.5.6 Migration ausfuehren"
-  ansible.builtin.shell: docker exec portal-db psql -U portal -d portal -f /tmp/migrate-v056.sql
-  register: migration_v056_result
-
-- name: "v0.5.6 Migration Ergebnis"
-  ansible.builtin.debug:
-    msg: "{{ migration_v056_result.stdout_lines[-5:] }}"
+    msg: "Schema OK: {{ schema_check.stdout | trim }} von 4 Pflicht-Spalten in licenses vorhanden"
 
 - name: "PROD-Server-Info in prod_status speichern"
   ansible.builtin.shell: |

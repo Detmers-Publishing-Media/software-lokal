@@ -166,7 +166,7 @@ ON CONFLICT (id) DO NOTHING;
 INSERT INTO products (id, name, description, price_cents, status, forgejo_repo)
 VALUES (
   'mitglieder-simple',
-  'MitgliederSimple',
+  'Mitglieder lokal',
   'Mitgliederverwaltung fuer Vereine — einfach, offline, DSGVO-konform',
   4900,
   'active',

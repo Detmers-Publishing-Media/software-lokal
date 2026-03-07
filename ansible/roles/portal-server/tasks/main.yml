@@ -43,8 +43,13 @@
         method: GET
         headers:
           Authorization: "Bearer {{ vault_upcloud_api_token }}"
+        status_code: [200, 404, 409]
       register: portal_status
-      until: portal_status.json.server.state == "started"
+      until: >-
+        portal_status.json is defined and
+        portal_status.json.server is defined and
+        portal_status.json.server.state is defined and
+        portal_status.json.server.state == "started"
       retries: 30
       delay: 10
 

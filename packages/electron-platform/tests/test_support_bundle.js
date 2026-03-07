@@ -127,7 +127,7 @@ describe('support-bundle', () => {
     it('works without DB (stateless product)', () => {
       db.close();
       const result = collectDiagnostics({
-        appName: 'FinanzRechner',
+        appName: 'FinanzRechner lokal',
         appVersion: '0.2.0',
         userDataPath: tmpDir,
         dbPath: null,
@@ -165,7 +165,7 @@ describe('support-bundle', () => {
   describe('formatCompactInfo', () => {
     it('returns two lines', () => {
       const result = formatCompactInfo({
-        appName: 'MitgliederSimple',
+        appName: 'Mitglieder lokal',
         appVersion: '0.5.0',
         schemaVersion: 7,
         errorCode: 'CF-DB-002',
@@ -176,7 +176,7 @@ describe('support-bundle', () => {
 
       const lines = result.split('\n');
       assert.equal(lines.length, 2);
-      assert.ok(lines[0].includes('MitgliederSimple'));
+      assert.ok(lines[0].includes('Mitglieder lokal'));
       assert.ok(lines[0].includes('0.5.0'));
       assert.ok(lines[0].includes('Schema v7'));
       assert.ok(lines[0].includes('CF-DB-002'));
@@ -186,11 +186,11 @@ describe('support-bundle', () => {
 
     it('handles missing optional fields', () => {
       const result = formatCompactInfo({
-        appName: 'FinanzRechner',
+        appName: 'FinanzRechner lokal',
         appVersion: '0.2.0',
       });
 
-      assert.ok(result.includes('FinanzRechner'));
+      assert.ok(result.includes('FinanzRechner lokal'));
       assert.ok(result.includes('kein Schema'));
       assert.ok(result.includes('kein Fehler'));
     });

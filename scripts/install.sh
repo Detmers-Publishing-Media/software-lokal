@@ -54,6 +54,7 @@ trap cleanup EXIT INT TERM
 
 # --- Hilfsfunktionen ---
 die() { echo "FEHLER: $*" >&2; exit 1; }
+warn() { echo "WARNUNG: $*" >&2; }
 
 check_cmd() {
     for cmd in "$@"; do
@@ -62,9 +63,9 @@ check_cmd() {
 }
 
 # --- [1] Preflight ---
-preflight() {
+preflight_base() {
     echo "=== Preflight ==="
-    check_cmd keepassxc-cli python3 docker
+    check_cmd keepassxc-cli python3 curl
 
     # KeePass-DB: Pfad abfragen falls nicht gesetzt
     if [ -z "$KEEPASS_DB" ] || [ ! -f "$KEEPASS_DB" ]; then
@@ -72,10 +73,28 @@ preflight() {
         read -rp "Pfad zur KeePass-Datenbank (vault.kdbx): " KEEPASS_DB
         [ -f "$KEEPASS_DB" ] || die "KeePass-DB nicht gefunden: $KEEPASS_DB"
     fi
+    echo "OK"
+}
 
+preflight_full() {
+    check_cmd docker
     [ -f "$TARBALL" ] || die "Tarball nicht gefunden: $TARBALL"
     docker info &>/dev/null || die "Docker laeuft nicht"
-    echo "OK"
+
+    # Tarball-Alter pruefen (Warnung wenn aelter als 1 Stunde)
+    local checksum_file
+    checksum_file="$(dirname "$TARBALL")/CHECKSUM"
+    if [ -f "$checksum_file" ]; then
+        local build_time
+        build_time=$(awk '{print $3}' "$checksum_file")
+        local build_epoch now_epoch age_minutes
+        build_epoch=$(date -d "$build_time" +%s 2>/dev/null || echo "0")
+        now_epoch=$(date +%s)
+        age_minutes=$(( (now_epoch - build_epoch) / 60 ))
+        if [ "$age_minutes" -gt 60 ]; then
+            warn "Tarball ist $age_minutes Minuten alt (gebaut: $build_time). Neu bauen mit build-installer.sh?"
+        fi
+    fi
 }
 
 # --- [2] KeePass-Passwort abfragen ---
@@ -261,6 +280,114 @@ PYEOF
     echo "Secrets geladen."
 }
 
+# --- [4] Nuke: Alle codefabrik-Server finden und verifiziert loeschen ---
+nuke_all_servers() {
+    echo ""
+    echo "=== Nuke: Alle codefabrik-Server abreissen ==="
+
+    # Token aus secrets.yml extrahieren
+    local api_token
+    api_token=$(grep 'vault_upcloud_api_token' "$SHM_SECRETS/secrets.yml" | cut -d'"' -f2)
+    [ -n "$api_token" ] || die "UpCloud API-Token nicht in secrets.yml gefunden"
+
+    # Alle Server auflisten
+    local response
+    response=$(curl -sf \
+        -H "Authorization: Bearer $api_token" \
+        "https://api.upcloud.com/1.3/server") || die "UpCloud API nicht erreichbar"
+
+    # codefabrik-* Server filtern → Temp-Datei (damit while-loop im Hauptprozess laeuft)
+    local server_list="$SHM_SECRETS/nuke_servers.txt"
+    echo "$response" | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+servers = data.get('servers', {}).get('server', [])
+cf = [s for s in servers if s.get('title', '').startswith('codefabrik-')]
+for s in cf:
+    print(f\"{s['uuid']}\t{s['title']}\t{s['state']}\")
+" > "$server_list"
+
+    if [ ! -s "$server_list" ]; then
+        echo "Keine codefabrik-Server gefunden. Sauber."
+        rm -f "$server_list" 2>/dev/null || true
+        return 0
+    fi
+
+    echo "Gefundene Server:"
+    while IFS=$'\t' read -r uuid title state; do
+        echo "  $title ($uuid) — $state"
+    done < "$server_list"
+    echo ""
+    read -rp "Alle abreissen? (ja/nein): " confirm
+    [ "$confirm" = "ja" ] || { echo "Abgebrochen."; rm -f "$server_list"; return 1; }
+
+    # Jeden Server stoppen + loeschen + verifiziert loeschen
+    while IFS=$'\t' read -r uuid title state; do
+        echo ""
+        echo "--- $title ($uuid) ---"
+
+        # Stoppen
+        echo "  Stoppen..."
+        curl -sf -X POST \
+            -H "Authorization: Bearer $api_token" \
+            -H "Content-Type: application/json" \
+            -d '{"stop_server":{"stop_type":"soft","timeout":60}}' \
+            "https://api.upcloud.com/1.3/server/$uuid/stop" >/dev/null 2>&1 || true
+
+        # Warten auf stopped/gone
+        local i srv_state
+        for i in $(seq 1 20); do
+            srv_state=$(curl -sf \
+                -H "Authorization: Bearer $api_token" \
+                "https://api.upcloud.com/1.3/server/$uuid" 2>/dev/null \
+                | python3 -c "import sys,json; print(json.load(sys.stdin).get('server',{}).get('state','unknown'))" 2>/dev/null) || srv_state="gone"
+            [ "$srv_state" = "gone" ] && break
+            [ "$srv_state" = "stopped" ] && break
+            echo "  Warte auf Stop... ($srv_state, Versuch $i/20)"
+            sleep 5
+        done
+
+        if [ "$srv_state" = "gone" ]; then
+            echo "  Bereits geloescht."
+            continue
+        fi
+
+        # Loeschen
+        echo "  Loeschen..."
+        curl -sf -X DELETE \
+            -H "Authorization: Bearer $api_token" \
+            "https://api.upcloud.com/1.3/server/$uuid/?storages=1&backups=delete" >/dev/null 2>&1 || true
+
+        # Verifizieren: Polling bis HTTP 404
+        local http_code
+        for i in $(seq 1 20); do
+            http_code=$(curl -s -o /dev/null -w "%{http_code}" \
+                -H "Authorization: Bearer $api_token" \
+                "https://api.upcloud.com/1.3/server/$uuid") || true
+            if [ "$http_code" = "404" ]; then
+                echo "  Geloescht (verifiziert)."
+                break
+            fi
+            if [ "$i" -eq 20 ]; then
+                rm -f "$server_list" 2>/dev/null || true
+                die "$title ($uuid) konnte nicht geloescht werden (nach 100s). Abbruch."
+            fi
+            echo "  Warte auf Loeschung... (HTTP $http_code, Versuch $i/20)"
+            sleep 5
+        done
+    done < "$server_list"
+
+    # Env-Dateien aufraeumen
+    for f in .server-env .portal-env .tokens-env .factory-passwords.env .portal-passwords.env .portal-smoke-results.env; do
+        rm -f "$SHM_OUTPUT/$f" 2>/dev/null || true
+    done
+
+    rm -f "$server_list" 2>/dev/null || true
+
+    echo ""
+    echo "Alle codefabrik-Server geloescht. Sauberer Zustand."
+}
+
 # --- [5] Tarball entpacken ---
 unpack_workspace() {
     echo ""
@@ -291,12 +418,13 @@ build_docker() {
 show_menu() {
     echo "" >&2
     echo "=== Code-Fabrik Installer ===" >&2
-    echo "  1) install          — Alles installieren (PROD + Portal + Seed)" >&2
+    echo "  1) install          — Alles installieren (Nuke + PROD + Portal + Seed)" >&2
     echo "  2) upgrade-portal   — Portal aktualisieren" >&2
     echo "  3) fabrik           — PROD Status abfragen" >&2
     echo "  4) nacht-stopp      — Jobs-Verarbeitung stoppen" >&2
-    echo "  5) teardown         — Alles abreissen (PROD + Portal)" >&2
+    echo "  5) teardown         — Alles abreissen (PROD + Portal, Ansible)" >&2
     echo "  6) sichern          — Aenderungen nach Forgejo + Tarball neu bauen" >&2
+    echo "  7) nuke             — Alle codefabrik-Server loeschen (UpCloud API)" >&2
     echo "  9) status           — Lokalen Docker-Status pruefen" >&2
     echo "  q) Beenden" >&2
     echo "" >&2
@@ -389,6 +517,7 @@ writeback_runtime() {
 
 # --- Komplett-Installation (PROD + Portal + Seed) ---
 run_full_install() {
+    nuke_all_servers
     run_ansible "playbooks/install.yml"
     writeback_runtime
     run_ansible "playbooks/install-portal.yml"
@@ -614,9 +743,19 @@ run_status() {
 # === MAIN ===
 ACTION="${1:-}"
 
-preflight
+# Basis-Preflight: KeePass + curl (immer noetig)
+preflight_base
 ask_keepass_password
 load_secrets
+
+# Nuke: nur API-Aufrufe, kein Workspace/Docker noetig
+if [ "$ACTION" = "nuke" ]; then
+    nuke_all_servers
+    exit 0
+fi
+
+# Voller Preflight: Docker + Tarball (fuer alle Ansible-Aktionen)
+preflight_full
 unpack_workspace
 build_docker
 
@@ -642,6 +781,7 @@ else
             1)  run_full_install ;;
             5)  run_full_teardown ;;
             6)  run_sichern ;;
+            7|nuke) nuke_all_servers ;;
             9|status) run_status ;;
             *)
                 playbook=$(playbook_for "$choice") || { echo "Ungueltige Auswahl"; continue; }

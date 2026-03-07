@@ -3,9 +3,19 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "pnpm -r run test"
+    "test": "pnpm -r run test",
+    "lint:unused": "knip",
+    "lint:ansible": "bash scripts/validate-ansible-roles.sh",
+    "lint:migrations": "bash scripts/validate-portal-migrations.sh"
   },
   "pnpm": {
-    "onlyBuiltDependencies": ["better-sqlite3", "electron", "esbuild"]
+    "onlyBuiltDependencies": [
+      "better-sqlite3",
+      "electron",
+      "esbuild"
+    ]
+  },
+  "devDependencies": {
+    "knip": "^5.86.0"
   }
 }

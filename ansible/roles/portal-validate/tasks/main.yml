@@ -1,4 +1,29 @@
 ---
+- name: "Pre-Check: Pflicht-Tabellen vorhanden"
+  ansible.builtin.shell: |
+    docker exec portal-db psql -U portal -d portal -tAq -c "
+    SELECT table_name FROM information_schema.tables
+    WHERE table_schema = 'public'
+      AND table_name IN ('products', 'licenses', 'support_tickets', 'test_reports')
+    ORDER BY table_name"
+  register: table_check
+
+- name: "Pre-Check: Tabellen-Ergebnis"
+  ansible.builtin.assert:
+    that:
+      - "'licenses' in table_check.stdout"
+      - "'products' in table_check.stdout"
+      - "'support_tickets' in table_check.stdout"
+    fail_msg: "Pflicht-Tabellen fehlen: {{ table_check.stdout }}. Migrationen unvollstaendig?"
+
+- name: "Pre-Check: license_hash Spalte vorhanden"
+  ansible.builtin.shell: |
+    docker exec portal-db psql -U portal -d portal -tAq -c "
+    SELECT column_name FROM information_schema.columns
+    WHERE table_name = 'licenses' AND column_name = 'license_hash'"
+  register: column_check
+  failed_when: column_check.stdout | trim | length == 0
+
 - name: "Smoke-Test: Portal /api/status"
   ansible.builtin.uri:
     url: "http://localhost:3200/api/status"
@@ -17,10 +42,10 @@
     status_code: 200
   register: products_check
 
-- name: "Smoke-Test: factory-gateway Produkt vorhanden"
+- name: "Smoke-Test: mitglieder-simple Produkt vorhanden"
   ansible.builtin.assert:
-    that: products_check.json | selectattr('id', 'eq', 'factory-gateway') | list | length > 0
-    fail_msg: "factory-gateway Produkt nicht gefunden"
+    that: products_check.json | selectattr('id', 'eq', 'mitglieder-simple') | list | length > 0
+    fail_msg: "mitglieder-simple Produkt nicht gefunden"
 
 - name: "Smoke-Test: Kauf-Flow"
   ansible.builtin.uri:
@@ -28,7 +53,7 @@
     method: POST
     body_format: json
     body:
-      product_id: factory-gateway
+      product_id: mitglieder-simple
       customer_email: "smoke-test@factory.local"
       customer_name: "Smoke Test"
     status_code: 201
@@ -111,7 +136,7 @@
     msg: |
       Portal Smoke-Test:
         /api/status:   ✅ ({{ status_check.json.portal }})
-        Produkte:      ✅ (factory-gateway)
+        Produkte:      ✅ (mitglieder-simple)
         Kauf-Flow:     ✅ (Key: {{ buy_result.json.license_key[:8] }}...)
         Support-Case:  ✅ ({{ support_result.json.case_number }})
         Idee:          ✅ ({{ idea_result.json.idea_number }})

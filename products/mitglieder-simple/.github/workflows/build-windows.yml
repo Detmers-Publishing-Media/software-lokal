@@ -82,3 +82,46 @@ jobs:
         with:
           files: products/mitglieder-simple/release/*.exe
           generate_release_notes: true
+
+  build-linux:
+    needs: test-linux
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
+      - name: Install build tools
+        run: sudo apt-get update && sudo apt-get install -y build-essential python3
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build Electron App
+        run: pnpm electron:build
+        working-directory: products/mitglieder-simple
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: mitglieder-lokal-linux
+          path: products/mitglieder-simple/release/*.AppImage
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: products/mitglieder-simple/release/*.AppImage
+          generate_release_notes: true

@@ -1,0 +1,56 @@
+id: "FEAT-001"
+title: "DSGVO-Datenauskunft (Art. 15)"
+epic: ""
+status: "inbox"
+
+# --- Governance ---
+story_type: "product-fast"
+lane: "fast"
+platform_impact: "none"
+founder_gate_required: false
+force_approve_allowed: true
+auto_merge_allowed: true
+
+# --- Inhalt ---
+produkt: mitglieder-simple
+
+description: |
+  Als Vereinsvorstand moechte ich fuer jedes Mitglied eine vollstaendige
+  Datenauskunft nach Art. 15 DSGVO als PDF und JSON exportieren koennen,
+  damit ich Auskunftsanfragen rechtskonform beantworten kann.
+
+  Der Button "Datenauskunft (DSGVO)" erscheint in der MemberDetail-Ansicht.
+  Er generiert ein PDF mit allen gespeicherten Daten des Mitglieds.
+  Zusaetzlich gibt es einen "JSON-Export (Art. 20)"-Button fuer maschinenlesbare
+  Datenportabilitaet.
+
+acceptance_criteria:
+  - "Button 'Datenauskunft (DSGVO)' in MemberDetail.svelte sichtbar"
+  - "Button 'JSON-Export (Art. 20)' in MemberDetail.svelte sichtbar"
+  - "PDF enthaelt Abschnitt 1: Stammdaten (alle Felder des Mitglieds)"
+  - "PDF enthaelt Abschnitt 2: Aenderungsprotokoll (Events die das Mitglied betreffen)"
+  - "PDF enthaelt Abschnitt 3: Beitraege (Zahlungshistorie)"
+  - "PDF enthaelt Abschnitt 4: Einwilligungen (erteilt/widerrufen mit Datum)"
+  - "PDF enthaelt Abschnitt 5: Verarbeitungszweck (Standardtext)"
+  - "PDF enthaelt Abschnitt 6: Speicherdauer (gesetzliche Fristen)"
+  - "PDF enthaelt Abschnitt 7: Empfaenger ('Keine Weitergabe an Dritte')"
+  - "PDF hat Vereinskopf (Name, Adresse aus club_profile)"
+  - "JSON-Export enthaelt Stammdaten, Events, Zahlungen, Einwilligungen"
+  - "JSON wird als Datei gespeichert (ueber Electron Dialog)"
+  - "Neue DB-Funktion getEventsByMember(memberId) in db.js"
+  - "Neue DB-Funktion getMemberDataReport(memberId) in db.js"
+  - "Neue Datei src/lib/pdf-dsgvo.js mit generateDataReport()"
+  - "Mindestens 5 neue Tests in tests/test_dsgvo.js"
+  - "Alle bestehenden 74 Tests bleiben gruen"
+
+affected_files:
+  - "products/mitglieder-simple/src/routes/MemberDetail.svelte"
+  - "products/mitglieder-simple/src/lib/db.js"
+  - "products/mitglieder-simple/src/lib/pdf-dsgvo.js (NEU)"
+  - "products/mitglieder-simple/tests/test_dsgvo.js (NEU)"
+
+depends_on: []
+
+manual_steps: []
+
+estimated_effort: "M"

@@ -48,48 +48,18 @@
       ansible.builtin.set_fact:
         install_type: "{{ 'update' if install_mode.user_input | trim == '2' else 'fresh' }}"
 
-    # --- Aufraeum-Block: Loescht bestehenden Server falls vorhanden ---
-    - name: "Aufraeumen: Server stoppen"
-      ansible.builtin.uri:
-        url: "https://api.upcloud.com/1.3/server/{{ server_uuid }}/stop"
-        method: POST
-        headers:
-          Authorization: "Bearer {{ vault_upcloud_api_token }}"
-          Content-Type: "application/json"
-        body_format: json
-        body:
-          stop_server:
-            stop_type: hard
-            timeout: 60
-        status_code: [200, 409]
-      ignore_errors: true
+    # Safety-Check: Bei Neuinstallation duerfen keine Server mehr existieren
+    # (install.sh nuke_all_servers muss vorher gelaufen sein)
+    - name: "Neuinstallation: Server muessen vorher bereinigt sein"
+      ansible.builtin.fail:
+        msg: "Server 'codefabrik-prod' existiert noch ({{ server_uuid }}). Bitte zuerst 'install.sh nuke' ausfuehren."
       when: install_type == 'fresh' and server_exists | bool
 
-    - name: "Aufraeumen: Warte auf Stop (30s)"
-      ansible.builtin.pause:
-        seconds: 30
-      when: install_type == 'fresh' and server_exists | bool
-
-    - name: "Aufraeumen: Server loeschen"
-      ansible.builtin.uri:
-        url: "https://api.upcloud.com/1.3/server/{{ server_uuid }}/?storages=1&backups=delete"
-        method: DELETE
-        headers:
-          Authorization: "Bearer {{ vault_upcloud_api_token }}"
-          Content-Type: "application/json"
-        status_code: [200, 204]
-      ignore_errors: true
-      when: install_type == 'fresh' and server_exists | bool
-
-    - name: "Aufraeumen: Warte auf Loeschung (30s)"
-      ansible.builtin.pause:
-        seconds: 30
-      when: install_type == 'fresh' and server_exists | bool
-
+    # DNS-Records aufraeumen (leichtgewichtig, nur API-Calls)
     - name: "Aufraeumen: DNS-Records entfernen"
       ansible.builtin.include_tasks: "{{ playbook_dir }}/../roles/dns/tasks/cleanup.yml"
       ignore_errors: true
-      when: install_type == 'fresh' and server_exists | bool
+      when: install_type == 'fresh'
 
     - name: "Aufraeumen: Lokale Dateien entfernen"
       ansible.builtin.file:
@@ -106,10 +76,10 @@
         content: "{{ install_type }}"
         dest: "/output/.install-type"
 
-    - name: "Kein Server vorhanden — ueberspringe Aufraeumen"
+    - name: "Neuinstallation: Sauberer Zustand bestaetigt"
       ansible.builtin.debug:
-        msg: "Kein bestehender Server gefunden. Starte Neuinstallation."
-      when: install_type == 'fresh' and not (server_exists | bool)
+        msg: "Keine bestehenden Server. Starte Neuinstallation."
+      when: install_type == 'fresh'
 
     - name: "Update: Server-Details von UpCloud laden"
       ansible.builtin.uri:
@@ -283,7 +253,6 @@
     - postgres
     - forgejo
     - runner
-    - tauri-build
     - openclaw
     - repos
     - secrets

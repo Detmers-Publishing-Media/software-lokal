@@ -20,6 +20,15 @@ TARBALL_NAME="codefabrik-v${VERSION}.tar.gz"
 
 echo "=== Code-Fabrik Installer bauen (v${VERSION}) ==="
 
+# Lint-Checks vor dem Build
+echo "Lint-Checks..."
+if [ -x "$SCRIPT_DIR/validate-portal-migrations.sh" ]; then
+    bash "$SCRIPT_DIR/validate-portal-migrations.sh" || { echo "FEHLER: Migrations-Lint fehlgeschlagen. Tarball wird nicht gebaut." >&2; exit 1; }
+fi
+if [ -x "$SCRIPT_DIR/validate-ansible-roles.sh" ]; then
+    bash "$SCRIPT_DIR/validate-ansible-roles.sh" || { echo "FEHLER: Ansible-Roles-Lint fehlgeschlagen. Tarball wird nicht gebaut." >&2; exit 1; }
+fi
+
 mkdir -p "$DIST_DIR"
 
 # Tarball erstellen: komplettes Repo ohne Secrets, temporaere Dateien und Build-Artefakte
@@ -52,7 +61,14 @@ ln -sf "$TARBALL_NAME" "$DIST_DIR/codefabrik.tar.gz"
 # install.sh + control.sh kopieren
 cp "$SCRIPT_DIR/install.sh" "$DIST_DIR/install.sh"
 cp "$SCRIPT_DIR/control.sh" "$DIST_DIR/control.sh"
+cp "$PROJECT_DIR/VERSION" "$DIST_DIR/VERSION"
 chmod +x "$DIST_DIR/install.sh" "$DIST_DIR/control.sh"
+
+# Checksum und Build-Timestamp schreiben
+CHECKSUM=$(sha256sum "$DIST_DIR/$TARBALL_NAME" | cut -d' ' -f1)
+BUILD_TIME=$(date -u '+%Y-%m-%dT%H:%M:%SZ')
+echo "$CHECKSUM  $TARBALL_NAME  $BUILD_TIME" > "$DIST_DIR/CHECKSUM"
+echo "Checksum: ${CHECKSUM:0:16}... ($BUILD_TIME)"
 
 echo ""
 echo "Fertig:"

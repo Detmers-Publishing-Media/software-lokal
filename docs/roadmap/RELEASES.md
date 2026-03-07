@@ -1,6 +1,6 @@
 # Code-Fabrik — Release-Historie
 
-Stand: 2026-03-08
+Stand: 2026-03-07
 
 ---
 
@@ -26,6 +26,7 @@ Stand: 2026-03-08
 | v0.6.6 | GitHub CI | Private Repos + GitHub Actions Workflows, Code gepusht | Done |
 | v0.6.7 | Prozessmodell v2 | Governance-Gates im Poller, story-types.yml, CI-Guardrails, Cross-Import-Regel | Done |
 | v0.7.0 | Lizenz & Support | Digistore IPN + CFML-Keys, Support-Tickets (HMAC), Trial-Keys (CFTM/CFTR), control.sh Kontrollzentrum, LicenseSection + SupportView UI | Done |
+| v0.8.0 | Hygiene | Tauri-Remnants bereinigt, Nuke-before-Install, knip + Ansible-Lint, Migrations-Checkliste, CLAUDE.md-Pflege-Regeln | Done |
 
 ---
 

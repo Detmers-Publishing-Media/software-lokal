@@ -4,13 +4,13 @@
   "bundles": {
     "B-05-verein-ehrenamt": {
       "name": "Verein & Ehrenamt Digital",
-      "description": "50 Tools fuer Vereinsverwaltung als Tauri + Svelte Desktop-Apps",
+      "description": "Vereinsverwaltung als Electron + Svelte Desktop-App",
       "target": "Foerdervereine, Kulturvereine, Sportvereine",
       "products": [
         {
           "repo": "mitglieder-simple",
           "type": "app",
-          "description": "Einfache Mitgliederverwaltung"
+          "description": "Mitglieder lokal — Mitgliederverwaltung fuer Vereine"
         },
         {
           "repo": "vereins-shared",
@@ -36,7 +36,7 @@
     "mitglieder-simple": {
       "bundles": ["B-05-verein-ehrenamt"],
       "type": "app",
-      "tech": "tauri-svelte",
+      "tech": "electron-svelte",
       "forgejo_repo": "factory-admin/mitglieder-simple"
     },
     "vereins-shared": {
@@ -54,7 +54,7 @@
     "finanz-rechner": {
       "bundles": ["B-24-finanz-rechner"],
       "type": "app",
-      "tech": "tauri-svelte",
+      "tech": "electron-svelte",
       "forgejo_repo": "factory-admin/finanz-rechner"
     },
     "fruehwarnreport": {

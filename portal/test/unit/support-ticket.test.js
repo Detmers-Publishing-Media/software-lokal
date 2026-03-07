@@ -45,7 +45,7 @@ describe('api-support-ticket', () => {
       id: 1,
       license_hash: VALID_HASH,
       product_id: 'mitglieder-simple',
-      product_name: 'MitgliederSimple',
+      product_name: 'Mitglieder lokal',
       status: 'active',
       expires_at: new Date(Date.now() + 365 * 86400000).toISOString(),
     };

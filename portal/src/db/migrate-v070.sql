@@ -25,7 +25,7 @@ ALTER TABLE licenses ADD COLUMN IF NOT EXISTS auto_renew BOOLEAN DEFAULT true;
 INSERT INTO products (id, name, description, price_cents, status, forgejo_repo)
 VALUES (
   'finanz-rechner',
-  'FinanzRechner',
+  'FinanzRechner lokal',
   'Finanzrechner fuer Versicherungsmakler — lokal, sicher, unabhaengig',
   2900,
   'active',

@@ -1,8 +1,8 @@
-# MitgliederSimple — Agent-Anweisungen
+# Mitglieder lokal — Agent-Anweisungen
 
 ## Produkt
 
-Mitgliederverwaltung fuer Vereine. Tauri v2 + Svelte 5 + SQLite Desktop-App.
+Mitgliederverwaltung fuer Vereine. Electron + Svelte 5 + SQLite Desktop-App.
 Produktspec: `docs/produktspec.md`
 Release-Historie: `docs/RELEASES.md`
 
@@ -42,11 +42,6 @@ src/
     Settings.svelte      Vereinsprofil + Beitragsklassen + Supportvertrag (LicenseSection)
     Import.svelte        CSV-Import
   App.svelte             Root-Komponente, Navigation, DB-Init, SupportView-Route
-src-tauri/
-  migrations/            SQL-Migrationsdateien (001-005)
-  capabilities/          Tauri v2 Permissions
-  Cargo.toml             Rust Dependencies
-  src/lib.rs             Plugin-Registrierung
 tests/
   fixtures/              SQLite-Fixtures pro Version (NIE loeschen)
   test_*.js              Testdateien (node --test)
