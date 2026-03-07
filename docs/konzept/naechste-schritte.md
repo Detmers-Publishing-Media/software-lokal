@@ -1,105 +1,73 @@
 # Code-Fabrik — Naechste Schritte
 
-*Priorisierte Handlungsempfehlungen, Stand 2026-03-06 (aktualisiert fuer GPL 3.0 + Support-Abo)*
-*Grundlage: Gesamtkonzept v3 (docs/konzept/gesamtkonzept-v3.md), Lizenzstrategie (docs/konzept/lizenzstrategie.md)*
+*Priorisierte Handlungsempfehlungen, Stand 2026-03-07*
+*Grundlage: Gesamtkonzept v3, Lizenzstrategie, Roadmap v0.6*
 
 ---
 
-## Sofort (v0.6.1 — Private Repos + CI vorbereiten)
+## Sofort (v0.7.0 — Windows-Builds + Referenzkunde)
 
-**Ziel:** Private Repos und CI-Pipeline in GitHub-Organisation aufbauen.
+**Ziel:** Echte EXE-Dateien bauen und an Referenzkunde ausliefern.
 
-1. **GitHub Organisation `codefabrik` — Private Repos anlegen**
-   - Organisation ist angelegt (Team-Plan, bezahlt)
-   - Produkt-Repos als **Private Repos** anlegen (Public ab v1.0)
-   - GPL 3.0 LICENSE bereits jetzt in die Repos legen (Vorbereitung)
+1. **GitHub Actions Windows-Build aufsetzen**
+   - Workflow `build-windows.yml` in beiden Repos (mitglieder-simple, finanz-rechner)
+   - Tauri → Windows EXE + Installer (MSI/NSIS)
+   - Build-Artefakte als GitHub Release hochladen
 
-2. **GitHub Actions aufbauen (Private Repos im Team-Plan)**
-   - ADR-009 umsetzen (Test-Server oder Docker-Isolation)
-   - Windows-Installer-Validierung automatisieren
-   - Tauri-Builds fuer Win/macOS/Linux
-   - Build-Artefakte als Actions Artifacts (intern, temporaer)
-
-4. **MitgliederSimple v0.1 an Referenzkunde ausliefern**
-   - App lokal mit `cargo tauri dev` testen
+2. **MitgliederSimple an Referenzkunde ausliefern**
+   - Windows-EXE lokal testen
    - An Referenzkunde per Mail schicken (Phase 1, lt. Gesamtkonzept Kap. 5.1)
    - Feedback-Schleife: Bug → Test (lt. Kap. 12.1)
 
-5. **Geschaeftsplan (v0.5.8, parallel)**
-   - Business-Plan ueberarbeiten (Marktanalyse, Finanzplanung)
-   - Referenzkunden-Gespraechsleitfaden erstellen
+3. **"So rechnet dieses Tool" Seite**
+   - Berechnungslogik in Alltagssprache (lt. Kap. 12.2)
+   - Testbericht oeffentlich einsehbar
 
 ---
 
-## Kurzfristig (v0.6.2 — MitgliederSimple v0.2 nach Feedback)
+## Kurzfristig (v0.8.0 — Erster Kauf End-to-End)
 
-**Ziel:** Produkt nach Referenzkunden-Feedback iterieren.
+**Ziel:** "Geld fliesst" Moment — Referenzkunde kauft ueber Digistore24.
 
-1. **Referenzkunden-Feedback auswerten**
-   - "Nutzt du das wirklich?" → Signal fuer Phase 2
-   - Fehlende Features priorisieren
-
-2. **MitgliederSimple v0.2 bauen**
-   - Weitere Felder / Validierungen (je nach Feedback)
-   - CSV-Import Verbesserungen, UX-Optimierungen
-   - "So rechnet dieses Tool" Seite (lt. Kap. 12.2)
-
-3. **Service-Abo Scope definieren**
-   - Welche Support-Leistungen gehoeren zum Abo? (Updates, Hotline, Prioritaets-Tickets)
-   - Preisstruktur fuer Support-Abo festlegen (lt. lizenzstrategie.md)
-
----
-
-## Mittelfristig (v0.7.0)
-
-**Ziel:** Vom Prototyp zum kaufbaren Produkt.
-
-1. **Digistore24 Support-Abo einrichten**
-   - Abo-Produkt in Digistore24 anlegen (monatlich/jaehrlich)
-   - IPN-Anbindung fuer Abo-Events (Zahlung, Kuendigung, Wiederaufnahme)
+1. **Digistore24 IPN-Handler implementieren**
+   - `/api/digistore-ipn` Endpoint auf Portal
+   - Key-Generierung (CF-B05-XXXXXXXX-XX)
    - HTTPS auf Portal (Caddy + Let's Encrypt)
 
-2. **Erster echter Kauf (v0.7.0)**
-   - Referenzkunde schliesst Support-Abo ab → "Geld fliesst" Moment (lt. Kap. 5.2)
-   - Software bleibt frei (GPL 3.0), Key schaltet Service frei
+2. **Lizenz-Aktivierung in Desktop-Apps**
+   - MitgliederSimple: license.js + Settings-UI
+   - Finanz-Rechner: Key-Validierung fuer Service-Features (PDF-Export)
+
+3. **End-to-End Test mit echtem Geld**
+   - Referenzkunde kauft Support-Abo → Key → Downloads freigeschaltet
 
 ---
 
-## Langfristig (v0.8.0 — v1.0.0)
+## Mittelfristig (v0.9.0 — Zweites Produkt)
 
-**Ziel:** Multi-Produkt-Faehigkeit beweisen und Go-Live.
+**Ziel:** Pipeline beweist Multi-Produkt-Faehigkeit.
 
-1. **Zweites Produkt (v0.8.0)**
-   - Zweites B-05-Tool (wird nach Referenzkunden-Feedback definiert)
-   - Shared Components extrahieren (`@codefabrik/vereins-shared`)
-   - Pipeline-Beweis: zweites Produkt in < 1 Woche
-
-2. **Zweites Bundle (v0.9.0)**
-   - B-24 Finanz-Rechner: Tilgungsplanrechner
-   - Shared Math-Engine
-   - Referenz-Makler einbinden
-
-3. **Go-Live (v1.0.0)**
-   - 24/7 Betrieb, Alerting, Credential-Rotation
-   - Min. 5 Tools B-05 + 3 Tools B-24
-   - Erster organischer Kunde
-   - GitHub Repos auf Public umschalten (GPL 3.0)
-   - Community-Feedback integriert
+1. **Zweites B-05-Tool bauen** (wird nach Referenzkunden-Feedback definiert)
+2. **Shared Components extrahieren** (`@codefabrik/vereins-shared`)
+3. **Pipeline-Beweis:** Zweites Produkt in < 1 Woche durch die Pipeline
 
 ---
 
-## Offene Entscheidungen
+## Langfristig (v1.0.0 — Go-Live)
 
-Aus Gesamtkonzept Kap. 14 — muessen im Laufe der Roadmap getroffen werden:
+**Ziel:** Produktionsbetrieb mit echten Kunden.
 
-| # | Thema | Status |
-|---|-------|--------|
-| 1 | **Finanz-UI-Framework:** Svelte vs. React | Offen — vor v0.9.0 (B-24 Start) |
-| 2 | **Digistore24 langfristig:** Bleiben vs. Paddle/LemonSqueezy | Offen — nach 6 Monaten Live-Betrieb |
-| 3 | **GPL 3.0 Lizenz:** Software frei, Service kostenpflichtig | Entschieden — siehe lizenzstrategie.md |
-| 4 | **Web-Versionen der Rechner:** SEO-Hebel vs. Fokus | Offen — nicht priorisiert |
-| 5 | **GitHub Actions als CI:** Private Repos (Team-Plan), ab v1.0 kostenlos (Public) | Entschieden — sofort umsetzen |
-| 6 | **PayPal neben Digistore24:** Fuer Event-Tickets (B-05) | Offen — bei konkretem Bedarf |
+1. **24/7 Betrieb** (Nightstop deaktivieren oder konfigurierbar)
+2. **Min. 5 Tools B-05 + 3 Tools B-24**
+3. **Erster organischer Kunde** (nicht Referenzkunde)
+4. **GitHub Repos auf Public umschalten** (GPL 3.0)
+
+---
+
+## Parallel (kein Blocker fuer Produkt-Entwicklung)
+
+- **Geschaeftsplan (v0.5.8):** Business-Plan ueberarbeiten, Preisstruktur, Referenzkunden-Gespraeche
+- **Infrastruktur-Haertung:** Erst wenn Produkt und Kunden es erfordern (Wachposten, Restore-Test, CVE-Scan)
 
 ---
 

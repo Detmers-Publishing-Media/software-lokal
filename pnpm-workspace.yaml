@@ -1,0 +1,4 @@
+packages:
+  - "packages/*"
+  - "products/mitglieder-simple"
+  - "products/finanz-rechner"

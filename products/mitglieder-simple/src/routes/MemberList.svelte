@@ -4,7 +4,7 @@
   import { members, searchQuery, statusFilter, filteredMembers } from '../lib/stores/members.js';
   import { currentView } from '../lib/stores/navigation.js';
   import { getMembers, getClubProfile } from '../lib/db.js';
-  import { generateCsv, downloadCsv } from '../lib/csv.js';
+  import { generateCsv, downloadCsv } from '@codefabrik/shared/csv';
   import { checkMemberLimit, hasLicenseKey } from '../lib/license.js';
   import { generateMitgliederliste, generateTelefonliste, generateGeburtstagsliste, generateJubilarliste } from '../lib/pdf-lists.js';
 

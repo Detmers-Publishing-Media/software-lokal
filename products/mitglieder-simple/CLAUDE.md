@@ -39,9 +39,9 @@ src/
     MemberForm.svelte    Anlegen/Bearbeiten + DSGVO-Felder + Limit-Check
     MemberDetail.svelte  Detailansicht + DSGVO-Badges + Zahlungshistorie
     Payments.svelte      Beitragsuebersicht + Zahlungserfassung
-    Settings.svelte      Vereinsprofil + Beitragsklassen
+    Settings.svelte      Vereinsprofil + Beitragsklassen + Supportvertrag (LicenseSection)
     Import.svelte        CSV-Import
-  App.svelte             Root-Komponente, Navigation, DB-Init
+  App.svelte             Root-Komponente, Navigation, DB-Init, SupportView-Route
 src-tauri/
   migrations/            SQL-Migrationsdateien (001-005)
   capabilities/          Tauri v2 Permissions
@@ -71,14 +71,15 @@ demo/
 
 - Runes: `$state`, `$props`, `$derived`, `$derived.by`, `$effect`
 - Stores: `writable`, `derived` aus svelte/store
-- Navigation: String-basiert via `currentView` Store ('list', 'payments', 'add', 'edit:ID', 'detail:ID', 'import', 'settings')
-- Shared Components: `DataTable`, `SearchBar`, `ExportButton` aus `@codefabrik/vereins-shared/components`
+- Navigation: String-basiert via `currentView` Store ('list', 'payments', 'add', 'edit:ID', 'detail:ID', 'import', 'settings', 'support')
+- Shared Components: `DataTable`, `SearchBar`, `ExportButton`, `LicenseSection`, `SupportView` aus `@codefabrik/vereins-shared/components`
 
-## Aktuelle Version: v0.4.0 "Beitrag"
+## Aktuelle Version: v0.5.0
 
 Features: Mitglieder-CRUD, Beitragsklassen, CSV-Export/Import, DSGVO-Einwilligungen,
 Vereinsprofil/Briefkopf, Probe-Lizenz (30 Mitglieder), PDF-Listen (5 Typen),
 Beitragsverwaltung (Zahlungserfassung, Jahresuebersicht, Mahnbriefe),
-Event-Log mit Hash-Kette, Schema-Versionierung.
+Event-Log mit Hash-Kette, Schema-Versionierung,
+Supportvertrag-Verwaltung (LicenseSection in Settings), Support-Seite (SupportView).
 
 74 Tests in 7 Kategorien: Unit, Integration, Migration, Ketten, Replay, Integritaet, Smoke.

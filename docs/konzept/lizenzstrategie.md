@@ -1,7 +1,8 @@
 # Code-Fabrik — Lizenzstrategie GPL 3.0 + Support-Abo
 
-*Stand: 2026-03-06*
+*Stand: 2026-03-07*
 *Dieses Dokument ersetzt die bisherige MIT-Lizenz-Strategie und "Delayed Open Source".*
+*Aktualisiert: Einmalkauf entfernt — nur noch Support-Abos (PO-Entscheidung 2026-03-07)*
 
 ---
 
@@ -69,7 +70,7 @@ SUPPORT-ABO-MODUS (mit Key):
   Update-Checker (prueft Portal auf neue Versionen)
   Fertige Installer (EXE/DMG/AppImage Download)
   Support-Tickets (48h Reaktionszeit)
-  Feature-Requests + Voting
+  Feature-Requests + Voting (exklusiv fuer Abo-Kunden)
   Vorlagen-Bibliothek (Satzungsvorlagen, DSGVO-Texte, Briefvorlagen)
   Gebrandete PDFs (Vereinslogo im Footer statt "Code-Fabrik")
   Cloud-Backup (verschluesselt, optional)
@@ -119,7 +120,7 @@ Der Key ist ein Service-Zugang, kein Produktschluessel.
 - **Gebrandete PDFs:** Vereinslogo im Footer statt "Erstellt mit Code-Fabrik"
 - **Support:** Ticket ueber Portal, 48h Antwort
 - **Cloud-Backup:** Verschluesselte Sicherung auf Code-Fabrik-Server (optional)
-- **Feature-Voting:** Mitbestimmung bei der Weiterentwicklung
+- **Feature-Requests + Voting:** Neue Funktionen und Tools vorschlagen und abstimmen (nur mit Key)
 
 ### Preismodell MitgliederSimple
 
@@ -155,15 +156,16 @@ Kein Wasserzeichen, keine Einschraenkung, kein "nur Bildschirm-Anzeige".
 - **Vorlagen:** Branchenspezifische Report-Vorlagen
 - **Gebrandete PDFs:** Makler-Logo statt "Code-Fabrik"
 - **Support:** Ticket ueber Portal, 48h Antwort
-- **Feature-Voting:** Welcher Rechner als naechstes?
+- **Feature-Requests + Voting:** Neue Rechner und Funktionen vorschlagen und abstimmen (nur mit Key)
 
 ### Preismodell Finanz-Rechner
 
 ```
-Community:          0 EUR — einzelne Rechner von GitHub, selbst kompilieren
-Finanz-Toolbox:    39 EUR Einmalkauf — alle Rechner als App + 12 Monate Updates
-Finanz-Toolbox Abo: 29 EUR/Jahr — immer neueste Rechner + Support
+Community:     0 EUR — einzelne Rechner von GitHub, selbst kompilieren
+Support-Abo:  29 EUR/Jahr — alle Rechner als App + Support + Updates + Vorlagen
 ```
+
+Kein Einmalkauf. Die Software ist Open Source — es gibt nur Support-Abos.
 
 ---
 
@@ -300,7 +302,7 @@ zum Zeitpunkt der Entwicklung.
 | Veroeffentlichung | Delayed (Tag 90+) | Privat bis v1.0, dann Public auf GitHub |
 | Key-Funktion | Portal-Zugang (Downloads, Support) | Service-Zugang (Updates, Support, Vorlagen) |
 | Probe-Lizenz | 30 Mitglieder, Wasserzeichen | Entfaellt — alles frei |
-| Stufen-Preise | 29-219 EUR/Jahr je nach Stufe+Groesse | 29 EUR/Jahr fuer alles |
+| Stufen-Preise | 29-219 EUR/Jahr je nach Stufe+Groesse | 29 EUR/Jahr Support-Abo (kein Einmalkauf) |
 | Feature-Gates | Stufen schalten Features frei | Keine — alle Features verfuegbar |
 | Binaries | Nur ueber Portal | Nur ueber Portal (Quellcode auf GitHub) |
 
@@ -317,15 +319,12 @@ zum Zeitpunkt der Entwicklung.
 ### Revenue-Streams
 
 ```
-1. Support-Abo (wiederkehrend):
-   → 29 EUR/Jahr (Vereine) / 29 EUR/Jahr (Finanz-Toolbox)
+1. Support-Abo (einziger Produkt-Revenue-Stream):
+   → 29 EUR/Jahr pro Produkt
    → Fertige Installer + Updates + Support + Vorlagen
+   → Kein Einmalkauf — Software ist Open Source, verkauft wird nur der Service
 
-2. Einmalkauf (einmalig):
-   → 39 EUR (Finanz-Toolbox) / 39 EUR (Vereins-Toolbox)
-   → 12 Monate Updates + Support, danach Community-Modus
-
-3. Consulting (optional, spaeter):
+2. Consulting (optional, spaeter):
    → Einrichtungshilfe, Datenmigration, Schulung
    → Auf Anfrage, kein Standardprodukt
 ```
@@ -381,3 +380,4 @@ README.md:
 | L6 | CI/CD oeffentlich | GitHub Actions | Kostenlos fuer Public Repos, kein CircleCI noetig | 2026-03-06 |
 | L7 | GitHub-Organisation | codefabrik | Zentrale Anlaufstelle fuer alle oeffentlichen Repos | 2026-03-06 |
 | L8 | Open-Core-Option | Vorgesehen | Proprietaere Zusatzmodule moeglich, aktuell kein Bedarf | 2026-03-06 |
+| L9 | Einmalkauf | Abgeschafft | Software ist Open Source, kein Produktverkauf, nur Support-Abos | 2026-03-07 |

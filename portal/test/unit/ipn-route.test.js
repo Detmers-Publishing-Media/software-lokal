@@ -16,17 +16,29 @@ require.cache[poolPath] = {
 // License-Service Mock
 const licenseCalls = [];
 const mockLicense = {
-  activateFromIPN: async (data) => { licenseCalls.push({ fn: 'activateFromIPN', data }); },
+  resolveProductId: async (pid) => {
+    licenseCalls.push({ fn: 'resolveProductId', pid });
+    return pid; // pass-through for tests
+  },
+  activateFromIPN: async (data) => {
+    licenseCalls.push({ fn: 'activateFromIPN', data });
+    return { existing: false, licenseKey: 'CFML-TEST-KEY1-KEY2-KE34' };
+  },
   revokeByOrderId: async (orderId) => {
     licenseCalls.push({ fn: 'revokeByOrderId', orderId });
     return mockLicense._revokeResult || { rows: [{ license_key: 'LK-M' }], rowCount: 1 };
   },
-  expireByOrderId: async (orderId) => {
-    licenseCalls.push({ fn: 'expireByOrderId', orderId });
-    return mockLicense._expireResult || { rows: [{ license_key: 'LK-M' }], rowCount: 1 };
+  cancelByOrderId: async (orderId) => {
+    licenseCalls.push({ fn: 'cancelByOrderId', orderId });
+    return mockLicense._cancelResult || { rows: [{ license_key: 'LK-M' }], rowCount: 1 };
+  },
+  resumeByOrderId: async (orderId) => {
+    licenseCalls.push({ fn: 'resumeByOrderId', orderId });
+    return mockLicense._resumeResult || { rows: [{ license_key: 'LK-M' }], rowCount: 1 };
   },
   _revokeResult: null,
-  _expireResult: null,
+  _cancelResult: null,
+  _resumeResult: null,
 };
 const licensePath = require.resolve('../../src/services/license');
 require.cache[licensePath] = {
@@ -92,7 +104,8 @@ describe('IPN Route Handler', () => {
     licenseCalls.length = 0;
     verifyReturnValue = true;
     mockLicense._revokeResult = null;
-    mockLicense._expireResult = null;
+    mockLicense._cancelResult = null;
+    mockLicense._resumeResult = null;
     process.env.DIGISTORE_IPN_PASSPHRASE = PASSPHRASE;
   });
 
@@ -128,23 +141,23 @@ describe('IPN Route Handler', () => {
     assert.equal(mockPool._calls[0].params[4], 'invalid_signature');
   });
 
-  it('3: on_payment → activateFromIPN aufgerufen', async () => {
+  it('3: on_payment → resolveProductId + activateFromIPN aufgerufen', async () => {
     const res = await postIPN(makePayload());
     assert.equal(await res.text(), 'OK');
-    assert.equal(licenseCalls.length, 1);
-    assert.equal(licenseCalls[0].fn, 'activateFromIPN');
-    assert.equal(licenseCalls[0].data.order_id, 'ORD-123');
-    assert.equal(licenseCalls[0].data.license_key, 'LK-ABC');
+    // resolveProductId + activateFromIPN
+    const activateCall = licenseCalls.find(c => c.fn === 'activateFromIPN');
+    assert.ok(activateCall, 'activateFromIPN should be called');
+    assert.equal(activateCall.data.order_id, 'ORD-123');
+    assert.equal(activateCall.data.product_id, 'PROD-1');
   });
 
-  it('4: on_payment ohne license_key → UUID generiert', async () => {
+  it('4: on_payment → Key wird vom Service generiert (nicht aus Payload)', async () => {
     const res = await postIPN(makePayload({ license_key: '' }));
     assert.equal(await res.text(), 'OK');
-    assert.equal(licenseCalls.length, 1);
-    // license_key sollte eine UUID sein (da leerer Key im Payload)
-    const key = licenseCalls[0].data.license_key;
-    assert.ok(key, 'license_key sollte nicht leer sein');
-    assert.match(key, /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
+    const activateCall = licenseCalls.find(c => c.fn === 'activateFromIPN');
+    assert.ok(activateCall, 'activateFromIPN should be called');
+    // Key is no longer passed from payload — service generates it
+    assert.equal(activateCall.data.order_id, 'ORD-123');
   });
 
   it('5: on_refund → revokeByOrderId aufgerufen', async () => {
@@ -162,21 +175,32 @@ describe('IPN Route Handler', () => {
     assert.equal(licenseCalls[0].fn, 'revokeByOrderId');
   });
 
-  it('7: on_rebill_cancelled → expireByOrderId aufgerufen', async () => {
+  it('7: on_rebill_cancelled → cancelByOrderId aufgerufen (kein sofortiger Ablauf)', async () => {
     const res = await postIPN(makePayload({ event: 'on_rebill_cancelled' }));
     assert.equal(await res.text(), 'OK');
-    assert.equal(licenseCalls.length, 1);
-    assert.equal(licenseCalls[0].fn, 'expireByOrderId');
-    assert.equal(licenseCalls[0].orderId, 'ORD-123');
+    const cancelCall = licenseCalls.find(c => c.fn === 'cancelByOrderId');
+    assert.ok(cancelCall, 'cancelByOrderId should be called');
+    assert.equal(cancelCall.orderId, 'ORD-123');
+  });
+
+  it('7b: on_rebill_resumed → resumeByOrderId aufgerufen', async () => {
+    const res = await postIPN(makePayload({ event: 'on_rebill_resumed' }));
+    assert.equal(await res.text(), 'OK');
+    const resumeCall = licenseCalls.find(c => c.fn === 'resumeByOrderId');
+    assert.ok(resumeCall, 'resumeByOrderId should be called');
+    assert.equal(resumeCall.orderId, 'ORD-123');
   });
 
   it('8: log-only Events → nur geloggt, kein License-Aufruf', async () => {
-    for (const event of ['on_payment_missed', 'on_rebill_resumed', 'last_paid_day']) {
+    for (const event of ['on_payment_missed', 'last_paid_day']) {
       mockPool.reset();
       licenseCalls.length = 0;
       const res = await postIPN(makePayload({ event }));
       assert.equal(await res.text(), 'OK');
-      assert.equal(licenseCalls.length, 0, `${event}: kein License-Aufruf erwartet`);
+      // Only resolveProductId is NOT called for log-only events
+      const licenseModifyCalls = licenseCalls.filter(c =>
+        !['resolveProductId'].includes(c.fn));
+      assert.equal(licenseModifyCalls.length, 0, `${event}: kein License-Aufruf erwartet`);
       // logIPN wird aufgerufen mit 'logged'
       assert.ok(mockPool._calls.some(c => c.params[4] === 'logged'), `${event}: logged erwartet`);
     }
@@ -203,8 +227,8 @@ describe('IPN Route Handler', () => {
   it('11: Content-Type application/x-www-form-urlencoded korrekt geparst', async () => {
     const res = await postIPN(makePayload(), 'application/x-www-form-urlencoded');
     assert.equal(await res.text(), 'OK');
-    assert.equal(licenseCalls.length, 1);
-    assert.equal(licenseCalls[0].fn, 'activateFromIPN');
-    assert.equal(licenseCalls[0].data.order_id, 'ORD-123');
+    const activateCall = licenseCalls.find(c => c.fn === 'activateFromIPN');
+    assert.ok(activateCall, 'activateFromIPN should be called');
+    assert.equal(activateCall.data.order_id, 'ORD-123');
   });
 });

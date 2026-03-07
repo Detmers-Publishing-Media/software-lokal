@@ -1,6 +1,7 @@
 <script>
   import { onMount } from 'svelte';
   import { getFeeClasses, saveFeeClass, getClubProfile, saveClubProfile } from '../lib/db.js';
+  import { LicenseSection } from '@codefabrik/vereins-shared/components';
 
   let feeClasses = $state([]);
   let newClass = $state({ name: '', amount_cents: 0, interval: 'jaehrlich' });
@@ -37,20 +38,12 @@
 
   async function handleLogoSelect() {
     try {
-      const { open } = await import('@tauri-apps/plugin-dialog');
-      const selected = await open({
-        multiple: false,
+      const selected = await window.electronAPI.dialog.openFile({
         filters: [{ name: 'Bilder', extensions: ['png', 'jpg', 'jpeg', 'svg'] }],
       });
       if (selected) {
-        const { copyFile, mkdir, exists } = await import('@tauri-apps/plugin-fs');
-        const { appDataDir, join } = await import('@tauri-apps/api/path');
-        const appData = await appDataDir();
-        const logoDir = await join(appData, 'logos');
-        if (!(await exists(logoDir))) await mkdir(logoDir, { recursive: true });
         const fileName = selected.split(/[/\\]/).pop();
-        const dest = await join(logoDir, fileName);
-        await copyFile(selected, dest);
+        const dest = await window.electronAPI.fs.copyFile(selected, 'logos', fileName);
         profile.logo_path = dest;
         logoPreview = dest;
       }
@@ -160,11 +153,13 @@
     </div>
   </section>
 
+  <LicenseSection />
+
   <section class="about">
-    <h2>Ueber MitgliederSimple</h2>
-    <p>Version 0.4.0</p>
-    <p>B-05 Verein & Ehrenamt Digital</p>
-    <p>Lizenz: MIT</p>
+    <h2>Ueber Mitglieder Lokal</h2>
+    <p>Version 0.5.0</p>
+    <p>Detmers Publishing &amp; Media</p>
+    <p>Lizenz: GPL-3.0</p>
   </section>
 </div>
 

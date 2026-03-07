@@ -1,0 +1,66 @@
+# Code-Fabrik — Story-Template v2
+# Kopieren, umbenennen, ausfuellen.
+
+id: "PLAT-XXX"
+title: ""
+epic: ""
+status: "inbox"          # inbox | refined | ready | in_progress | review | done | blocked
+
+# --- Governance (Pflicht ab Prozessmodell v2) ---
+
+story_type: ""
+# Erlaubte Werte: siehe docs/governance/story-types.yml
+# Kurzfassung: product-fast, shared-pattern, platform-core,
+#   support-runtime, infra-factory, docs-governance
+
+lane: ""
+# Erlaubte Werte:
+#   fast   — Auto-Merge moeglich, Force-Approve erlaubt, KI-Review reicht
+#   slow   — Kein Auto-Merge, kein Force-Approve, Founder Gate Pflicht
+
+platform_impact: "none"
+# Erlaubte Werte: none | low | high
+# none = reine Produktaenderung
+# low  = beruehrt shared-pattern, aber nicht den Kern
+# high = beruehrt Plattformkern, IPC, Preload, Migrationen
+
+founder_gate_required: false
+# true wenn: platform-core, support-runtime, infra-factory,
+#   oder Aenderungen an geschuetzten Pfaden (siehe protected-paths.yml)
+
+force_approve_allowed: true
+# false wenn: platform-core, support-runtime, infra-factory,
+#   migrationsrelevante shared-pattern
+
+auto_merge_allowed: true
+# false wenn: lane == slow
+
+# --- Platform Gate (nur bei platform_impact != none) ---
+
+platform_rationale: ""
+# Warum Plattformcode und nicht Produktcode?
+
+reused_by_products: []
+# Welche Produkte profitieren? z.B. ["mitglieder-simple", "kassenbuch"]
+
+non_goals: []
+# Was bleibt bewusst produktspezifisch?
+
+# --- Inhalt ---
+
+description: |
+  Was soll erreicht werden?
+
+acceptance_criteria:
+  - ""
+
+affected_files:
+  - ""
+
+depends_on: []
+
+manual_steps: []
+# Handoff-Schritte an PO (wenn noetig)
+
+estimated_effort: ""
+# XS (< 1h) | S (1-4h) | M (4-8h) | L (1-2d) | XL (> 2d)

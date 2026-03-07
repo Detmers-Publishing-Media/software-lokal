@@ -2,7 +2,7 @@ import { describe, it, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import Database from 'better-sqlite3';
 import { createHmac } from 'node:crypto';
-import { generateCsv } from '../src/lib/csv.js';
+import { generateCsv } from '@codefabrik/shared/csv';
 
 const APP_SECRET = 'codefabrik-vereins-v1';
 

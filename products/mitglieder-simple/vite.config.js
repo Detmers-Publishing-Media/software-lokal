@@ -8,10 +8,12 @@ export default defineConfig({
     port: 1420,
     strictPort: true,
   },
-  envPrefix: ['VITE_', 'TAURI_'],
+  base: './',
+  resolve: {
+    conditions: ['browser', 'module', 'import', 'default'],
+  },
   build: {
     target: 'esnext',
-    minify: !process.env.TAURI_DEBUG ? 'esbuild' : false,
-    sourcemap: !!process.env.TAURI_DEBUG,
+    outDir: 'dist',
   },
 });

@@ -15,16 +15,25 @@ require.cache[poolPath] = {
 // License-Service Mock mit aufrufbarem Tracking
 const licenseCalls = [];
 const mockLicense = {
+  resolveProductId: async (pid) => {
+    licenseCalls.push({ fn: 'resolveProductId', pid });
+    return pid;
+  },
   activateFromIPN: async (data) => {
     licenseCalls.push({ fn: 'activateFromIPN', data });
+    return { existing: false, licenseKey: 'CFML-TEST-KEY1-KEY2-KE34' };
   },
   revokeByOrderId: async (orderId) => {
     licenseCalls.push({ fn: 'revokeByOrderId', orderId });
     return { rows: [{ license_key: 'LK-REVOKED' }], rowCount: 1 };
   },
-  expireByOrderId: async (orderId) => {
-    licenseCalls.push({ fn: 'expireByOrderId', orderId });
-    return { rows: [{ license_key: 'LK-EXPIRED' }], rowCount: 1 };
+  cancelByOrderId: async (orderId) => {
+    licenseCalls.push({ fn: 'cancelByOrderId', orderId });
+    return { rows: [{ license_key: 'LK-CANCELLED' }], rowCount: 1 };
+  },
+  resumeByOrderId: async (orderId) => {
+    licenseCalls.push({ fn: 'resumeByOrderId', orderId });
+    return { rows: [{ license_key: 'LK-RESUMED' }], rowCount: 1 };
   },
   validateLicense: async (key) => {
     licenseCalls.push({ fn: 'validateLicense', key });
@@ -89,21 +98,19 @@ describe('Order Lifecycle (IPN-basiert)', () => {
   it('1: on_payment → Lizenz fuer factory-gateway erstellt', async () => {
     const res = await postIPN(PAYMENT_GATEWAY);
     assert.equal(await res.text(), 'OK');
-    assert.equal(licenseCalls.length, 1);
-    assert.equal(licenseCalls[0].fn, 'activateFromIPN');
-    assert.equal(licenseCalls[0].data.product_id, 'factory-gateway');
-    assert.equal(licenseCalls[0].data.license_key, 'LK-GW-001');
-    assert.equal(licenseCalls[0].data.order_id, 'ORD-GW-001');
+    const activateCall = licenseCalls.find(c => c.fn === 'activateFromIPN');
+    assert.ok(activateCall, 'activateFromIPN should be called');
+    assert.equal(activateCall.data.product_id, 'factory-gateway');
+    assert.equal(activateCall.data.order_id, 'ORD-GW-001');
   });
 
   it('2: on_payment zweites Produkt → eigene Lizenz', async () => {
     const res = await postIPN(PAYMENT_ADDON);
     assert.equal(await res.text(), 'OK');
-    assert.equal(licenseCalls.length, 1);
-    assert.equal(licenseCalls[0].fn, 'activateFromIPN');
-    assert.equal(licenseCalls[0].data.product_id, 'test-addon');
-    assert.equal(licenseCalls[0].data.license_key, 'LK-ADDON-001');
-    assert.equal(licenseCalls[0].data.buyer_email, 'addon-buyer@example.com');
+    const activateCall = licenseCalls.find(c => c.fn === 'activateFromIPN');
+    assert.ok(activateCall, 'activateFromIPN should be called');
+    assert.equal(activateCall.data.product_id, 'test-addon');
+    assert.equal(activateCall.data.buyer_email, 'addon-buyer@example.com');
   });
 
   it('3: on_payment Idempotenz → doppelter IPN, keine Fehler', async () => {
@@ -132,35 +139,37 @@ describe('Order Lifecycle (IPN-basiert)', () => {
     assert.equal(licenseCalls[0].orderId, 'ORD-ADDON-001');
   });
 
-  it('6: on_rebill_cancelled → expires_at gesetzt', async () => {
+  it('6: on_rebill_cancelled → cancelByOrderId (kein sofortiger Ablauf)', async () => {
     const res = await postIPN(CANCEL);
     assert.equal(await res.text(), 'OK');
-    assert.equal(licenseCalls.length, 1);
-    assert.equal(licenseCalls[0].fn, 'expireByOrderId');
-    assert.equal(licenseCalls[0].orderId, 'ORD-GW-001');
+    const cancelCall = licenseCalls.find(c => c.fn === 'cancelByOrderId');
+    assert.ok(cancelCall, 'cancelByOrderId should be called');
+    assert.equal(cancelCall.orderId, 'ORD-GW-001');
   });
 
   it('7: Lifecycle: Bezahlung → Erstattung → Lizenz revoked', async () => {
     // Schritt 1: Bezahlung
     await postIPN(PAYMENT_GATEWAY);
-    assert.equal(licenseCalls[0].fn, 'activateFromIPN');
+    assert.ok(licenseCalls.some(c => c.fn === 'activateFromIPN'));
 
     // Schritt 2: Erstattung
     await postIPN(REFUND);
-    assert.equal(licenseCalls[1].fn, 'revokeByOrderId');
-    assert.equal(licenseCalls[1].orderId, 'ORD-GW-001');
+    const revokeCall = licenseCalls.find(c => c.fn === 'revokeByOrderId');
+    assert.ok(revokeCall);
+    assert.equal(revokeCall.orderId, 'ORD-GW-001');
 
     // IPN-Log: 2x logIPN (payment success + refund success)
     const logCalls = mockPool._calls.filter(c => c.sql.includes('digistore_ipn_log'));
     assert.equal(logCalls.length, 2);
   });
 
-  it('8: Lifecycle: Bezahlung → Kuendigung → Lizenz abgelaufen', async () => {
+  it('8: Lifecycle: Bezahlung → Kuendigung → auto_renew false', async () => {
     // Schritt 1: Bezahlung
     await postIPN(PAYMENT_ADDON);
-    assert.equal(licenseCalls[0].fn, 'activateFromIPN');
+    const activateCall = licenseCalls.find(c => c.fn === 'activateFromIPN');
+    assert.ok(activateCall);
 
-    // Schritt 2: Kuendigung (gleiche Order)
+    // Schritt 2: Kuendigung (gleiche Order) — kein sofortiger Ablauf
     const cancelAddon = makeSignedPayload('on_rebill_cancelled', {
       order_id: 'ORD-ADDON-001',
       product_id: 'test-addon',
@@ -168,8 +177,9 @@ describe('Order Lifecycle (IPN-basiert)', () => {
       payment_id: 'PAY-ADDON-001',
     });
     await postIPN(cancelAddon);
-    assert.equal(licenseCalls[1].fn, 'expireByOrderId');
-    assert.equal(licenseCalls[1].orderId, 'ORD-ADDON-001');
+    const cancelCall = licenseCalls.find(c => c.fn === 'cancelByOrderId');
+    assert.ok(cancelCall);
+    assert.equal(cancelCall.orderId, 'ORD-ADDON-001');
   });
 
   it('9: Mehrere Produkte, unterschiedliche Bestellungen parallel', async () => {
@@ -185,7 +195,7 @@ describe('Order Lifecycle (IPN-basiert)', () => {
     assert.deepEqual(productIds, ['factory-gateway', 'test-addon']);
   });
 
-  it('10: Payment ohne license_key → UUID auto-generiert', async () => {
+  it('10: Payment → Key wird vom Service generiert (nicht aus Payload)', async () => {
     const payload = makeSignedPayload('on_payment', {
       order_id: 'ORD-NOLICENSE-001',
       product_id: 'factory-gateway',
@@ -194,10 +204,9 @@ describe('Order Lifecycle (IPN-basiert)', () => {
     });
     const res = await postIPN(payload);
     assert.equal(await res.text(), 'OK');
-    assert.equal(licenseCalls.length, 1);
-    const key = licenseCalls[0].data.license_key;
-    // Leerer license_key im Payload → Route generiert UUID
-    assert.ok(key, 'license_key sollte nicht leer sein');
-    assert.match(key, /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
+    const activateCall = licenseCalls.find(c => c.fn === 'activateFromIPN');
+    assert.ok(activateCall, 'activateFromIPN should be called');
+    // Key is generated by service, not passed from payload
+    assert.equal(activateCall.data.order_id, 'ORD-NOLICENSE-001');
   });
 });

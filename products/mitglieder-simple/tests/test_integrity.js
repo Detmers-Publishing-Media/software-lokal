@@ -1,7 +1,7 @@
 import { describe, it, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import Database from 'better-sqlite3';
-import { computeHmac } from '../src/lib/crypto.js';
+import { computeHmac } from '@codefabrik/shared/crypto';
 
 let db;
 

@@ -49,15 +49,17 @@ tar czf "$DIST_DIR/$TARBALL_NAME" \
 # Symlink codefabrik.tar.gz → aktuellen Release (damit install.sh ihn findet)
 ln -sf "$TARBALL_NAME" "$DIST_DIR/codefabrik.tar.gz"
 
-# install.sh kopieren
+# install.sh + control.sh kopieren
 cp "$SCRIPT_DIR/install.sh" "$DIST_DIR/install.sh"
-chmod +x "$DIST_DIR/install.sh"
+cp "$SCRIPT_DIR/control.sh" "$DIST_DIR/control.sh"
+chmod +x "$DIST_DIR/install.sh" "$DIST_DIR/control.sh"
 
 echo ""
 echo "Fertig:"
+echo "  $DIST_DIR/control.sh"
 echo "  $DIST_DIR/install.sh"
 echo "  $DIST_DIR/$TARBALL_NAME ($(du -h "$DIST_DIR/$TARBALL_NAME" | cut -f1))"
 echo "  $DIST_DIR/codefabrik.tar.gz → $TARBALL_NAME"
 echo ""
 echo "Fabrik im Koffer (v${VERSION}):"
-echo "  install.sh + $TARBALL_NAME + vault.kdbx = kompletter Neuaufbau"
+echo "  control.sh + install.sh + $TARBALL_NAME + vault.kdbx = kompletter Neuaufbau"

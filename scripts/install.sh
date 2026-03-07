@@ -327,6 +327,20 @@ run_ansible() {
         products_mount=(-v "$products_dir:/products:ro")
     fi
 
+    # Docs-Mount vorbereiten (fuer Governance-Dateien)
+    local docs_mount=()
+    local docs_dir="$SHM_WORKSPACE/docs"
+    if [ -d "$docs_dir" ]; then
+        docs_mount=(-v "$docs_dir:/docs:ro")
+    fi
+
+    # Scripts-Mount vorbereiten (fuer validate-story-governance.mjs)
+    local scripts_mount=()
+    local scripts_dir="$SHM_WORKSPACE/scripts"
+    if [ -d "$scripts_dir" ]; then
+        scripts_mount=(-v "$scripts_dir:/scripts:ro")
+    fi
+
     docker run --rm -it \
         --network host \
         -v "$ansible_dir:/ansible:ro" \
@@ -336,6 +350,8 @@ run_ansible() {
         -v "$SHM_OUTPUT:/output:rw" \
         "${portal_mount[@]}" \
         "${products_mount[@]}" \
+        "${docs_mount[@]}" \
+        "${scripts_mount[@]}" \
         "$DOCKER_IMAGE" \
         "$playbook" -e @/root/secrets.yml
 

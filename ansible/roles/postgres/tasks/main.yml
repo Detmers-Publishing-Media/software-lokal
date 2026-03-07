@@ -98,6 +98,14 @@
       ADD COLUMN IF NOT EXISTS review_completed_at TIMESTAMPTZ,
       ADD COLUMN IF NOT EXISTS review_verdict TEXT;"
 
+- name: "pipeline_metrics Governance-Spalten (v0.6.0)"
+  ansible.builtin.shell: |
+    docker exec factory-postgres psql -U forgejo -d forgejo -tAq -c "
+    ALTER TABLE pipeline_metrics
+      ADD COLUMN IF NOT EXISTS story_type VARCHAR(30),
+      ADD COLUMN IF NOT EXISTS lane VARCHAR(10),
+      ADD COLUMN IF NOT EXISTS completed_at TIMESTAMPTZ;"
+
 - name: "pipeline_metrics Dauer-Trigger"
   ansible.builtin.shell: |
     docker exec factory-postgres psql -U forgejo -d forgejo -tAq -c "

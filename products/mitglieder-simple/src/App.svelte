@@ -9,6 +9,7 @@
   import Import from './routes/Import.svelte';
   import Payments from './routes/Payments.svelte';
   import Settings from './routes/Settings.svelte';
+  import { SupportView } from '@codefabrik/vereins-shared/components';
 
   let dbReady = $state(false);
   let dbError = $state(null);
@@ -38,13 +39,14 @@
     { id: 'add', label: 'Neu' },
     { id: 'import', label: 'Import' },
     { id: 'settings', label: 'Einstellungen' },
+    { id: 'support', label: 'Support' },
   ];
 </script>
 
 <div class="app-layout">
   <nav class="sidebar">
     <div class="logo">
-      <h2>MitgliederSimple</h2>
+      <h2>Mitglieder Lokal</h2>
     </div>
     <ul>
       {#each navItems as item}
@@ -81,6 +83,8 @@
       <Import />
     {:else if $currentView === 'settings'}
       <Settings />
+    {:else if $currentView === 'support'}
+      <SupportView />
     {/if}
   </main>
 </div>

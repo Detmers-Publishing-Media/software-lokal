@@ -1,0 +1,93 @@
+# Code-Fabrik — Geschuetzte Pfade
+# Aenderungen an diesen Pfaden erzwingen automatisch Slow Lane + Founder Gate.
+#
+# Status: Verbindlich
+# Stand: 2026-03-07
+
+protected_paths:
+  # Plattformkern
+  - pattern: "packages/electron-platform/lib/**"
+    reason: "Plattformkern — alle Produkte betroffen"
+  - pattern: "packages/electron-platform/ipc/**"
+    reason: "IPC-Schicht — alle Produkte betroffen"
+  - pattern: "**/preload.cjs"
+    reason: "Preload-Bridge — Sicherheitsgrenze"
+
+  # Migrationen und Backup
+  - pattern: "**/migrations/**"
+    reason: "Datenbankmigrationen — Datenverlustrisiko"
+  - pattern: "**/backup/**"
+    reason: "Backup-Kern — Datensicherheit"
+  - pattern: "**/lib/backup*.js"
+    reason: "Backup-Logik — Datensicherheit"
+
+  # Support und Diagnose
+  - pattern: "**/lib/support-bundle*.js"
+    reason: "Support-Bundle — Diagnosefaehigkeit"
+  - pattern: "**/lib/support-sanitizer*.js"
+    reason: "Sanitizer — DSGVO-Konformitaet"
+  - pattern: "**/lib/error-codes*.js"
+    reason: "Fehlercode-System — Support-Kette"
+
+  # Infrastruktur
+  - pattern: "scripts/install*.sh"
+    reason: "Installationsroutine — Betriebssicherheit"
+  - pattern: "ansible/**"
+    reason: "Infrastruktur — Serverkonfiguration"
+  - pattern: "**/poller/**"
+    reason: "Poller — Pipeline-Kern"
+
+  # Governance
+  - pattern: "CLAUDE.md"
+    reason: "Root-Agenten-Anweisungen — alle Agenten betroffen"
+  - pattern: "docs/governance/**"
+    reason: "Verbindliche Governance-Dokumente"
+  - pattern: ".stories/story.template.yml"
+    reason: "Story-Template — Prozessdefinition"
+
+# Import-Grenzen
+# CI prueft diese Regeln bei jedem Commit.
+import_rules:
+  - name: "platform-no-product-imports"
+    description: "Plattformcode darf keine Produkte importieren"
+    source_pattern: "packages/electron-platform/**/*.{js,ts,mjs}"
+    forbidden_imports:
+      - "products/"
+      - "../products/"
+      - "../../products/"
+
+  - name: "renderer-no-native-modules"
+    description: "Renderer darf kein better-sqlite3 importieren"
+    source_pattern: "**/renderer/**/*.{js,ts,svelte,mjs}"
+    forbidden_imports:
+      - "better-sqlite3"
+      - "electron"
+      - "node:fs"
+      - "node:child_process"
+      - "node:crypto"
+
+  - name: "shared-no-product-imports"
+    description: "Shared-Packages duerfen keine Produkte importieren"
+    source_pattern: "packages/shared/**/*.{js,ts,mjs}"
+    forbidden_imports:
+      - "products/"
+      - "../products/"
+      - "../../products/"
+
+  - name: "testable-core-no-electron"
+    description: "Testbare Kernlogik darf kein Electron importieren"
+    source_pattern: "packages/electron-platform/lib/**/*.{js,ts,mjs}"
+    forbidden_imports:
+      - "electron"
+    exceptions:
+      - "packages/electron-platform/lib/app-lifecycle.js"
+      - "packages/electron-platform/lib/window-manager.js"
+
+  - name: "product-no-cross-imports"
+    description: "Produkte duerfen keine anderen Produkte importieren"
+    source_pattern: "products/**/*.{js,ts,svelte,mjs}"
+    forbidden_imports:
+      - "../products/"
+      - "../../products/"
+      - "products/"
+    exceptions: []

@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { generateCsv } from '../src/lib/csv.js';
+import { generateCsv } from '@codefabrik/shared/csv';
 import { MEMBERS, MEMBER_WITH_SEMICOLON, MEMBER_WITH_QUOTES } from './fixtures/members.js';
 
 const COLUMNS = [

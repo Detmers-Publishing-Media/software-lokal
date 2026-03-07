@@ -1,0 +1,56 @@
+# Aktive Story — wird von CI und Pipeline gelesen
+# Immer nur EINE Story gleichzeitig aktiv.
+
+id: "PLAT-049"
+title: "Prozessmodell v2 — Pipeline-Integration + Konsistenz"
+epic: "PLAT-GOVERNANCE"
+status: "done"
+
+story_type: "docs-governance"
+lane: "slow"
+platform_impact: "high"
+founder_gate_required: true
+force_approve_allowed: false
+auto_merge_allowed: false
+
+platform_rationale: |
+  Fuehrt verbindliche Prozessregeln ein, die alle kuenftigen Stories
+  und alle Produkte betreffen. Aenderungen am Root-CLAUDE.md und an
+  der CI-Pipeline.
+
+reused_by_products: ["alle"]
+
+non_goals:
+  - "Keine Codeaenderungen an Produkten"
+  - "Kein Electron-Plattform-Umbau (kommt danach)"
+
+description: |
+  Umsetzung der verabschiedeten Massnahmen aus dem Entwicklungsprozess-Review:
+  Story-Template v2, Merge-Policy, Protected Paths, CI-Guardrails,
+  CLAUDE.md-Update mit Governance-Regeln.
+
+acceptance_criteria:
+  - "story.template.yml mit allen Governance-Feldern vorhanden"
+  - "merge-policy.md beschreibt Fast Lane / Slow Lane verbindlich"
+  - "protected-paths.yml definiert geschuetzte Pfade und Import-Grenzen"
+  - "validate-story-governance.mjs validiert Story-YAML korrekt"
+  - "CLAUDE.md enthaelt Governance-Abschnitt"
+
+affected_files:
+  - ".stories/story.template.yml"
+  - ".stories/current.yml"
+  - "docs/governance/merge-policy.md"
+  - "docs/governance/protected-paths.yml"
+  - "docs/governance/README.md"
+  - "scripts/validate-story-governance.mjs"
+  - "CLAUDE.md"
+
+depends_on: []
+
+manual_steps:
+  - step: "PO prueft alle Governance-Dateien"
+    owner: "PO"
+  - step: "PO gibt Founder Gate frei"
+    owner: "PO"
+
+estimated_effort: "M"

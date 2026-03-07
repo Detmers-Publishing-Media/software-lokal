@@ -1,5 +1,5 @@
-import { query, execute, openDb } from '@codefabrik/vereins-shared/db';
-import { computeHmac } from './crypto.js';
+import { query, execute } from '@codefabrik/vereins-shared/db';
+import { computeHmac } from '@codefabrik/shared/crypto';
 
 const MIGRATION_SQL = [
   `CREATE TABLE IF NOT EXISTS fee_classes (
@@ -105,7 +105,7 @@ const FEE_PAYMENTS_SQL = [
 ];
 
 export async function initDb() {
-  await openDb();
+  // DB is opened in main process — IPC calls work immediately
   for (const sql of MIGRATION_SQL) {
     await execute(sql);
   }

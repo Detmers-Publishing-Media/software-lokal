@@ -1,54 +1,36 @@
 <script>
-  import { onMount } from 'svelte';
   import { currentView } from './lib/stores/navigation.js';
-  import { loadStoredLicense, canAccess, hasLicense } from './lib/license.js';
   import BeitragsAnpassung from './routes/BeitragsAnpassung.svelte';
   import Ratenzuschlag from './routes/Ratenzuschlag.svelte';
   import StornoHaftung from './routes/StornoHaftung.svelte';
   import CourtagenBarwert from './routes/CourtagenBarwert.svelte';
   import SpartenDeckung from './routes/SpartenDeckung.svelte';
   import Settings from './routes/Settings.svelte';
-
-  let licensed = $state(false);
-
-  onMount(() => {
-    loadStoredLicense();
-    licensed = hasLicense();
-  });
-
-  function navigate(id) {
-    if (canAccess(id) || id === 'settings') {
-      currentView.set(id);
-    }
-  }
+  import { SupportView } from '@codefabrik/vereins-shared/components';
 
   const navItems = [
-    { id: 'beitragsanpassung', label: 'Beitragsanpassung', free: true },
-    { id: 'ratenzuschlag', label: 'Ratenzuschlag', free: true },
-    { id: 'stornohaftung', label: 'Stornohaftung', free: false },
-    { id: 'courtagenbarwert', label: 'Courtagen-Barwert', free: false },
-    { id: 'spartendeckung', label: 'Spartendeckung', free: false },
-    { id: 'settings', label: 'Einstellungen', free: true },
+    { id: 'beitragsanpassung', label: 'Beitragsanpassung' },
+    { id: 'ratenzuschlag', label: 'Ratenzuschlag' },
+    { id: 'stornohaftung', label: 'Stornohaftung' },
+    { id: 'courtagenbarwert', label: 'Courtagen-Barwert' },
+    { id: 'spartendeckung', label: 'Spartendeckung' },
+    { id: 'settings', label: 'Einstellungen' },
+    { id: 'support', label: 'Support' },
   ];
 </script>
 
 <div class="app-layout">
   <nav class="sidebar">
     <div class="logo">
-      <h2>FinanzRechner</h2>
+      <h2>FinanzRechner Lokal</h2>
     </div>
     <ul>
       {#each navItems as item}
         <li>
           <button
             class:active={$currentView === item.id}
-            class:locked={!item.free && !licensed}
-            onclick={() => navigate(item.id)}
-            title={!item.free && !licensed ? 'Lizenz erforderlich' : ''}
+            onclick={() => currentView.set(item.id)}
           >
-            {#if !item.free && !licensed}
-              <span class="lock">&#x1F512;</span>
-            {/if}
             {item.label}
           </button>
         </li>
@@ -68,7 +50,9 @@
     {:else if $currentView === 'spartendeckung'}
       <SpartenDeckung />
     {:else if $currentView === 'settings'}
-      <Settings onLicenseChange={() => licensed = hasLicense()} />
+      <Settings />
+    {:else if $currentView === 'support'}
+      <SupportView />
     {/if}
   </main>
 </div>
@@ -107,10 +91,6 @@
 
   .sidebar button:hover { background: var(--color-border); }
   .sidebar button.active { background: var(--color-primary); color: white; }
-  .sidebar button.locked { opacity: 0.5; }
-  .sidebar button.locked:hover { background: var(--color-border); }
-
-  .lock { font-size: 0.75rem; margin-right: 0.25rem; }
 
   .content {
     flex: 1;

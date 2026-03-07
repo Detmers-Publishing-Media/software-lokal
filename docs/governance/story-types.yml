@@ -1,0 +1,51 @@
+# Code-Fabrik — Story-Typen (Single Source of Truth)
+# Wird von validate-story-governance.mjs gelesen.
+# Aenderungen hier gelten automatisch fuer CI.
+#
+# Status: Verbindlich
+# Stand: 2026-03-07
+
+types:
+  product-fast:
+    description: "Reine Produktfeatures, UI, Fachlogik"
+    default_lane: "fast"
+    force_approve_allowed: true
+    auto_merge_allowed: true
+    founder_gate_required: false
+
+  shared-pattern:
+    description: "Wiederverwendbare Module in packages/shared"
+    default_lane: "fast"
+    force_approve_allowed: true
+    auto_merge_allowed: true
+    founder_gate_required: false
+    notes: "slow wenn migrationsrelevant oder von >2 Produkten genutzt"
+
+  platform-core:
+    description: "Aenderungen am Plattformkern"
+    default_lane: "slow"
+    force_approve_allowed: false
+    auto_merge_allowed: false
+    founder_gate_required: true
+
+  support-runtime:
+    description: "Diagnose, Recovery, Support, Fehlercodes"
+    default_lane: "slow"
+    force_approve_allowed: false
+    auto_merge_allowed: false
+    founder_gate_required: true
+
+  infra-factory:
+    description: "CI, Automation, Poller, Ansible, Fabrik-im-Koffer"
+    default_lane: "slow"
+    force_approve_allowed: false
+    auto_merge_allowed: false
+    founder_gate_required: true
+
+  docs-governance:
+    description: "Verbindliche Architektur- oder Prozessdoku"
+    default_lane: "slow"
+    force_approve_allowed: false
+    auto_merge_allowed: false
+    founder_gate_required: true
+    notes: "Reine Tippfehler-Korrekturen koennen fast sein"

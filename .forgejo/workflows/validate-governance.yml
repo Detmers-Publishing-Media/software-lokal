@@ -1,0 +1,33 @@
+name: Governance Validation
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Get changed files
+        id: changed
+        run: |
+          CHANGED=$(git diff --name-only origin/main...HEAD | tr '\n' ' ')
+          echo "files=$CHANGED" >> "$GITHUB_OUTPUT"
+
+      - name: Validate Story Governance
+        run: |
+          node scripts/validate-story-governance.mjs \
+            --changed-files ${{ steps.changed.outputs.files }}
+
+      - name: Check Import Boundaries
+        run: |
+          node scripts/validate-story-governance.mjs --check-imports

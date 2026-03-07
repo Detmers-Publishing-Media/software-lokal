@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { computeHmac } from '../src/lib/crypto.js';
+import { computeHmac } from '@codefabrik/shared/crypto';
 
 describe('computeHmac', () => {
   it('erzeugt deterministisches Ergebnis', async () => {

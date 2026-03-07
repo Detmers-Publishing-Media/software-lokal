@@ -73,7 +73,7 @@ export function generateCalculatorPdf(title, inputs, results, transparenzText) {
     ],
     footer: (currentPage, pageCount) => ({
       columns: [
-        { text: 'Erstellt mit FinanzRechner — codefabrik.de', fontSize: 7, color: '#999999', margin: [40, 0, 0, 0] },
+        { text: 'Erstellt mit FinanzRechner Lokal — detmers-publish.de', fontSize: 7, color: '#999999', margin: [40, 0, 0, 0] },
         { text: `Seite ${currentPage} / ${pageCount}`, fontSize: 7, color: '#999999', alignment: 'right', margin: [0, 0, 40, 0] },
       ],
     }),

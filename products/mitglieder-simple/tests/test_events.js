@@ -1,6 +1,6 @@
 import { describe, it, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { computeHmac } from '../src/lib/crypto.js';
+import { computeHmac } from '@codefabrik/shared/crypto';
 
 // In-memory store simulating the events table for unit tests
 let events = [];

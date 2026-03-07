@@ -5,6 +5,27 @@
     dest: /opt/codefabrik/openclaw-poller.sh
     mode: '0755'
 
+- name: "Governance-Verzeichnis erstellen"
+  ansible.builtin.file:
+    path: /opt/codefabrik/docs/governance
+    state: directory
+    mode: '0755'
+
+- name: "Governance-Dateien deployen"
+  ansible.builtin.copy:
+    src: "{{ item.src }}"
+    dest: "/opt/codefabrik/{{ item.dest }}"
+    mode: '0644'
+  loop:
+    - { src: "/docs/governance/story-types.yml", dest: "docs/governance/story-types.yml" }
+    - { src: "/docs/governance/protected-paths.yml", dest: "docs/governance/protected-paths.yml" }
+
+- name: "Governance-Validierungsscript deployen"
+  ansible.builtin.copy:
+    src: "/scripts/validate-story-governance.mjs"
+    dest: /opt/codefabrik/validate-story-governance.mjs
+    mode: '0755'
+
 - name: "Poller systemd Service"
   ansible.builtin.copy:
     content: |

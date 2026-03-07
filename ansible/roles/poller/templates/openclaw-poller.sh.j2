@@ -1,5 +1,5 @@
 #!/bin/bash
-# OpenClaw Poller v0.5.5 — 5-Phasen Pipeline mit Review-Loop + Metriken
+# OpenClaw Poller v0.6.0 — 5-Phasen Pipeline mit Review-Loop + Governance
 set -euo pipefail
 
 LOGFILE=/var/log/openclaw-poller.log
@@ -140,6 +140,30 @@ record_metric() {
     DO UPDATE SET $field = $value;" 2>/dev/null || true
 }
 
+# ─── Story-Governance-Felder lesen ───────────────────────────────────────────
+read_story_field() {
+  local story_file="$1"
+  local field="$2"
+  grep "^${field}:" "$story_file" 2>/dev/null | head -1 | \
+    sed "s/^${field}:[[:space:]]*//" | tr -d '"'"'" | tr -d '[:space:]'
+}
+
+read_story_governance() {
+  local story_file="$1"
+  STORY_TYPE=$(read_story_field "$story_file" "story_type")
+  STORY_LANE=$(read_story_field "$story_file" "lane")
+  FORCE_APPROVE=$(read_story_field "$story_file" "force_approve_allowed")
+  AUTO_MERGE=$(read_story_field "$story_file" "auto_merge_allowed")
+  FOUNDER_GATE=$(read_story_field "$story_file" "founder_gate_required")
+
+  # Defaults fuer Stories ohne Governance-Felder (Abwaertskompatibilitaet)
+  [ -z "$STORY_TYPE" ] && STORY_TYPE="product-fast"
+  [ -z "$STORY_LANE" ] && STORY_LANE="fast"
+  [ -z "$FORCE_APPROVE" ] && FORCE_APPROVE="true"
+  [ -z "$AUTO_MERGE" ] && AUTO_MERGE="true"
+  [ -z "$FOUNDER_GATE" ] && FOUNDER_GATE="false"
+}
+
 # ─── Phase 1: DISPATCH — Inbox → Backlog ───────────────────────────────────
 log "--- Phase 1: dispatch ---"
 
@@ -184,6 +208,26 @@ for story_file in "$INBOX_DIR"/*.yml; do
     produkt="$PRODUCT_REPO"
     log "dispatch: $story_id hat kein produkt-Feld — verwende Default: $PRODUCT_REPO"
   fi
+
+  # Governance-Felder lesen und validieren
+  read_story_governance "$story_file"
+  log "dispatch: $story_id — type=$STORY_TYPE lane=$STORY_LANE founder_gate=$FOUNDER_GATE"
+
+  # Slow-Lane-Typen muessen lane=slow haben
+  case "$STORY_TYPE" in
+    platform-core|support-runtime|infra-factory)
+      if [ "$STORY_LANE" != "slow" ]; then
+        log "dispatch: FEHLER: $story_id hat story_type=$STORY_TYPE aber lane=$STORY_LANE (muss slow sein)"
+        update_poller_state "$story_id" "governance-error"
+        log_poller_event "$story_id" "governance_error" "story_type=$STORY_TYPE erfordert lane=slow"
+        continue
+      fi
+      ;;
+  esac
+
+  # Lane in Metrik speichern
+  record_metric "$story_id" "story_type" "'$STORY_TYPE'"
+  record_metric "$story_id" "lane" "'$STORY_LANE'"
 
   # In Backlog verschieben
   DEST_DIR="$BACKLOG_DIR/by-product/$produkt"
@@ -252,6 +296,9 @@ else
         AKZEPTANZKRITERIEN=$(awk '/^akzeptanzkriterien:/,/^[a-z]/' "$WORK_DIR/process/work/04-in-progress/$story_id.yml" | \
           grep '^\s*-' | sed 's/^\s*- /- /' | head -20 || echo "- Siehe Story")
 
+        # Governance-Felder lesen
+        read_story_governance "$WORK_DIR/process/work/04-in-progress/$story_id.yml"
+
         cat > "_task.md" << TASKEOF
 # Task: $story_id
 
@@ -268,6 +315,9 @@ $AKZEPTANZKRITERIEN
 - Story-ID: $story_id
 - Branch: $BRANCH_NAME
 - Version: v$FACTORY_VERSION
+- Story-Typ: $STORY_TYPE
+- Lane: $STORY_LANE
+- Founder Gate: $FOUNDER_GATE
 TASKEOF
 
         git add _task.md
@@ -423,12 +473,37 @@ for story_file in "$WORK_DIR/process/work/04-in-progress"/*.yml 2>/dev/null; do
     "SELECT COALESCE(review_iterations, 0) FROM pipeline_metrics WHERE object_id='$story_id'" 2>/dev/null | tr -d '[:space:]')
   REVIEW_ITERS=${REVIEW_ITERS:-0}
 
+  # Governance-Felder lesen
+  read_story_governance "$story_file"
+
   if [ "$REVIEW_ITERS" -ge "{{ max_review_iterations }}" ]; then
-    log "review: $story_id — Max-Iterationen ({{ max_review_iterations }}) erreicht → force-approve"
-    update_poller_state "$story_id" "reviewed" "$BRANCH_NAME"
-    record_metric "$story_id" "review_verdict" "'force-approved'"
-    record_metric "$story_id" "review_completed_at"
-    log_poller_event "$story_id" "force_approved" "Max-Iterationen erreicht ($REVIEW_ITERS)"
+    if [ "$FORCE_APPROVE" = "false" ]; then
+      # Slow Lane: Force-Approve VERBOTEN → Story blockieren
+      log "review: $story_id — Max-Iterationen erreicht, aber force_approve_allowed=false → BLOCKIERT"
+      update_poller_state "$story_id" "blocked-needs-po"
+      record_metric "$story_id" "blocked_at"
+      record_metric "$story_id" "blocked_reason" "'force-approve-denied'"
+      log_poller_event "$story_id" "blocked" "Max-Iterationen, force_approve nicht erlaubt (lane=$STORY_LANE)"
+
+      # Story in needs-po verschieben
+      cd "$WORK_DIR/process"
+      BLOCKED_DIR="work/09-blocked/needs-po"
+      mkdir -p "$BLOCKED_DIR"
+      if [ -f "work/04-in-progress/$story_id.yml" ]; then
+        git mv "work/04-in-progress/$story_id.yml" "$BLOCKED_DIR/$story_id.yml" 2>/dev/null || \
+          mv "work/04-in-progress/$story_id.yml" "$BLOCKED_DIR/$story_id.yml"
+        git add -A
+        git commit -m "review: $story_id blockiert — Founder Gate erforderlich" 2>/dev/null || true
+        git push origin main --quiet 2>/dev/null || true
+      fi
+    else
+      # Fast Lane: Force-Approve erlaubt
+      log "review: $story_id — Max-Iterationen ({{ max_review_iterations }}) erreicht → force-approve"
+      update_poller_state "$story_id" "reviewed" "$BRANCH_NAME"
+      record_metric "$story_id" "review_verdict" "'force-approved'"
+      record_metric "$story_id" "review_completed_at"
+      log_poller_event "$story_id" "force_approved" "Max-Iterationen erreicht ($REVIEW_ITERS)"
+    fi
     continue
   fi
 
@@ -594,6 +669,53 @@ for story_file in "$WORK_DIR/process/work/04-in-progress"/*.yml 2>/dev/null; do
     update_poller_state "$story_id" "pr_created" "$BRANCH_NAME"
     record_metric "$story_id" "pr_created_at"
     log_poller_event "$story_id" "pr_created" "PR #$PR_NUMBER"
+
+    # Governance-Felder lesen
+    read_story_governance "$story_file"
+
+    if [ "$AUTO_MERGE" = "true" ]; then
+      # Fast Lane: Auto-Merge
+      log "pr-check: $story_id — Auto-Merge (lane=$STORY_LANE)"
+      forgejo_api \
+        -X POST \
+        "$FORGEJO_URL/api/v1/repos/$FORGEJO_ORG/$story_produkt/pulls/$PR_NUMBER/merge" \
+        -d "{\"Do\": \"merge\", \"merge_message_field\": \"$story_id: Auto-Merge (Fast Lane)\"}" \
+        2>/dev/null || log "pr-check: Auto-Merge fehlgeschlagen fuer PR #$PR_NUMBER"
+
+      # Story nach done verschieben
+      cd "$WORK_DIR/process"
+      DONE_DIR="work/08-done"
+      mkdir -p "$DONE_DIR"
+      if [ -f "work/04-in-progress/$story_id.yml" ]; then
+        git mv "work/04-in-progress/$story_id.yml" "$DONE_DIR/$story_id.yml" 2>/dev/null || \
+          mv "work/04-in-progress/$story_id.yml" "$DONE_DIR/$story_id.yml"
+        git add -A
+        git commit -m "done: $story_id (Auto-Merge, Fast Lane)" 2>/dev/null || true
+        git push origin main --quiet 2>/dev/null || true
+      fi
+      update_poller_state "$story_id" "done" "$BRANCH_NAME"
+      record_metric "$story_id" "completed_at"
+      log_poller_event "$story_id" "done" "Auto-Merge PR #$PR_NUMBER"
+    else
+      # Slow Lane: PR wartet auf Founder Gate
+      log "pr-check: $story_id — Slow Lane, PR #$PR_NUMBER wartet auf Founder Gate"
+
+      # Label erstellen (ignoriert Fehler wenn bereits vorhanden)
+      forgejo_api \
+        -X POST \
+        "$FORGEJO_URL/api/v1/repos/$FORGEJO_ORG/$story_produkt/labels" \
+        -d '{"name": "awaiting-founder-gate", "color": "#e11d48"}' \
+        2>/dev/null || true
+
+      # Label an PR haengen
+      forgejo_api \
+        -X POST \
+        "$FORGEJO_URL/api/v1/repos/$FORGEJO_ORG/$story_produkt/issues/$PR_NUMBER/labels" \
+        -d '{"labels": ["awaiting-founder-gate"]}' \
+        2>/dev/null || true
+
+      log_poller_event "$story_id" "awaiting_founder_gate" "PR #$PR_NUMBER wartet auf PO"
+    fi
   else
     log "pr-check: $story_id → PR-Erstellung fehlgeschlagen: $PR_RESULT"
   fi
