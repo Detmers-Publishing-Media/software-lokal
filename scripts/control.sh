@@ -200,15 +200,17 @@ run_trial_key() {
     echo ""
     echo -e "${BOLD}=== Test-Key erstellen ===${NC}"
     echo ""
-    echo "  1) MitgliederSimple (CFTM)"
-    echo "  2) FinanzRechner    (CFTR)"
+    echo "  1) Mitglieder Lokal  (CFTM)"
+    echo "  2) FinanzRechner     (CFTR)"
+    echo "  3) Rechnung Lokal    (CFTL)"
     echo ""
-    read -rp "Produkt [1/2]: " product_choice
+    read -rp "Produkt [1/2/3]: " product_choice
 
     local product_id
     case "$product_choice" in
         1) product_id="mitglieder-lokal" ;;
         2) product_id="finanz-rechner" ;;
+        3) product_id="rechnung-lokal" ;;
         *) die "Ungueltige Auswahl" ;;
     esac
 

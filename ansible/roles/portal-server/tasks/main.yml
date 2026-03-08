@@ -2,6 +2,53 @@
 - name: "Portal-Server via UpCloud API erstellen"
   delegate_to: localhost
   block:
+    # --- Persistentes Downloads-Storage suchen oder erstellen ---
+    - name: "Bestehendes Downloads-Storage suchen"
+      ansible.builtin.uri:
+        url: "https://api.upcloud.com/1.3/storage/private"
+        method: GET
+        headers:
+          Authorization: "Bearer {{ vault_upcloud_api_token }}"
+        status_code: [200]
+      register: storage_list
+
+    - name: "Downloads-Storage UUID ermitteln (falls vorhanden)"
+      ansible.builtin.set_fact:
+        downloads_storage_uuid: "{{ storage_list.json.storages.storage | selectattr('title', 'eq', portal_downloads_storage_title) | map(attribute='uuid') | first | default('') }}"
+
+    - name: "Downloads-Storage existiert bereits"
+      ansible.builtin.debug:
+        msg: "Bestehendes Storage gefunden: {{ downloads_storage_uuid }}"
+      when: downloads_storage_uuid | length > 0
+
+    - name: "Downloads-Storage erstellen (erstmalig)"
+      ansible.builtin.uri:
+        url: "https://api.upcloud.com/1.3/storage"
+        method: POST
+        headers:
+          Authorization: "Bearer {{ vault_upcloud_api_token }}"
+          Content-Type: "application/json"
+        body_format: json
+        body:
+          storage:
+            zone: "{{ upcloud_zone }}"
+            title: "{{ portal_downloads_storage_title }}"
+            size: "{{ portal_downloads_storage_size }}"
+            tier: "{{ upcloud_storage_tier }}"
+        status_code: [200, 201]
+      register: new_storage_result
+      when: downloads_storage_uuid | length == 0
+
+    - name: "Neue Storage UUID setzen"
+      ansible.builtin.set_fact:
+        downloads_storage_uuid: "{{ new_storage_result.json.storage.uuid }}"
+      when: downloads_storage_uuid | length == 0
+
+    - name: "Downloads-Storage UUID speichern"
+      ansible.builtin.debug:
+        msg: "Downloads-Storage UUID: {{ downloads_storage_uuid }}"
+
+    # --- Portal-Server erstellen ---
     - name: "Portal-Server erstellen"
       ansible.builtin.uri:
         url: "https://api.upcloud.com/1.3/server"
@@ -29,6 +76,8 @@
                   title: "portal-os"
                   size: "{{ portal_upcloud_os_storage }}"
                   tier: "{{ upcloud_storage_tier }}"
+                - action: attach
+                  storage: "{{ downloads_storage_uuid }}"
         status_code: [200, 201, 202]
       register: portal_server_result
 
@@ -58,6 +107,7 @@
         content: |
           PORTAL_UUID={{ portal_uuid }}
           PORTAL_IP={{ portal_ip }}
+          DOWNLOADS_STORAGE_UUID={{ downloads_storage_uuid }}
         dest: "/output/.portal-env"
       delegate_to: localhost
 
@@ -76,5 +126,6 @@
         ansible_ssh_private_key_file: "{{ ssh_key_path }}"
         portal_uuid: "{{ portal_uuid }}"
         portal_ip: "{{ portal_ip }}"
+        downloads_storage_uuid: "{{ downloads_storage_uuid }}"
         groups:
           - portal

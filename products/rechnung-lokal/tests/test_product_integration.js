@@ -285,3 +285,245 @@ describe('Rechnung Lokal — EUeR Integration', () => {
     assert.ok(valid, 'Hash chain should be valid');
   });
 });
+
+describe('Rechnung Lokal — Transaction Workflow', () => {
+  let db, models;
+
+  before(async () => {
+    db = await createTestDb();
+    await createSchema(db.execute, productConfig.features, {
+      product_id: productConfig.product,
+      app_version: '0.2.0',
+    });
+    await seedCategories(db.execute, db.query);
+    models = createModels(
+      { query: db.query, execute: db.execute, computeHmac: testHmac },
+      productConfig.features,
+    );
+  });
+
+  after(() => db.close());
+
+  it('creates income transaction', async () => {
+    const cats = await models.category.getAll();
+    const incomeCat = cats.find(c => c.type === 'income');
+
+    const id = await models.transaction.save({
+      type: 'income',
+      date: '2026-03-01',
+      amount_cents: 50000,
+      description: 'Beratung',
+      category_id: incomeCat.id,
+    });
+    assert.ok(id > 0);
+
+    const tx = await models.transaction.getById(id);
+    assert.equal(tx.type, 'income');
+    assert.equal(tx.amount_cents, 50000);
+    assert.equal(tx.description, 'Beratung');
+  });
+
+  it('creates expense transaction', async () => {
+    const cats = await models.category.getAll();
+    const expenseCat = cats.find(c => c.type === 'expense');
+
+    const id = await models.transaction.save({
+      type: 'expense',
+      date: '2026-03-02',
+      amount_cents: 3000,
+      description: 'Bueromaterial',
+      category_id: expenseCat.id,
+    });
+    assert.ok(id > 0);
+
+    const tx = await models.transaction.getById(id);
+    assert.equal(tx.type, 'expense');
+    assert.equal(tx.amount_cents, 3000);
+  });
+
+  it('lists transactions with filter', async () => {
+    const all = await models.transaction.getAll();
+    assert.ok(all.length >= 2);
+
+    const incomeOnly = await models.transaction.getAll({ type: 'income' });
+    assert.ok(incomeOnly.every(t => t.type === 'income'));
+
+    const expenseOnly = await models.transaction.getAll({ type: 'expense' });
+    assert.ok(expenseOnly.every(t => t.type === 'expense'));
+  });
+
+  it('cancels transaction with reversal entry', async () => {
+    const cats = await models.category.getAll();
+    const incomeCat = cats.find(c => c.type === 'income');
+
+    const id = await models.transaction.save({
+      type: 'income',
+      date: '2026-03-05',
+      amount_cents: 20000,
+      description: 'Storno-Test',
+      category_id: incomeCat.id,
+    });
+
+    const cancelId = await models.transaction.cancel(id);
+    assert.ok(cancelId > 0);
+
+    const original = await models.transaction.getById(id);
+    assert.equal(original.cancelled, 1);
+
+    const reversal = await models.transaction.getById(cancelId);
+    assert.equal(reversal.amount_cents, -20000);
+    assert.equal(reversal.cancel_ref, id);
+  });
+
+  it('excludes cancelled transactions by default', async () => {
+    const active = await models.transaction.getAll();
+    const withCancelled = await models.transaction.getAll({ include_cancelled: true });
+    assert.ok(withCancelled.length > active.length);
+  });
+});
+
+describe('Rechnung Lokal — Customer Workflow', () => {
+  let db, models;
+
+  before(async () => {
+    db = await createTestDb();
+    await createSchema(db.execute, productConfig.features, {
+      product_id: productConfig.product,
+      app_version: '0.2.0',
+    });
+    await seedCategories(db.execute, db.query);
+    models = createModels(
+      { query: db.query, execute: db.execute, computeHmac: testHmac },
+      productConfig.features,
+    );
+  });
+
+  after(() => db.close());
+
+  it('creates customer with auto-number', async () => {
+    const id = await models.person.save({
+      company: 'Musterfirma GmbH',
+      first_name: 'Max',
+      last_name: 'Mustermann',
+      type: 'customer',
+      email: 'max@musterfirma.de',
+      is_b2b: true,
+    });
+    assert.ok(id > 0);
+    const c = await models.person.getById(id);
+    assert.ok(c.person_number.startsWith('K'), `Number starts with K: ${c.person_number}`);
+    assert.equal(c.is_b2b, 1);
+  });
+
+  it('searches customers', async () => {
+    await models.person.save({ company: 'Alpha GmbH', type: 'customer' });
+    await models.person.save({ company: 'Beta AG', type: 'customer' });
+
+    const results = await models.person.search('Alpha');
+    assert.equal(results.length, 1);
+    assert.equal(results[0].company, 'Alpha GmbH');
+  });
+
+  it('updates customer', async () => {
+    const id = await models.person.save({
+      company: 'Update Test',
+      type: 'customer',
+    });
+
+    await models.person.save({
+      id,
+      company: 'Update Test GmbH',
+      city: 'Hamburg',
+    });
+
+    const updated = await models.person.getById(id);
+    assert.equal(updated.company, 'Update Test GmbH');
+    assert.equal(updated.city, 'Hamburg');
+  });
+
+  it('soft-deletes customer', async () => {
+    const id = await models.person.save({
+      company: 'Zu Loeschen',
+      type: 'customer',
+    });
+
+    await models.person.remove(id);
+    const all = await models.person.getAll();
+    assert.ok(!all.find(p => p.id === id), 'Deleted customer should not appear in getAll');
+
+    const deleted = await models.person.getById(id);
+    assert.equal(deleted.status, 'deleted');
+  });
+
+  it('filters invoices by customer', async () => {
+    const c1 = await models.person.save({ company: 'Kunde A', type: 'customer' });
+    const c2 = await models.person.save({ company: 'Kunde B', type: 'customer' });
+
+    await models.invoice.save({
+      person_id: c1, issue_date: '2026-03-01', status: 'draft',
+    }, [{ description: 'Service A', quantity: 1, unit_price_cents: 10000 }]);
+
+    await models.invoice.save({
+      person_id: c2, issue_date: '2026-03-01', status: 'draft',
+    }, [{ description: 'Service B', quantity: 1, unit_price_cents: 20000 }]);
+
+    const invoicesA = await models.invoice.getAll({ person_id: c1 });
+    assert.equal(invoicesA.length, 1);
+    assert.equal(invoicesA[0].subtotal_cents, 10000);
+  });
+});
+
+describe('Rechnung Lokal — Invoice Number Generation', () => {
+  let db, models;
+
+  before(async () => {
+    db = await createTestDb();
+    await createSchema(db.execute, productConfig.features, {
+      product_id: productConfig.product,
+      app_version: '0.2.0',
+    });
+    await seedCategories(db.execute, db.query);
+    models = createModels(
+      { query: db.query, execute: db.execute, computeHmac: testHmac },
+      productConfig.features,
+    );
+  });
+
+  after(() => db.close());
+
+  it('generates first number as RE-YYYY-0001', async () => {
+    const num = await models.invoice.nextNumber('RE', 2026, 'yearly');
+    assert.equal(num, 'RE-2026-0001');
+  });
+
+  it('increments number after first invoice', async () => {
+    const customerId = await models.person.save({ company: 'Num Test', type: 'customer' });
+    await models.invoice.save({
+      person_id: customerId,
+      issue_date: '2026-03-01',
+      prefix: 'RE',
+      number_mode: 'yearly',
+    }, [{ description: 'Test', quantity: 1, unit_price_cents: 1000 }]);
+
+    const next = await models.invoice.nextNumber('RE', 2026, 'yearly');
+    assert.equal(next, 'RE-2026-0002');
+  });
+
+  it('supports custom prefix', async () => {
+    const num = await models.invoice.nextNumber('INV', 2026, 'yearly');
+    assert.equal(num, 'INV-2026-0001');
+  });
+
+  it('supports continuous numbering mode', async () => {
+    const customerId = await models.person.save({ company: 'Cont Test', type: 'customer' });
+    await models.invoice.save({
+      person_id: customerId,
+      issue_date: '2025-12-01',
+      prefix: 'X',
+      number_mode: 'continuous',
+    }, [{ description: 'Test', quantity: 1, unit_price_cents: 1000 }]);
+
+    const next = await models.invoice.nextNumber('X', 2026, 'continuous');
+    assert.match(next, /^X-2026-0002$/);
+  });
+});

@@ -51,7 +51,7 @@
   block:
     - name: "Deep-Smoke: Poller-Verarbeitung von STORY-000099 (nicht-blockierend)"
       ansible.builtin.shell: |
-        for i in $(seq 1 60); do
+        for i in $(seq 1 20); do
           STATE=$(docker exec factory-postgres psql -U forgejo -d forgejo -tAq -c \
             "SELECT stage FROM poller_state WHERE object_id='STORY-000099'" 2>/dev/null | tr -d '[:space:]')
           if [ "$STATE" = "pr_created" ] || [ "$STATE" = "done" ]; then
@@ -61,7 +61,7 @@
           echo "Warte... stage=$STATE ($(($i * 10))s)"
           sleep 10
         done
-        echo "DEEP_SMOKE_TIMEOUT: STORY-000099 did not complete in 10 minutes (stage=$STATE)"
+        echo "DEEP_SMOKE_TIMEOUT: STORY-000099 did not complete in 200 seconds (stage=$STATE)"
         exit 0
       register: smoke_result
       changed_when: false

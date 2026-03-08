@@ -1,0 +1,71 @@
+id: "FEAT-005"
+title: "Device-Limit fuer Lizenzkeys (max. 3 Geraete)"
+epic: "LIZENZ-LIFECYCLE"
+status: "inbox"
+
+story_type: "platform-core"
+lane: "slow"
+platform_impact: "high"
+founder_gate_required: true
+force_approve_allowed: false
+auto_merge_allowed: false
+
+platform_rationale: "Aendert Lizenz-Validierung in electron-platform und Portal — betrifft alle Produkte"
+reused_by_products: ["mitglieder-lokal", "rechnung-lokal", "finanz-rechner"]
+non_goals:
+  - "Hardware-Fingerprinting (zu invasiv, DSGVO-kritisch)"
+  - "Online-Pflicht (Offline-Modus muss weiter funktionieren)"
+
+description: |
+  Aktuell kann ein Lizenzkey auf beliebig vielen Geraeten gleichzeitig
+  genutzt werden. Das ermoeglicht unkontrollierte Weitergabe.
+
+  Loesung: Jedes Geraet registriert sich beim Portal mit einer anonymen
+  Device-ID (z.B. UUID, beim ersten Start generiert und lokal gespeichert).
+  Das Portal zaehlt aktive Devices pro Key und lehnt ab, wenn das Limit
+  ueberschritten wird.
+
+  Regeln:
+  - Max. 3 Geraete pro Key (1 Arbeitsplatz + 1 Laptop + 1 Reserve)
+  - Device-ID ist eine zufaellige UUID (kein Hardware-Fingerprint)
+  - Geraet kann manuell deaktiviert werden (Self-Service oder Support)
+  - Inaktive Geraete (>90 Tage keine Validierung) werden automatisch freigegeben
+  - Offline-Modus: Cache bleibt 30 Tage gueltig, Device-Registrierung
+    erfolgt bei naechster Online-Validierung
+  - Trial-Keys: gleiches Limit (3 Geraete)
+
+  Aenderungen:
+  - Portal: `license_devices` Tabelle (license_id, device_id, last_seen, active)
+  - Portal: `/api/license/validate` prueft Device-Count, registriert Device
+  - electron-platform: Device-ID generieren + bei Validierung mitsenden
+  - Portal: Admin-API zum Deaktivieren einzelner Devices
+
+acceptance_criteria:
+  - "Portal DB hat Tabelle license_devices (license_id, device_id, first_seen, last_seen, active)"
+  - "POST /api/license/validate akzeptiert optionalen deviceId-Parameter"
+  - "4. Geraet bekommt valid:false mit reason:'device_limit_exceeded'"
+  - "Inaktive Devices (>90 Tage) werden bei Validierung automatisch freigegeben"
+  - "electron-platform generiert UUID beim ersten Start, speichert in userData"
+  - "electron-platform sendet deviceId bei jeder Online-Validierung"
+  - "Offline-Cache funktioniert weiterhin (30 Tage ohne Online-Check)"
+  - "Admin-API: DELETE /api/admin/license/:id/devices/:deviceId"
+  - "Tests: Device-Limit, Auto-Freigabe, Offline-Kompatibilitaet"
+  - "CLAUDE.md aktualisiert"
+
+affected_files:
+  - "portal/src/db/migrate-v*.sql"
+  - "portal/src/routes/api-license.js"
+  - "portal/src/services/license.js"
+  - "packages/electron-platform/lib/license-client.js"
+  - "portal/test/unit/license-service.test.js"
+  - "portal/test/unit/license-validate-api.test.js"
+
+depends_on: []
+
+manual_steps:
+  - step: "Device-Limit kommunizieren"
+    desc: "FAQ und Produktseiten aktualisieren: 'Ihr Key gilt fuer bis zu 3 Geraete'"
+  - step: "Support-Prozess definieren"
+    desc: "Wie reagiert Support wenn Kunde mehr als 3 Geraete braucht?"
+
+estimated_effort: "L"

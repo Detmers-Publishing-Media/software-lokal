@@ -65,7 +65,7 @@
       <label>Vorname <input type="text" bind:value={firstName} /></label>
       <label>Nachname <input type="text" bind:value={lastName} required /></label>
     </FormRow>
-    <label>Strasse <input type="text" bind:value={street} /></label>
+    <label>Straße <input type="text" bind:value={street} /></label>
     <FormRow>
       <label>PLZ <input type="text" bind:value={zip} /></label>
       <label>Ort <input type="text" bind:value={city} /></label>
@@ -76,7 +76,7 @@
     </FormRow>
     <FormRow>
       <label>USt-IdNr. <input type="text" bind:value={vatId} placeholder="DE..." /></label>
-      <label class="checkbox"><input type="checkbox" bind:checked={isB2b} /> Geschaeftskunde (B2B)</label>
+      <label class="checkbox"><input type="checkbox" bind:checked={isB2b} /> Geschäftskunde (B2B)</label>
     </FormRow>
     <label>Notizen <textarea bind:value={notes} rows="2"></textarea></label>
 

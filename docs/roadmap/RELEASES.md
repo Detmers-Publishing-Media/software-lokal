@@ -47,7 +47,7 @@ Stand: 2026-03-07
 
 ### DNS (Cloudflare)
 - Zone: `detmers-publish.de`
-- Subdomains: `git-codefabrik`, `gateway-codefabrik`, `portal-codefabrik`
+- Subdomains: `git-codefabrik`, `gateway-codefabrik`, `portal`
 
 ### Deployment
 - **Kontrollzentrum:** `scripts/control.sh` — Monitoring, Trial-Keys, delegiert Install/Sichern

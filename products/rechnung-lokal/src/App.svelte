@@ -7,10 +7,12 @@
   import InvoiceDetail from './routes/InvoiceDetail.svelte';
   import CustomerList from './routes/CustomerList.svelte';
   import CustomerForm from './routes/CustomerForm.svelte';
+  import CustomerDetail from './routes/CustomerDetail.svelte';
   import EuerOverview from './routes/EuerOverview.svelte';
+  import TransactionList from './routes/TransactionList.svelte';
   import TransactionForm from './routes/TransactionForm.svelte';
   import ProfileSettings from './routes/ProfileSettings.svelte';
-  import { SupportView } from '@codefabrik/app-shared/components';
+  import { SupportView, FeatureRequestView } from '@codefabrik/app-shared/components';
 
   let dbReady = $state(false);
   let dbError = $state(null);
@@ -29,8 +31,10 @@
   const navItems = [
     { id: 'invoices', label: 'Rechnungen' },
     { id: 'customers', label: 'Kunden' },
-    { id: 'euer', label: 'EUeR' },
+    { id: 'transactions', label: 'Buchungen' },
+    { id: 'euer', label: 'EÜR' },
     { id: 'profile', label: 'Profil' },
+    { id: 'feature-request', label: 'Wünsche' },
     { id: 'support', label: 'Support' },
   ];
 
@@ -44,6 +48,7 @@
     if (v.startsWith('customer:new')) return { page: 'customer-new' };
     if (v.startsWith('customer:')) return { page: 'customer-detail', id: parseInt(v.split(':')[1]) };
     if (v === 'transaction:new') return { page: 'transaction-new' };
+    if (v === 'transactions') return { page: 'transactions' };
     return { page: v };
   });
 </script>
@@ -65,7 +70,7 @@
         </li>
       {/each}
     </ul>
-    {#if $currentView === 'euer'}
+    {#if $currentView === 'euer' || $currentView === 'transactions'}
       <div class="sub-actions">
         <button class="small" onclick={() => currentView.set('transaction:new')}>
           + Buchung
@@ -98,12 +103,18 @@
       <CustomerForm />
     {:else if route.page === 'customer-edit'}
       <CustomerForm customerId={route.id} />
+    {:else if route.page === 'customer-detail'}
+      <CustomerDetail customerId={route.id} />
+    {:else if route.page === 'transactions'}
+      <TransactionList />
     {:else if route.page === 'euer'}
       <EuerOverview />
     {:else if route.page === 'transaction-new'}
       <TransactionForm />
     {:else if route.page === 'profile'}
       <ProfileSettings />
+    {:else if route.page === 'feature-request'}
+      <FeatureRequestView />
     {:else if route.page === 'support'}
       <SupportView />
     {/if}

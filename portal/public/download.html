@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Download - Code-Fabrik</title>
+  <title>Download - Detmers Publishing &amp; Media</title>
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
   <header>
     <div class="container">
-      <h1><a href="/">Code-Fabrik</a></h1>
+      <h1><a href="/">Detmers Publishing &amp; Media</a></h1>
       <nav>
         <a href="/support">Support</a>
         <a href="/ideas">Ideen</a>
@@ -26,7 +26,7 @@
         <p style="margin-bottom:1rem">Geben Sie Ihren Lizenzkey ein, um Ihr Produkt herunterzuladen.</p>
         <form id="keyForm">
           <label for="license_key">Lizenzkey</label>
-          <input type="text" id="license_key" required placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
+          <input type="text" id="license_key" required placeholder="CFML-XXXX-XXXX-XXXX-XXXX">
           <button type="submit" class="btn">Weiter</button>
         </form>
       </div>
@@ -35,14 +35,15 @@
       <h2 id="productName"></h2>
       <div class="card">
         <p id="productDesc"></p>
-        <p style="margin-top:0.8rem">
-          Version: <span class="badge badge-green" id="productVersion"></span>
-        </p>
-        <p style="margin-top:1rem">
-          <a id="downloadBtn" href="#" class="btn">Download</a>
-        </p>
       </div>
-      <div class="card" style="background:#f8fafc">
+
+      <div id="versions-list" style="margin-top:1rem"></div>
+
+      <div class="card" style="background:#fffbeb;margin-top:1rem;font-size:0.85rem;color:#92400e">
+        <p><strong>Hinweis:</strong> Wir stellen die letzten 4 Versionen zum Download bereit. Aeltere Versionen werden automatisch entfernt. Falls Sie eine bestimmte Version benoetigen, wenden Sie sich bitte an unseren <a href="/support">Support</a>.</p>
+      </div>
+
+      <div class="card" style="background:#f8fafc;margin-top:1rem">
         <p style="font-size:0.9rem;color:#555">
           Ihr Lizenzkey: <code id="displayKey"></code>
         </p>
@@ -73,12 +74,23 @@
       </p>
     </div>
   </div>
-  <footer>Code-Fabrik v0.6.0</footer>
+  <footer>Detmers Publishing &amp; Media</footer>
   <script>
     function esc(s) { if (!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
+    function formatSize(bytes) {
+      if (!bytes) return '';
+      return (bytes / 1024 / 1024).toFixed(1) + ' MB';
+    }
+
+    function platformLabel(p) {
+      const labels = { linux: 'Linux', macos: 'macOS', windows: 'Windows' };
+      return labels[p] || p;
+    }
+
     const params = new URLSearchParams(location.search);
     const key = params.get('key');
+    let productId = null;
 
     if (key) {
       document.getElementById('key-form').style.display = 'none';
@@ -93,24 +105,60 @@
           return;
         }
         const data = await res.json();
-        if (data.download_url) {
-          document.getElementById('productName').textContent = data.product.name;
-          document.getElementById('productDesc').textContent = data.product.description || '';
-          document.getElementById('productVersion').textContent = data.latest_version || 'n/a';
-          document.getElementById('downloadBtn').href = data.download_url;
-          document.getElementById('displayKey').textContent = data.license_key;
-          document.getElementById('supportLink').href = `/support?key=${encodeURIComponent(key)}`;
-          document.getElementById('requestLink').href = `/request?key=${encodeURIComponent(key)}`;
-          document.getElementById('product-view').style.display = 'block';
-        } else {
+        productId = data.product.id;
+
+        if (!data.download_url && !productId) {
           document.getElementById('noDownloadProduct').textContent = data.product.name;
           document.getElementById('no-download').style.display = 'block';
+          return;
         }
+
+        document.getElementById('productName').textContent = data.product.name;
+        document.getElementById('productDesc').textContent = data.product.description || '';
+        document.getElementById('displayKey').textContent = data.license_key;
+        document.getElementById('supportLink').href = `/support?key=${encodeURIComponent(key)}`;
+        document.getElementById('requestLink').href = `/request?key=${encodeURIComponent(key)}`;
+        document.getElementById('product-view').style.display = 'block';
+
+        loadVersions(productId);
       }).catch(() => {
         document.getElementById('loading').style.display = 'none';
         document.getElementById('errorMsg').textContent = 'Verbindungsfehler. Bitte versuchen Sie es spaeter erneut.';
         document.getElementById('error-view').style.display = 'block';
       });
+    }
+
+    async function loadVersions(pid) {
+      const el = document.getElementById('versions-list');
+      try {
+        const res = await fetch(`/api/releases/${encodeURIComponent(pid)}`);
+        const data = await res.json();
+
+        if (!data.versions || !data.versions.length) {
+          el.innerHTML = '<div class="card"><p>Noch kein Download verfuegbar.</p></div>';
+          return;
+        }
+
+        el.innerHTML = data.versions.map((v, i) => {
+          const isLatest = i === 0;
+          const versionLabel = esc(v.version) + (isLatest ? ' <span class="badge badge-green">Aktuell</span>' : '');
+
+          const platformLinks = v.platforms.map(p => {
+            const url = `/api/download/${esc(pid)}/${esc(p.platform)}?key=${encodeURIComponent(key)}&version=${encodeURIComponent(v.version)}`;
+            return `<a href="${url}" class="btn${isLatest ? '' : ' btn-secondary'}" style="font-size:0.85rem;padding:0.4rem 0.8rem">`
+              + `${platformLabel(p.platform)}`
+              + `<span style="font-size:0.75rem;color:${isLatest ? '#ddd' : '#888'};margin-left:0.3rem">${formatSize(p.size)}</span>`
+              + `</a>`;
+          }).join(' ');
+
+          return `<div class="card${isLatest ? '' : ''}" style="margin-bottom:0.5rem">`
+            + `<h3 style="margin-bottom:0.5rem">${versionLabel}</h3>`
+            + `<div style="display:flex;gap:0.5rem;flex-wrap:wrap">${platformLinks}</div>`
+            + `</div>`;
+        }).join('');
+      } catch (err) {
+        el.innerHTML = '<div class="card"><p class="error" style="display:block">Fehler beim Laden der Versionen.</p></div>';
+      }
     }
 
     document.getElementById('keyForm').addEventListener('submit', (e) => {

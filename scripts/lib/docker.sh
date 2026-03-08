@@ -81,6 +81,13 @@ run_ansible() {
         products_mount=(-v "$products_dir:/products:ro")
     fi
 
+    # Packages-Mount vorbereiten (fuer seed-products: shared, app-shared, finanz-shared)
+    local packages_mount=()
+    local packages_dir="$SHM_WORKSPACE/packages"
+    if [ -d "$packages_dir" ]; then
+        packages_mount=(-v "$packages_dir:/packages:ro")
+    fi
+
     # Docs-Mount vorbereiten (fuer Governance-Dateien)
     local docs_mount=()
     local docs_dir="$SHM_WORKSPACE/docs"
@@ -100,10 +107,12 @@ run_ansible() {
         -v "$ansible_dir:/ansible:ro" \
         -v "$SHM_SECRETS/deploy_key:/root/.ssh/codefabrik_deploy:ro" \
         -v "$SHM_SECRETS/deploy_key.pub:/root/.ssh/codefabrik_deploy.pub:ro" \
+        -v "$SHM_SECRETS/ci_deploy_key.pub:/root/.ssh/portal_deploy_ci.pub:ro" \
         -v "$SHM_SECRETS/secrets.yml:/root/secrets.yml:ro" \
         -v "$SHM_OUTPUT:/output:rw" \
         "${portal_mount[@]}" \
         "${products_mount[@]}" \
+        "${packages_mount[@]}" \
         "${docs_mount[@]}" \
         "${scripts_mount[@]}" \
         "$DOCKER_IMAGE" \

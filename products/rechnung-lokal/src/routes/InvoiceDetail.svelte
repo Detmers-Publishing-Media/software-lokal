@@ -72,7 +72,7 @@
       <div>
         <h3>Rechnungsdaten</h3>
         <p>Datum: {formatDate(inv.issue_date)}</p>
-        <p>Faellig: {formatDate(inv.due_date)}</p>
+        <p>Fällig: {formatDate(inv.due_date)}</p>
         {#if inv.paid_date}<p>Bezahlt: {formatDate(inv.paid_date)}</p>{/if}
       </div>
     </div>
@@ -107,7 +107,7 @@
 
     <div class="actions">
       <button class="primary" onclick={() => generateInvoicePdf(inv, customer, profile)}>PDF erstellen</button>
-      <button onclick={() => currentView.set('invoices')}>Zurueck</button>
+      <button onclick={() => currentView.set('invoices')}>Zurück</button>
       {#if inv.status === 'draft' || inv.status === 'sent'}
         <button onclick={() => currentView.set(`invoice:edit:${inv.id}`)}>Bearbeiten</button>
       {/if}

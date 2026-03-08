@@ -167,6 +167,27 @@ if ssh_pub:
     os.chmod(pub_file, 0o644)
     print(f"  OK: ssh-deploy-key-pub -> {pub_file}")
 
+# CI Deploy Key extrahieren (fuer GitHub Actions SCP auf Portal)
+ci_key = get_entry_password(cf_group, "ci-deploy-key-portal")
+if ci_key:
+    ci_key_file = os.path.join(secrets_dir, "ci_deploy_key")
+    with open(ci_key_file, "w") as f:
+        f.write(ci_key)
+        if not ci_key.endswith("\n"):
+            f.write("\n")
+    os.chmod(ci_key_file, 0o600)
+    print(f"  OK: ci-deploy-key-portal -> {ci_key_file}")
+
+ci_pub = get_entry_password(cf_group, "ci-deploy-key-portal-pub")
+if ci_pub:
+    ci_pub_file = os.path.join(secrets_dir, "ci_deploy_key.pub")
+    with open(ci_pub_file, "w") as f:
+        f.write(ci_pub)
+        if not ci_pub.endswith("\n"):
+            f.write("\n")
+    os.chmod(ci_pub_file, 0o644)
+    print(f"  OK: ci-deploy-key-portal-pub -> {ci_pub_file}")
+
 # Runtime-Gruppe finden
 runtime_parts = runtime_path.split("/")
 rt_group = find_group(db_root, runtime_parts)

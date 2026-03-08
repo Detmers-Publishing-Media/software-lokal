@@ -21,8 +21,10 @@ const LICENSE_FILE = 'license.json';
 const PREFIX_TO_PRODUCT = {
   'CFML': 'mitglieder-lokal',
   'CFFR': 'finanz-rechner',
+  'CFRL': 'rechnung-lokal',
   'CFTM': 'mitglieder-lokal',
   'CFTR': 'finanz-rechner',
+  'CFTL': 'rechnung-lokal',
 };
 
 /**

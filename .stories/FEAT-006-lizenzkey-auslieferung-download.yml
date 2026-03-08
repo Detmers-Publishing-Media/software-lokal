@@ -1,0 +1,80 @@
+id: "FEAT-006"
+title: "Lizenzkey-Auslieferung via Digistore24 + Download-Seite"
+epic: "LIZENZ-LIFECYCLE"
+status: "inbox"
+
+story_type: "platform-core"
+lane: "slow"
+platform_impact: "high"
+founder_gate_required: true
+force_approve_allowed: false
+auto_merge_allowed: false
+
+platform_rationale: "Schliesst die Luecke zwischen Kauf und Produktnutzung — betrifft alle Produkte"
+reused_by_products: ["mitglieder-lokal", "rechnung-lokal", "finanz-rechner"]
+non_goals:
+  - "E-Mail-Versand (strict no-email)"
+  - "Kunden-Account-System"
+  - "Eigene Bestelluebersicht (liegt bei Digistore24)"
+
+description: |
+  Nach einem Kauf ueber Digistore24 bekommt der Kunde aktuell seinen
+  Lizenzkey nicht ausgeliefert. Es fehlt die Verbindung zwischen
+  Bezahlung und Produktnutzung.
+
+  Loesung (Weg 2 — Key von Digistore24, Download-Seite im Portal):
+
+  1. Digistore24 "Liefern"-Tab: Auto-Lizenzkeys aktivieren.
+     Digistore24 ruft unseren Endpoint auf, bekommt den generierten Key
+     zurueck und zeigt ihn dem Kunden auf der Dankeseite.
+     Kunde kann Key jederzeit in seinem Digistore24-Konto erneut abrufen.
+
+  2. Portal Download-Seite: Einfache Seite unter /download.
+     Kunde gibt Lizenzkey ein, Portal validiert, zeigt Produkt-Info
+     und Download-Buttons (Linux, macOS, Windows) fuer die neueste Version.
+
+  Vorteile:
+  - Kein Key in URLs / Browser-History
+  - Key-Recovery eingebaut (Digistore24-Konto)
+  - Passt zum License-Key-only-Prinzip
+  - Keine Kundendaten im Portal noetig
+
+  Aenderungen:
+  - Portal: Digistore24-Lizenzkey-API-Endpoint (wird von Digistore24 aufgerufen)
+  - Portal: Download-Seite (/download) mit Key-Eingabe + Plattform-Auswahl
+  - Portal: Download-Seite zeigt Produktname, Version, Dateigroesse
+  - Digistore24: Tab "Liefern" → Auto-Lizenzkeys konfigurieren
+  - Digistore24: Dankeseite-Text mit Hinweis "Key aufbewahren"
+
+acceptance_criteria:
+  - "Digistore24 'Liefern'-Tab ist konfiguriert mit Portal-API-URL"
+  - "Portal hat Endpoint den Digistore24 aufruft und Key zurueckbekommt"
+  - "Kunde sieht Lizenzkey auf Digistore24-Dankeseite nach Kauf"
+  - "Kunde kann Key in Digistore24-Bestelluebersicht jederzeit erneut abrufen"
+  - "Portal hat Download-Seite unter /download"
+  - "Download-Seite: Key eingeben → validieren → Produkt + Plattform-Downloads anzeigen"
+  - "Download-Seite zeigt Produktname, neueste Version, Dateigroesse pro Plattform"
+  - "Ungueltiger Key → klare Fehlermeldung"
+  - "Abgelaufener/revoked Key → Hinweis mit Verweis auf Digistore24-Support"
+  - "Download funktioniert (Datei wird ausgeliefert)"
+  - "Dankeseite-Text enthaelt Hinweis: 'Bewahren Sie Ihren Lizenzschluessel sicher auf'"
+  - "Tests: Key-Validierung, Download-Seite, Fehlerszenarien"
+  - "CLAUDE.md aktualisiert"
+
+affected_files:
+  - "portal/src/routes/api-license.js"
+  - "portal/src/routes/pages.js"
+  - "portal/public/download.html"
+  - "portal/test/unit/download-page.test.js"
+
+depends_on: []
+
+manual_steps:
+  - step: "Digistore24 'Liefern'-Tab konfigurieren"
+    desc: "Auto-Lizenzkeys aktivieren, Portal-API-URL eintragen"
+  - step: "Digistore24 Dankeseite anpassen"
+    desc: "Text mit Lizenzkey-Anzeige und Aufbewahrungs-Hinweis"
+  - step: "E2E-Test mit Testkauf"
+    desc: "Testkauf ausloesen, Key auf Dankeseite pruefen, Download testen"
+
+estimated_effort: "M"

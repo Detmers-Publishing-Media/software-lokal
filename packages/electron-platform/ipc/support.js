@@ -199,6 +199,76 @@ function registerSupportHandlers({ ipcMain, app, config, getDb, safeMode }) {
     }
   });
 
+  // --- Feature Requests ---
+
+  ipcMain.handle('featureRequest:submit', async (_event, data) => {
+    const portalUrl = config.portalUrl;
+    if (!portalUrl) {
+      return { ok: false, error: 'Portal-URL nicht konfiguriert' };
+    }
+
+    let safeStorage = null;
+    try { safeStorage = require('electron').safeStorage; } catch (_) {}
+
+    const cache = readLicenseCache(safeStorage, userDataPath);
+    if (!cache.licenseKey) {
+      return { ok: false, error: 'Kein Lizenzkey hinterlegt' };
+    }
+
+    try {
+      const result = await postJson(portalUrl, '/api/requests', {
+        license_key: cache.licenseKey,
+        title: data.title,
+        description: data.description,
+        priority: data.priority || 'normal',
+      });
+      logInfo('support', 'Feature-Request erstellt', { requestNumber: result.request_number });
+      return { ok: true, requestNumber: result.request_number, status: result.status };
+    } catch (err) {
+      logWarn('support', 'Feature-Request fehlgeschlagen', { error: err.message });
+      return { ok: false, error: err.message };
+    }
+  });
+
+  ipcMain.handle('featureRequest:list', async () => {
+    const portalUrl = config.portalUrl;
+    if (!portalUrl) return [];
+
+    let safeStorage = null;
+    try { safeStorage = require('electron').safeStorage; } catch (_) {}
+
+    const cache = readLicenseCache(safeStorage, userDataPath);
+    if (!cache.licenseKey) return [];
+
+    try {
+      const url = new URL('/api/requests', portalUrl);
+      url.searchParams.set('key', cache.licenseKey);
+      return await getJson(url.toString());
+    } catch (err) {
+      logWarn('support', 'Feature-Request-Abruf fehlgeschlagen', { error: err.message });
+      return [];
+    }
+  });
+
+  ipcMain.handle('featureRequest:get', async (_event, requestNumber) => {
+    const portalUrl = config.portalUrl;
+    if (!portalUrl) return null;
+
+    let safeStorage = null;
+    try { safeStorage = require('electron').safeStorage; } catch (_) {}
+
+    const cache = readLicenseCache(safeStorage, userDataPath);
+    if (!cache.licenseKey) return null;
+
+    try {
+      const url = new URL(`/api/requests/${requestNumber}`, portalUrl);
+      url.searchParams.set('key', cache.licenseKey);
+      return await getJson(url.toString());
+    } catch (err) {
+      return null;
+    }
+  });
+
   logInfo('ipc', 'Support-Handler registriert');
 }
 

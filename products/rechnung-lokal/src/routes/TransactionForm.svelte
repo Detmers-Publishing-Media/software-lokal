@@ -28,7 +28,7 @@
         type, date, amount_cents: amountCents,
         description, category_id: categoryId,
       });
-      currentView.set('euer');
+      currentView.set('transactions');
     } finally {
       saving = false;
     }
@@ -51,7 +51,7 @@
     </FormRow>
 
     <label>Betrag (Cent) <input type="number" bind:value={amountCents} min="1" required /></label>
-    <label>Beschreibung <input type="text" bind:value={description} required placeholder="z.B. Domain-Gebuehr" /></label>
+    <label>Beschreibung <input type="text" bind:value={description} required placeholder="z.B. Domain-Gebühr" /></label>
 
     <label>
       Kategorie

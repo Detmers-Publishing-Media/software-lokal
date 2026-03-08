@@ -43,6 +43,38 @@
     src: ../templates/portal-docker-compose.yml.j2
     dest: "{{ portal_docker_compose_dir }}/docker-compose.yml"
 
+- name: "Downloads-Laufwerk formatieren (nur wenn leer)"
+  ansible.builtin.shell: |
+    if ! blkid /dev/vdb | grep -q ext4; then
+      mkfs.ext4 -L downloads /dev/vdb
+      echo "FORMATTED"
+    else
+      echo "ALREADY_FORMATTED"
+    fi
+  register: format_result
+  changed_when: "'FORMATTED' in format_result.stdout"
+
+- name: "Downloads-Mountpoint erstellen"
+  ansible.builtin.file:
+    path: "{{ portal_downloads_mount }}"
+    state: directory
+    mode: '0755'
+
+- name: "Downloads-Laufwerk mounten (fstab)"
+  ansible.posix.mount:
+    path: "{{ portal_downloads_mount }}"
+    src: LABEL=downloads
+    fstype: ext4
+    opts: defaults
+    state: mounted
+
+- name: "CI Deploy Key fuer SCP-Uploads einrichten"
+  ansible.posix.authorized_key:
+    user: root
+    key: "{{ lookup('file', ci_deploy_key_path + '.pub') }}"
+    key_options: 'no-port-forwarding,no-X11-forwarding,no-agent-forwarding'
+    state: present
+
 - name: "Certs-Verzeichnis erstellen"
   ansible.builtin.file:
     path: "{{ portal_docker_compose_dir }}/certs"

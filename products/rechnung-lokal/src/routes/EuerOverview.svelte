@@ -11,7 +11,7 @@
   let months = $state([]);
   let loading = $state(true);
 
-  const monthNames = ['Jan', 'Feb', 'Maz', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'];
+  const monthNames = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'];
 
   async function loadData() {
     loading = true;
@@ -37,7 +37,7 @@
 </script>
 
 <div class="content">
-  <PageHeader title="Einnahmen-Ausgaben-Uebersicht {year}">
+  <PageHeader title="Einnahmen-Überschuss-Rechnung {year}">
     <YearNavigator {year} onchange={(y) => year = y} />
   </PageHeader>
 
@@ -50,7 +50,7 @@
       <SummaryCard label="Gewinn / Verlust" value={formatEur(annual.profit_cents)} variant={annual.profit_cents < 0 ? 'danger' : 'profit'} />
     </div>
 
-    <h2>Monatsuebersicht</h2>
+    <h2>Monatsübersicht</h2>
     <table>
       <thead>
         <tr><th>Monat</th><th>Einnahmen</th><th>Ausgaben</th><th>Saldo</th></tr>

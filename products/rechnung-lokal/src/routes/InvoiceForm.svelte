@@ -11,13 +11,14 @@
   let issueDate = $state(new Date().toISOString().slice(0, 10));
   let dueDate = $state('');
   let notes = $state('');
-  let items = $state([{ description: '', quantity: 1, unit: 'Stueck', unit_price_cents: 0, tax_rate: 1900 }]);
+  let items = $state([{ description: '', quantity: 1, unit: 'Stück', unit_price_cents: 0, tax_rate: 1900 }]);
   let saving = $state(false);
 
   const { person, invoice, profile: profileModel } = getModels();
   let isSmallBusiness = $state(false);
   let invoicePrefix = $state('RE');
   let numberMode = $state('yearly');
+  let nextNumber = $state('');
 
   onMount(async () => {
     customers = await person.getAll();
@@ -25,6 +26,10 @@
     isSmallBusiness = !!prof?.is_small_business;
     invoicePrefix = prof?.invoice_prefix ?? 'RE';
     numberMode = prof?.invoice_number_mode ?? 'yearly';
+
+    if (!invoiceId) {
+      nextNumber = await invoice.nextNumber(invoicePrefix, new Date().getFullYear(), numberMode);
+    }
 
     if (invoiceId) {
       const inv = await invoice.getWithItems(invoiceId);
@@ -45,7 +50,7 @@
   });
 
   function addItem() {
-    items = [...items, { description: '', quantity: 1, unit: 'Stueck', unit_price_cents: 0, tax_rate: 1900 }];
+    items = [...items, { description: '', quantity: 1, unit: 'Stück', unit_price_cents: 0, tax_rate: 1900 }];
   }
 
   function removeItem(index) {
@@ -78,7 +83,7 @@
 
 <div class="content">
   <PageHeader title={invoiceId ? 'Rechnung bearbeiten' : 'Neue Rechnung'}>
-    <button onclick={() => currentView.set('invoices')}>Zurueck</button>
+    <button onclick={() => currentView.set('invoices')}>Zurück</button>
   </PageHeader>
 
   <form onsubmit={e => { e.preventDefault(); save(); }}>
@@ -86,7 +91,7 @@
       <label>
         Kunde
         <select bind:value={selectedCustomer} required>
-          <option value={null}>-- Kunde waehlen --</option>
+          <option value={null}>-- Kunde wählen --</option>
           {#each customers as c}
             <option value={c.id}>{c.company || `${c.first_name} ${c.last_name}`} ({c.person_number})</option>
           {/each}
@@ -95,9 +100,13 @@
       <button type="button" onclick={() => currentView.set('customer:new')}>Neuer Kunde</button>
     </FormRow>
 
+    {#if nextNumber}
+      <p class="hint">Nächste Rechnungsnummer: <strong>{nextNumber}</strong></p>
+    {/if}
+
     <FormRow>
       <label>Rechnungsdatum <input type="date" bind:value={issueDate} required /></label>
-      <label>Faellig am <input type="date" bind:value={dueDate} /></label>
+      <label>Fällig am <input type="date" bind:value={dueDate} /></label>
     </FormRow>
 
     <h3>Positionen</h3>
@@ -129,7 +138,7 @@
         {/each}
       </tbody>
     </table>
-    <button type="button" onclick={addItem}>Position hinzufuegen</button>
+    <button type="button" onclick={addItem}>Position hinzufügen</button>
 
     <div class="totals">
       <p>Netto: {formatCents(totals.subtotal_cents)} EUR</p>

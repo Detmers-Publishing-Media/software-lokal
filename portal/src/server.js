@@ -9,6 +9,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
 app.use(require('./routes/api-buy'));
+app.use(require('./routes/api-releases'));
 app.use(require('./routes/api-digistore-ipn'));
 app.use(require('./routes/api-license'));
 app.use(require('./routes/api-support'));

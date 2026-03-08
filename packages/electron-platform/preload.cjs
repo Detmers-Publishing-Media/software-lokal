@@ -42,6 +42,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
     getHash: () => ipcRenderer.invoke('license:getHash'),
     revalidate: () => ipcRenderer.invoke('license:revalidate'),
   },
+  featureRequest: {
+    submit: (data) => ipcRenderer.invoke('featureRequest:submit', data),
+    list: () => ipcRenderer.invoke('featureRequest:list'),
+    get: (requestNumber) => ipcRenderer.invoke('featureRequest:get', requestNumber),
+  },
   app: {
     rendererReady: () => ipcRenderer.invoke('app:rendererReady'),
     isSafeMode: () => ipcRenderer.invoke('app:isSafeMode'),

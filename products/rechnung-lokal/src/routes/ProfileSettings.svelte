@@ -67,13 +67,13 @@
 </script>
 
 <div class="content">
-  <PageHeader title="Geschaeftsprofil" />
+  <PageHeader title="Geschäftsprofil" />
   <p class="hint">Diese Daten erscheinen auf Ihren Rechnungen.</p>
 
   <form onsubmit={e => { e.preventDefault(); save(); }}>
     <FormSection title="Unternehmen">
       <label>Firmenname / Name <input type="text" bind:value={name} required /></label>
-      <label>Strasse <input type="text" bind:value={street} /></label>
+      <label>Straße <input type="text" bind:value={street} /></label>
       <FormRow>
         <label>PLZ <input type="text" bind:value={zip} /></label>
         <label>Ort <input type="text" bind:value={city} /></label>
@@ -116,7 +116,7 @@
         <label>Prefix <input type="text" bind:value={invoicePrefix} placeholder="RE" /></label>
         <label>Nummerierung
           <select bind:value={numberMode}>
-            <option value="yearly">Jaehrlich neu (RE-2026-0001)</option>
+            <option value="yearly">Jährlich neu (RE-2026-0001)</option>
             <option value="continuous">Fortlaufend (RE-2026-0042)</option>
           </select>
         </label>

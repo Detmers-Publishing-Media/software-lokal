@@ -14,3 +14,6 @@ jobs:
     with:
       product_dir: products/finanz-rechner
       artifact_prefix: finanzrechner-lokal
+    secrets:
+      PORTAL_DEPLOY_KEY: ${{ secrets.PORTAL_DEPLOY_KEY }}
+      PORTAL_HOST: ${{ secrets.PORTAL_HOST }}

@@ -14,11 +14,32 @@
     status_code: [201, 409]
   loop: "{{ seed_products }}"
 
-- name: "Produkt-Source auf Server kopieren"
+- name: "Produkt-Source als Tarball packen (lokal)"
+  ansible.builtin.shell: |
+    tar czf /tmp/seed-{{ item.repo }}.tar.gz \
+      --exclude='node_modules' \
+      --exclude='release' \
+      --exclude='dist' \
+      --exclude='.git' \
+      -C /{{ item.src_dir }}/{{ item.repo }} .
+  args:
+    executable: /bin/bash
+  delegate_to: localhost
+  loop: "{{ seed_products }}"
+
+- name: "Tarballs zum Server uebertragen"
   ansible.builtin.copy:
-    src: "/products/{{ item.repo }}/"
-    dest: "/tmp/seed-{{ item.repo }}/"
-    mode: preserve
+    src: "/tmp/seed-{{ item.repo }}.tar.gz"
+    dest: "/tmp/seed-{{ item.repo }}.tar.gz"
+  loop: "{{ seed_products }}"
+
+- name: "Tarballs auf Server entpacken"
+  ansible.builtin.shell: |
+    mkdir -p /tmp/seed-{{ item.repo }}
+    tar xzf /tmp/seed-{{ item.repo }}.tar.gz -C /tmp/seed-{{ item.repo }}
+    rm -f /tmp/seed-{{ item.repo }}.tar.gz
+  args:
+    executable: /bin/bash
   loop: "{{ seed_products }}"
 
 - name: "Produkt-Source in Forgejo pushen"
@@ -121,4 +142,11 @@
   ansible.builtin.file:
     path: "/tmp/{{ item.repo }}-{{ item.tag }}-src.tar.gz"
     state: absent
+  loop: "{{ seed_products }}"
+
+- name: "Lokale Tarballs aufraeumen"
+  ansible.builtin.file:
+    path: "/tmp/seed-{{ item.repo }}.tar.gz"
+    state: absent
+  delegate_to: localhost
   loop: "{{ seed_products }}"

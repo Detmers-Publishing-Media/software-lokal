@@ -9,7 +9,7 @@
   import Import from './routes/Import.svelte';
   import Payments from './routes/Payments.svelte';
   import Settings from './routes/Settings.svelte';
-  import { SupportView } from '@codefabrik/app-shared/components';
+  import { SupportView, FeatureRequestView } from '@codefabrik/app-shared/components';
 
   let dbReady = $state(false);
   let dbError = $state(null);
@@ -41,6 +41,7 @@
     { id: 'add', label: 'Neu' },
     { id: 'import', label: 'Import' },
     { id: 'settings', label: 'Einstellungen' },
+    { id: 'feature-request', label: 'Wuensche' },
     { id: 'support', label: 'Support' },
   ];
 </script>
@@ -85,6 +86,8 @@
       <Import />
     {:else if $currentView === 'settings'}
       <Settings />
+    {:else if $currentView === 'feature-request'}
+      <FeatureRequestView />
     {:else if $currentView === 'support'}
       <SupportView />
     {/if}

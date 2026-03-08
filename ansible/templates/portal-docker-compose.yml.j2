@@ -9,6 +9,8 @@ services:
       - "127.0.0.1:3200:3200"
     env_file:
       - .env
+    volumes:
+      - {{ portal_downloads_mount }}:/data/downloads
     depends_on:
       postgres:
         condition: service_healthy

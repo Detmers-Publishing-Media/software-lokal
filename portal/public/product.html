@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Produkt — Code-Fabrik</title>
+  <title>Produkt — Detmers Publishing &amp; Media</title>
   <link rel="stylesheet" href="/css/style.css">
   <style>
     .tabs { display: flex; gap: 0; margin-bottom: 1.5rem; border-bottom: 2px solid #e5e7eb; }
@@ -28,7 +28,7 @@
 <body>
   <header>
     <div class="container">
-      <h1><a href="/">Code-Fabrik</a></h1>
+      <h1><a href="/">Detmers Publishing &amp; Media</a></h1>
       <nav>
         <a href="/support">Support</a>
         <a href="/ideas">Ideen</a>
@@ -42,7 +42,7 @@
     <div class="tabs" id="tabs"></div>
     <div id="content"><p>Lade...</p></div>
   </div>
-  <footer>Code-Fabrik v0.5.5</footer>
+  <footer>Detmers Publishing &amp; Media</footer>
   <script>
     const pathParts = window.location.pathname.split('/').filter(Boolean);
     const productId = pathParts[1] || '';
@@ -86,7 +86,7 @@
         <h2>${esc(product.name)}</h2>
         <p style="color:#555;margin-bottom:1rem">${esc(product.description || '')}</p>
       `;
-      document.title = esc(product.name) + ' — Code-Fabrik';
+      document.title = esc(product.name) + ' \u2014 Detmers Publishing & Media';
 
       const el = document.getElementById('content');
 

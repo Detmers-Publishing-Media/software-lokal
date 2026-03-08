@@ -1,0 +1,52 @@
+id: "FEAT-004"
+title: "Migrationstest Rechnung Lokal (v0.1.0 → v0.2.0)"
+epic: "RECHNUNG-V1"
+status: "inbox"
+
+story_type: "product-fast"
+lane: "fast"
+platform_impact: "none"
+founder_gate_required: false
+force_approve_allowed: true
+auto_merge_allowed: true
+
+description: |
+  Nach Release v0.2.0 muss sichergestellt werden, dass bestehende
+  Rechnung-Lokal-Installationen mit Daten (Kunden, Rechnungen, Buchungen)
+  korrekt auf die neue Version migriert werden.
+
+  Dazu wird ein DB-Fixture aus v0.1.0 erstellt und automatisierte
+  Migrationstests geschrieben (Testkategorien 3+4: Migration + Ketten).
+
+  Ablauf:
+  1. DB-Fixture `tests/fixtures/db_v0.1.0.sqlite` aus einer echten
+     v0.1.0-Datenbank mit Testdaten erstellen (vor dem Release einfrieren)
+  2. Migrationstests schreiben, die das Fixture oeffnen, migrieren und
+     pruefen dass alle Daten korrekt uebernommen wurden
+  3. Kettentest: v0.1.0 → v0.2.0 Migration, danach normale CRUD-Ops
+  4. Event-Log Hash-Kette muss nach Migration intakt sein
+  5. Manueller Test auf einem System mit echten Daten (Handoff an PO)
+
+acceptance_criteria:
+  - "DB-Fixture tests/fixtures/db_v0.1.0.sqlite existiert mit Testdaten (Kunden, Rechnungen, Buchungen, Events)"
+  - "Migrationstest oeffnet v0.1.0-Fixture, fuehrt Schema-Migration auf v0.2.0 durch"
+  - "Alle bestehenden Daten (Kunden, Rechnungen, Positionen, Buchungen) sind nach Migration vorhanden"
+  - "Event-Log Hash-Kette ist nach Migration valide"
+  - "Kettentest: v0.1.0 → v0.2.0, danach neue Rechnung erstellen + Buchung erfassen funktioniert"
+  - "Manueller Test auf echtem System mit PO-Bestaetigung"
+  - "CLAUDE.md Testzahlen aktualisiert"
+
+affected_files:
+  - "products/rechnung-lokal/tests/fixtures/db_v0.1.0.sqlite"
+  - "products/rechnung-lokal/tests/test_migration.js"
+  - "products/rechnung-lokal/tests/test_chain.js"
+
+depends_on: []
+
+manual_steps:
+  - step: "v0.1.0-Fixture erstellen"
+    desc: "App mit v0.1.0 starten, Testdaten anlegen, DB kopieren als Fixture"
+  - step: "Manueller Upgrade-Test"
+    desc: "Bestehende v0.1.0-Installation mit Daten auf v0.2.0 aktualisieren, pruefen ob alles da ist"
+
+estimated_effort: "M"

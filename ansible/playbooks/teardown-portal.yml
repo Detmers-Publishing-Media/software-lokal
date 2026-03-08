@@ -15,10 +15,11 @@
       register: portal_info
       ignore_errors: true
 
-    - name: "PORTAL_UUID und PORTAL_IP setzen"
+    - name: "PORTAL_UUID, PORTAL_IP und DOWNLOADS_STORAGE_UUID setzen"
       ansible.builtin.set_fact:
         portal_uuid: "{{ (portal_info.stdout | regex_search('PORTAL_UUID=([^\\s]+)', '\\1'))[0] | default('') }}"
         portal_ip: "{{ (portal_info.stdout | regex_search('PORTAL_IP=([^\\s]+)', '\\1'))[0] | default('') }}"
+        downloads_storage_uuid: "{{ (portal_info.stdout | regex_search('DOWNLOADS_STORAGE_UUID=([^\\s]+)', '\\1'))[0] | default('') }}"
       when: portal_info.rc == 0
 
     - name: "Portal-Server stoppen"
@@ -41,7 +42,23 @@
         seconds: 30
       when: portal_uuid is defined and portal_uuid | length > 0
 
-    - name: "Portal-Server loeschen"
+    - name: "Downloads-Storage vom Server detachen"
+      ansible.builtin.uri:
+        url: "https://api.upcloud.com/1.3/server/{{ portal_uuid }}/storage/detach"
+        method: POST
+        headers:
+          Authorization: "Bearer {{ vault_upcloud_api_token }}"
+          Content-Type: "application/json"
+        body_format: json
+        body:
+          storage_device:
+            address: "virtio:1"
+      ignore_errors: true
+      when: >
+        portal_uuid is defined and portal_uuid | length > 0 and
+        downloads_storage_uuid is defined and downloads_storage_uuid | length > 0
+
+    - name: "Portal-Server loeschen (nur OS-Storage)"
       ansible.builtin.uri:
         url: "https://api.upcloud.com/1.3/server/{{ portal_uuid }}/?storages=1&backups=delete"
         method: DELETE
@@ -51,9 +68,14 @@
       ignore_errors: true
       when: portal_uuid is defined and portal_uuid | length > 0
 
+    - name: "Downloads-Storage bleibt erhalten"
+      ansible.builtin.debug:
+        msg: "Downloads-Storage {{ downloads_storage_uuid }} wurde NICHT geloescht (persistent)"
+      when: downloads_storage_uuid is defined and downloads_storage_uuid | length > 0
+
     - name: "Portal DNS-Record finden"
       ansible.builtin.uri:
-        url: "https://api.cloudflare.com/client/v4/zones/{{ cloudflare_zone_id }}/dns_records?name=portal-codefabrik.{{ cloudflare_zone }}"
+        url: "https://api.cloudflare.com/client/v4/zones/{{ cloudflare_zone_id }}/dns_records?name=portal.{{ cloudflare_zone }}"
         method: GET
         headers:
           Authorization: "Bearer {{ vault_cloudflare_api_token }}"

@@ -29,9 +29,13 @@ product_repo: factory-gateway
 
 # SSH
 ssh_key_path: "/root/.ssh/codefabrik_deploy"
+ci_deploy_key_path: "/root/.ssh/portal_deploy_ci"
 
 # Portal
-portal_domain: "portal-codefabrik.detmers-publish.de"
+portal_domain: "portal.detmers-publish.de"
 portal_upcloud_plan: "DEV-1xCPU-1GB"
 portal_upcloud_os_storage: 25
 portal_docker_compose_dir: /opt/portal
+portal_downloads_storage_title: "portal-downloads"
+portal_downloads_storage_size: 50
+portal_downloads_mount: /mnt/downloads

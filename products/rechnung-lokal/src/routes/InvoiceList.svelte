@@ -38,10 +38,10 @@
   <PageHeader title="Rechnungen">
     <select bind:value={filter}>
       <option value="all">Alle</option>
-      <option value="draft">Entwuerfe</option>
+      <option value="draft">Entwürfe</option>
       <option value="sent">Versendet</option>
       <option value="paid">Bezahlt</option>
-      <option value="overdue">Ueberfaellig</option>
+      <option value="overdue">Überfällig</option>
       <option value="cancelled">Storniert</option>
     </select>
     <button class="primary" onclick={() => currentView.set('invoice:new')}>

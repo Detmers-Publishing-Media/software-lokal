@@ -1,20 +1,26 @@
 ---
 seed_products:
   - repo: shared
+    src_dir: packages
     tag: v0.1.0-alpha
     public: true
   - repo: app-shared
+    src_dir: packages
     tag: v0.1.0-alpha
     public: true
   - repo: mitglieder-lokal
+    src_dir: products
     tag: v0.4.0-alpha
     public: true
   - repo: finanz-rechner
+    src_dir: products
     tag: v0.1.0-alpha
     public: true
   - repo: finanz-shared
+    src_dir: packages
     tag: v0.1.0-alpha
     public: true
   - repo: rechnung-lokal
+    src_dir: products
     tag: v0.1.0-alpha
     public: true

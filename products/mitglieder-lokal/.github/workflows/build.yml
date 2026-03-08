@@ -14,3 +14,6 @@ jobs:
     with:
       product_dir: products/mitglieder-lokal
       artifact_prefix: mitglieder-lokal
+    secrets:
+      PORTAL_DEPLOY_KEY: ${{ secrets.PORTAL_DEPLOY_KEY }}
+      PORTAL_HOST: ${{ secrets.PORTAL_HOST }}

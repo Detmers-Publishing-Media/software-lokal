@@ -17,3 +17,6 @@ jobs:
       product_dir: products/rechnung-lokal
       artifact_prefix: rechnung-lokal
       test_packages: packages/finanz-shared
+    secrets:
+      PORTAL_DEPLOY_KEY: ${{ secrets.PORTAL_DEPLOY_KEY }}
+      PORTAL_HOST: ${{ secrets.PORTAL_HOST }}

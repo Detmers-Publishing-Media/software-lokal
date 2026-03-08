@@ -85,6 +85,7 @@ playbook_for() {
         8|fabrik)           echo "playbooks/fabrik.yml" ;;
         10|rotate-token)    echo "playbooks/rotate-token.yml" ;;
         11|recover)         echo "playbooks/recover-env.yml" ;;
+        12|seed)            echo "playbooks/seed-products.yml" ;;
         *) return 1 ;;
     esac
 }

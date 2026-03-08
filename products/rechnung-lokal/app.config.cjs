@@ -4,6 +4,7 @@ module.exports = {
   name: 'Rechnung Lokal',
   identifier: 'de.detmers-publish.rechnung-lokal',
   windowTitle: 'Rechnung Lokal — Rechnungsstellung',
+  version: '0.2.0',
   width: 1100,
   height: 768,
   dbName: 'rechnungen.db',
