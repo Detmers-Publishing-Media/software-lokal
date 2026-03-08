@@ -11,9 +11,77 @@ on:
       - 'packages/ui-shared/**'
 
 jobs:
-  build:
-    uses: ./.github/workflows/electron-build.yml
-    with:
-      product_dir: products/rechnung-lokal
-      artifact_prefix: rechnung-lokal
-      test_packages: packages/finanz-shared
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: pnpm/action-setup@v4
+        with:
+          version: latest
+      - run: pnpm install
+      - run: node --test packages/finanz-shared/tests/test_*.js
+      - run: pnpm test
+        working-directory: products/rechnung-lokal
+
+  build-linux:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: pnpm/action-setup@v4
+        with:
+          version: latest
+      - run: pnpm install
+      - run: pnpm electron:build
+        working-directory: products/rechnung-lokal
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rechnung-lokal-linux
+          path: products/rechnung-lokal/release/*.AppImage
+
+  build-macos:
+    needs: test
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: pnpm/action-setup@v4
+        with:
+          version: latest
+      - run: pnpm install
+      - run: pnpm electron:build
+        working-directory: products/rechnung-lokal
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rechnung-lokal-macos
+          path: |
+            products/rechnung-lokal/release/*.dmg
+            products/rechnung-lokal/release/*.zip
+            !products/rechnung-lokal/release/*.blockmap
+
+  build-windows:
+    needs: test
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: pnpm/action-setup@v4
+        with:
+          version: latest
+      - run: pnpm install
+      - run: pnpm electron:build
+        working-directory: products/rechnung-lokal
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rechnung-lokal-windows
+          path: products/rechnung-lokal/release/*.exe
