@@ -36,9 +36,9 @@ router.get('/api/products/:id', async (req, res) => {
 
 router.post('/api/buy', async (req, res) => {
   try {
-    const { product_id, customer_email, customer_name } = req.body;
-    if (!product_id || !customer_email) {
-      return res.status(400).json({ error: 'product_id und customer_email sind Pflicht' });
+    const { product_id } = req.body;
+    if (!product_id) {
+      return res.status(400).json({ error: 'product_id ist Pflicht' });
     }
     const { rows: products } = await pool.query(
       "SELECT * FROM products WHERE id = $1 AND status = 'active'", [product_id]
@@ -46,7 +46,7 @@ router.post('/api/buy', async (req, res) => {
     if (!products.length) return res.status(404).json({ error: 'Produkt nicht gefunden oder nicht aktiv' });
 
     const product = products[0];
-    const lic = await license.createLicense(product_id, customer_email, customer_name);
+    const lic = await license.createLicense(product_id);
     const downloadUrl = product.forgejo_repo
       ? `/api/download/${product_id}?key=${lic.license_key}`
       : null;
@@ -104,18 +104,17 @@ router.get('/api/download/:product_id', async (req, res) => {
       return res.status(403).json({ error: 'Lizenzkey gehoert nicht zu diesem Produkt' });
     }
 
-    const { rows: products } = await pool.query(
-      'SELECT * FROM products WHERE id = $1', [req.params.product_id]
-    );
-    if (!products.length || !products[0].forgejo_repo) {
-      return res.status(404).json({ error: 'Kein Download verfuegbar' });
-    }
-
-    const release = await forgejo.getLatestRelease(products[0].forgejo_repo);
-    if (!release) return res.status(404).json({ error: 'Kein Release gefunden' });
-
-    const releaseUrl = `${process.env.FORGEJO_URL}/${products[0].forgejo_repo}/releases/tag/${release.tag_name}`;
-    res.redirect(302, releaseUrl);
+    // Download-Links fuer alle Plattformen zurueckgeben
+    const productId = req.params.product_id;
+    res.json({
+      product_id: productId,
+      license_key: key,
+      downloads: {
+        linux: `/api/download/${productId}/linux?key=${key}`,
+        macos: `/api/download/${productId}/macos?key=${key}`,
+        windows: `/api/download/${productId}/windows?key=${key}`,
+      },
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

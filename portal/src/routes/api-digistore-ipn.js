@@ -37,14 +37,10 @@ router.post('/api/digistore-ipn', async (req, res) => {
         // Resolve Digistore product_id to internal product_id
         const rawProductId = req.body.product_id || 'unknown';
         const productId = await license.resolveProductId(rawProductId) || rawProductId;
-        const buyerName = [req.body.buyer_first_name, req.body.buyer_last_name]
-          .filter(Boolean).join(' ') || null;
 
         const result = await license.activateFromIPN({
           order_id: orderId,
           product_id: productId,
-          buyer_email: req.body.email || req.body.buyer_email,
-          buyer_name: buyerName,
           payment_id: req.body.payment_id,
         });
         await logIPN(event, orderId, result.licenseKey, req.body, 'success', null);

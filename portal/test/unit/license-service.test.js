@@ -50,8 +50,6 @@ describe('license-service', () => {
     const result = await license.activateFromIPN({
       order_id: 'ORD-1',
       product_id: 'mitglieder-lokal',
-      buyer_email: 'test@example.com',
-      buyer_name: 'Test User',
       payment_id: 'PAY-1',
     });
     assert.equal(result.existing, false);
@@ -70,8 +68,6 @@ describe('license-service', () => {
     const result = await license.activateFromIPN({
       order_id: 'ORD-1',
       product_id: 'mitglieder-lokal',
-      buyer_email: 'test@example.com',
-      buyer_name: null,
       payment_id: 'PAY-2',
     });
     assert.equal(result.existing, true);
@@ -112,9 +108,9 @@ describe('license-service', () => {
   });
 
   it('10: createLicense — generiert CFML-Key und gibt Row zurueck', async () => {
-    const row = { license_key: 'CFML-GEN1-GEN2-GEN3-GE45', product_id: 'mitglieder-lokal', customer_email: 'e@e.com' };
+    const row = { license_key: 'CFML-GEN1-GEN2-GEN3-GE45', product_id: 'mitglieder-lokal' };
     mockPool.mockResult({ rows: [row], rowCount: 1 });
-    const result = await license.createLicense('mitglieder-lokal', 'e@e.com', 'Name');
+    const result = await license.createLicense('mitglieder-lokal');
     assert.deepEqual(result, row);
     assert.ok(mockPool._calls[0].sql.includes('RETURNING'));
     assert.ok(mockPool._calls[0].sql.includes('license_hash'));

@@ -16,8 +16,6 @@ CREATE TABLE IF NOT EXISTS licenses (
   id SERIAL PRIMARY KEY,
   license_key UUID NOT NULL DEFAULT gen_random_uuid(),
   product_id VARCHAR(50) NOT NULL REFERENCES products(id),
-  customer_email VARCHAR(300) NOT NULL,
-  customer_name VARCHAR(200),
   status VARCHAR(20) NOT NULL DEFAULT 'active',
   issued_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   expires_at TIMESTAMPTZ,
@@ -31,7 +29,6 @@ CREATE TABLE IF NOT EXISTS licenses (
 );
 
 CREATE INDEX IF NOT EXISTS idx_licenses_key ON licenses (license_key);
-CREATE INDEX IF NOT EXISTS idx_licenses_email ON licenses (customer_email);
 
 CREATE TABLE IF NOT EXISTS support_cases (
   id SERIAL PRIMARY KEY,

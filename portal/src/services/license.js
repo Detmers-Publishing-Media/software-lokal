@@ -13,13 +13,13 @@ async function validateLicense(licenseKey) {
   return rows[0] || null;
 }
 
-async function createLicense(productId, email, name) {
+async function createLicense(productId) {
   const licenseKey = keygen.generateKey(productId);
   const licenseHash = keygen.computeLicenseHash(licenseKey);
   const { rows } = await pool.query(
-    `INSERT INTO licenses (license_key, license_hash, product_id, customer_email, customer_name)
-     VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-    [licenseKey, licenseHash, productId, email, name || null]
+    `INSERT INTO licenses (license_key, license_hash, product_id)
+     VALUES ($1, $2, $3) RETURNING *`,
+    [licenseKey, licenseHash, productId]
   );
   return rows[0];
 }
@@ -44,7 +44,7 @@ async function resolveProductId(digistoreProductId) {
  * - New order: generates key in CFML format, sets expires_at +1 year
  * - Existing order (rebill): extends expires_at by 1 year
  */
-async function activateFromIPN({ order_id, product_id, buyer_email, buyer_name, payment_id }) {
+async function activateFromIPN({ order_id, product_id, payment_id }) {
   // Check for existing license (recurring payment)
   const { rows: existing } = await pool.query(
     'SELECT id, license_key FROM licenses WHERE order_id = $1', [order_id]);
@@ -64,12 +64,12 @@ async function activateFromIPN({ order_id, product_id, buyer_email, buyer_name, 
   const licenseHash = keygen.computeLicenseHash(licenseKey);
 
   await pool.query(`
-    INSERT INTO licenses (license_key, license_hash, product_id, customer_email, customer_name,
+    INSERT INTO licenses (license_key, license_hash, product_id,
                           order_id, transaction_id, source, status, activated_at, issued_at,
                           expires_at, auto_renew)
-    VALUES ($1, $2, $3, $4, $5, $6, $7, 'digistore', 'active', NOW(), NOW(),
+    VALUES ($1, $2, $3, $4, $5, 'digistore', 'active', NOW(), NOW(),
             NOW() + INTERVAL '1 year', true)
-  `, [licenseKey, licenseHash, product_id, buyer_email, buyer_name, order_id, payment_id]);
+  `, [licenseKey, licenseHash, product_id, order_id, payment_id]);
 
   return { existing: false, licenseKey };
 }

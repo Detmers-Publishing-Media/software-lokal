@@ -15,8 +15,8 @@ require.cache[poolPath] = {
 // License-Service Mock
 const licenseCalls = [];
 const mockLicense = {
-  createLicense: async (productId, email, name) => {
-    const lic = { license_key: 'LK-GENERATED-001', product_id: productId, customer_email: email, customer_name: name };
+  createLicense: async (productId) => {
+    const lic = { license_key: 'LK-GENERATED-001', product_id: productId };
     licenseCalls.push({ fn: 'createLicense', ...lic });
     return lic;
   },
@@ -110,7 +110,7 @@ describe('Buy Route (Testprodukte)', () => {
     const res = await fetch(`${baseUrl}/api/buy`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ product_id: 'factory-gateway', customer_email: 'buyer@example.com' }),
+      body: JSON.stringify({ product_id: 'factory-gateway' }),
     });
     assert.equal(res.status, 201);
     const data = await res.json();
@@ -124,22 +124,24 @@ describe('Buy Route (Testprodukte)', () => {
     const res = await fetch(`${baseUrl}/api/buy`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ customer_email: 'buyer@example.com' }),
+      body: JSON.stringify({}),
     });
     assert.equal(res.status, 400);
     const data = await res.json();
     assert.ok(data.error.includes('Pflicht'));
   });
 
-  it('6: POST /api/buy ohne email → 400', async () => {
+  it('6: POST /api/buy nur mit product_id → 201 (keine email noetig)', async () => {
+    const gw = PRODUCTS['factory-gateway'];
+    mockPool.mockResult({ rows: [gw], rowCount: 1 });
     const res = await fetch(`${baseUrl}/api/buy`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ product_id: 'factory-gateway' }),
     });
-    assert.equal(res.status, 400);
+    assert.equal(res.status, 201);
     const data = await res.json();
-    assert.ok(data.error.includes('Pflicht'));
+    assert.equal(data.license_key, 'LK-GENERATED-001');
   });
 
   it('7: POST /api/buy mit inaktivem Produkt → 404', async () => {
@@ -147,7 +149,7 @@ describe('Buy Route (Testprodukte)', () => {
     const res = await fetch(`${baseUrl}/api/buy`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ product_id: 'archived-tool', customer_email: 'buyer@example.com' }),
+      body: JSON.stringify({ product_id: 'archived-tool' }),
     });
     assert.equal(res.status, 404);
     const data = await res.json();

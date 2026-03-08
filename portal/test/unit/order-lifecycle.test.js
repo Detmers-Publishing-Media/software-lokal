@@ -110,7 +110,6 @@ describe('Order Lifecycle (IPN-basiert)', () => {
     const activateCall = licenseCalls.find(c => c.fn === 'activateFromIPN');
     assert.ok(activateCall, 'activateFromIPN should be called');
     assert.equal(activateCall.data.product_id, 'test-addon');
-    assert.equal(activateCall.data.buyer_email, 'addon-buyer@example.com');
   });
 
   it('3: on_payment Idempotenz → doppelter IPN, keine Fehler', async () => {
