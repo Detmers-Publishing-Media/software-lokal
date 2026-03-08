@@ -8,7 +8,7 @@ on:
     paths:
       - 'products/rechnung-lokal/**'
       - 'packages/finanz-shared/**'
-      - 'packages/**'
+      - 'packages/ui-shared/**'
 
 jobs:
   build:
