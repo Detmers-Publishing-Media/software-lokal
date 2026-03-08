@@ -30,13 +30,11 @@
   gather_facts: false
   tasks:
     - name: "Portal-Code synchronisieren"
-      ansible.posix.synchronize:
-        src: "{{ playbook_dir }}/../../portal/"
+      ansible.builtin.copy:
+        src: /portal/
         dest: "{{ portal_docker_compose_dir }}/"
-        delete: false
-        rsync_opts:
-          - "--exclude=node_modules"
-          - "--exclude=.git"
+        owner: root
+        group: root
 
     - name: "Portal Container rebuilden"
       ansible.builtin.shell: |
