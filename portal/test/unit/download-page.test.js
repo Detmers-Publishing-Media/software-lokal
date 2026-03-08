@@ -84,7 +84,7 @@ describe('Download Page — GET /api/license/:key', () => {
     assert.equal(data.product.name, 'Factory Gateway');
     assert.equal(data.product.description, 'API-Gateway fuer die Code-Fabrik');
     assert.equal(data.latest_version, 'v1.2.0');
-    assert.equal(data.download_url, '/api/download/factory-gateway?key=LK-TEST-001');
+    assert.equal(data.download_url, '/download');
   });
 
   it('2: gueltige Lizenz ohne forgejo_repo → 200, download_url = null', async () => {

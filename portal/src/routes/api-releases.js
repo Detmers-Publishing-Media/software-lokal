@@ -1,4 +1,5 @@
 const { Router } = require('express');
+const crypto = require('node:crypto');
 const fs = require('node:fs');
 const path = require('node:path');
 const pool = require('../db/pool');
@@ -8,6 +9,19 @@ const adminAuth = require('../middleware/admin-auth');
 const router = Router();
 
 const DOWNLOADS_DIR = process.env.DOWNLOADS_DIR || '/data/downloads';
+
+// In-memory download tokens (token → { productId, expiresAt })
+// Short-lived (10 min), so license key never appears in URLs
+const downloadTokens = new Map();
+const TOKEN_TTL_MS = 10 * 60 * 1000;
+
+// Cleanup expired tokens periodically
+setInterval(() => {
+  const now = Date.now();
+  for (const [token, data] of downloadTokens) {
+    if (data.expiresAt < now) downloadTokens.delete(token);
+  }
+}, 60_000);
 const MAX_VERSIONS = 4;
 
 /**
@@ -160,27 +174,57 @@ router.get('/api/releases/:product_id', async (req, res) => {
 });
 
 /**
+ * POST /api/download-token
+ * Creates a short-lived download token from a license key.
+ * Key is sent in request body (not URL) for security.
+ * Body: { key: "CFRL-XXXX-..." }
+ * Returns: { token, productId, expiresIn }
+ */
+router.post('/api/download-token', async (req, res) => {
+  try {
+    const { key } = req.body;
+    if (!key) return res.status(400).json({ error: 'key fehlt' });
+
+    const lic = await license.validateLicense(key);
+    if (!lic) return res.status(403).json({ error: 'Ungueltiger Lizenzkey' });
+
+    const token = crypto.randomBytes(32).toString('hex');
+    downloadTokens.set(token, {
+      productId: lic.product_id,
+      expiresAt: Date.now() + TOKEN_TTL_MS,
+    });
+
+    res.json({ token, productId: lic.product_id, expiresIn: TOKEN_TTL_MS / 1000 });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
  * GET /api/download/:product_id/:platform
- * Download release for a platform. Requires valid license key.
- * Query: ?key=CFRL-XXXX-XXXX-XXXX-XXXX&version=v1.0.0 (version optional, default: latest)
+ * Download release for a platform. Requires a valid download token.
+ * Query: ?token=xxx&version=v1.0.0 (version optional, default: latest)
  */
 router.get('/api/download/:product_id/:platform', async (req, res) => {
   try {
     const { product_id, platform } = req.params;
-    const { key, version: requestedVersion } = req.query;
+    const { token, version: requestedVersion } = req.query;
 
-    if (!key) return res.status(400).json({ error: 'key Parameter fehlt' });
+    if (!token) return res.status(400).json({ error: 'token Parameter fehlt' });
 
     const validPlatforms = ['linux', 'macos', 'windows'];
     if (!validPlatforms.includes(platform)) {
       return res.status(400).json({ error: `Ungueltige Plattform. Erlaubt: ${validPlatforms.join(', ')}` });
     }
 
-    // Lizenz pruefen
-    const lic = await license.validateLicense(key);
-    if (!lic) return res.status(403).json({ error: 'Ungueltiger Lizenzkey' });
-    if (lic.product_id !== product_id) {
-      return res.status(403).json({ error: 'Lizenzkey gehoert nicht zu diesem Produkt' });
+    // Token pruefen
+    const tokenData = downloadTokens.get(token);
+    if (!tokenData || tokenData.expiresAt < Date.now()) {
+      downloadTokens.delete(token);
+      return res.status(403).json({ error: 'Download-Token ungueltig oder abgelaufen' });
+    }
+    if (tokenData.productId !== product_id) {
+      return res.status(403).json({ error: 'Token gehoert nicht zu diesem Produkt' });
     }
 
     // Versionen laden

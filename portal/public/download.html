@@ -88,44 +88,65 @@
       return labels[p] || p;
     }
 
-    const params = new URLSearchParams(location.search);
-    const key = params.get('key');
+    let downloadToken = null;
     let productId = null;
 
-    if (key) {
+    async function validateKey(licenseKey) {
       document.getElementById('key-form').style.display = 'none';
       document.getElementById('loading').style.display = 'block';
 
-      fetch(`/api/license/${encodeURIComponent(key)}`).then(async (res) => {
-        document.getElementById('loading').style.display = 'none';
-        if (!res.ok) {
-          const data = await res.json();
+      try {
+        // 1. Download-Token holen (Key geht per POST, nie in URL)
+        const tokenRes = await fetch('/api/download-token', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ key: licenseKey }),
+        });
+
+        if (!tokenRes.ok) {
+          document.getElementById('loading').style.display = 'none';
+          const data = await tokenRes.json();
           document.getElementById('errorMsg').textContent = data.error || 'Unbekannter Fehler';
           document.getElementById('error-view').style.display = 'block';
           return;
         }
-        const data = await res.json();
-        productId = data.product.id;
 
-        if (!data.download_url && !productId) {
-          document.getElementById('noDownloadProduct').textContent = data.product.name;
-          document.getElementById('no-download').style.display = 'block';
-          return;
+        const tokenData = await tokenRes.json();
+        downloadToken = tokenData.token;
+        productId = tokenData.productId;
+
+        // 2. Produkt-Infos laden
+        const licRes = await fetch(`/api/license/${encodeURIComponent(licenseKey)}`);
+        document.getElementById('loading').style.display = 'none';
+
+        if (licRes.ok) {
+          const data = await licRes.json();
+
+          if (!data.download_url && !productId) {
+            document.getElementById('noDownloadProduct').textContent = data.product.name;
+            document.getElementById('no-download').style.display = 'block';
+            return;
+          }
+
+          document.getElementById('productName').textContent = data.product.name;
+          document.getElementById('productDesc').textContent = data.product.description || '';
+          document.getElementById('displayKey').textContent = data.license_key;
+        } else {
+          document.getElementById('productName').textContent = productId;
+          document.getElementById('productDesc').textContent = '';
+          document.getElementById('displayKey').textContent = licenseKey;
         }
 
-        document.getElementById('productName').textContent = data.product.name;
-        document.getElementById('productDesc').textContent = data.product.description || '';
-        document.getElementById('displayKey').textContent = data.license_key;
-        document.getElementById('supportLink').href = `/support?key=${encodeURIComponent(key)}`;
-        document.getElementById('requestLink').href = `/request?key=${encodeURIComponent(key)}`;
+        document.getElementById('supportLink').href = '/support';
+        document.getElementById('requestLink').href = '/request';
         document.getElementById('product-view').style.display = 'block';
 
         loadVersions(productId);
-      }).catch(() => {
+      } catch {
         document.getElementById('loading').style.display = 'none';
         document.getElementById('errorMsg').textContent = 'Verbindungsfehler. Bitte versuchen Sie es spaeter erneut.';
         document.getElementById('error-view').style.display = 'block';
-      });
+      }
     }
 
     async function loadVersions(pid) {
@@ -144,18 +165,32 @@
           const versionLabel = esc(v.version) + (isLatest ? ' <span class="badge badge-green">Aktuell</span>' : '');
 
           const platformLinks = v.platforms.map(p => {
-            const url = `/api/download/${esc(pid)}/${esc(p.platform)}?key=${encodeURIComponent(key)}&version=${encodeURIComponent(v.version)}`;
-            return `<a href="${url}" class="btn${isLatest ? '' : ' btn-secondary'}" style="font-size:0.85rem;padding:0.4rem 0.8rem">`
+            return `<a href="#" class="btn${isLatest ? '' : ' btn-secondary'}" style="font-size:0.85rem;padding:0.4rem 0.8rem;cursor:pointer" data-pid="${esc(pid)}" data-platform="${esc(p.platform)}" data-version="${esc(v.version)}">`
               + `${platformLabel(p.platform)}`
               + `<span style="font-size:0.75rem;color:${isLatest ? '#ddd' : '#888'};margin-left:0.3rem">${formatSize(p.size)}</span>`
               + `</a>`;
           }).join(' ');
 
-          return `<div class="card${isLatest ? '' : ''}" style="margin-bottom:0.5rem">`
+          return `<div class="card" style="margin-bottom:0.5rem">`
             + `<h3 style="margin-bottom:0.5rem">${versionLabel}</h3>`
             + `<div style="display:flex;gap:0.5rem;flex-wrap:wrap">${platformLinks}</div>`
             + `</div>`;
         }).join('');
+
+        // Download via Token (kein Key in URL)
+        el.addEventListener('click', (e) => {
+          const btn = e.target.closest('a[data-pid]');
+          if (!btn || !downloadToken) return;
+          e.preventDefault();
+          const { pid: p, platform, version } = btn.dataset;
+          const url = `/api/download/${encodeURIComponent(p)}/${encodeURIComponent(platform)}?token=${encodeURIComponent(downloadToken)}&version=${encodeURIComponent(version)}`;
+          const a = document.createElement('a');
+          a.href = url;
+          a.style.display = 'none';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+        });
       } catch (err) {
         el.innerHTML = '<div class="card"><p class="error" style="display:block">Fehler beim Laden der Versionen.</p></div>';
       }
@@ -164,7 +199,7 @@
     document.getElementById('keyForm').addEventListener('submit', (e) => {
       e.preventDefault();
       const val = document.getElementById('license_key').value.trim();
-      if (val) location.href = `/download?key=${encodeURIComponent(val)}`;
+      if (val) validateKey(val);
     });
   </script>
 </body>

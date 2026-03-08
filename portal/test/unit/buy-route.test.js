@@ -117,7 +117,7 @@ describe('Buy Route (Testprodukte)', () => {
     assert.equal(data.license_key, 'LK-GENERATED-001');
     assert.equal(data.product.id, 'factory-gateway');
     assert.equal(data.product.name, 'Factory Gateway');
-    assert.ok(data.download_url, 'download_url erwartet fuer Produkt mit forgejo_repo');
+    assert.equal(data.download_url, '/download', 'download_url zeigt auf Download-Seite');
   });
 
   it('5: POST /api/buy ohne product_id → 400', async () => {
@@ -156,10 +156,16 @@ describe('Buy Route (Testprodukte)', () => {
     assert.ok(data.error.includes('nicht aktiv'));
   });
 
-  it('8: GET /api/download ohne key → 400', async () => {
-    const res = await fetch(`${baseUrl}/api/download/factory-gateway`);
-    assert.equal(res.status, 400);
+  it('8: POST /api/buy download_url ist /download (kein Key in URL)', async () => {
+    const gw = PRODUCTS['factory-gateway'];
+    mockPool.mockResult({ rows: [gw], rowCount: 1 });
+    const res = await fetch(`${baseUrl}/api/buy`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ product_id: 'factory-gateway' }),
+    });
     const data = await res.json();
-    assert.ok(data.error.includes('key'));
+    assert.equal(data.download_url, '/download');
+    assert.ok(!data.download_url.includes('key='), 'Key darf nicht in URL stehen');
   });
 });

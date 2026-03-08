@@ -47,9 +47,7 @@ router.post('/api/buy', async (req, res) => {
 
     const product = products[0];
     const lic = await license.createLicense(product_id);
-    const downloadUrl = product.forgejo_repo
-      ? `/api/download/${product_id}?key=${lic.license_key}`
-      : null;
+    const downloadUrl = product.forgejo_repo ? '/download' : null;
 
     res.status(201).json({
       license_key: lic.license_key,
@@ -82,38 +80,9 @@ router.get('/api/license/:key', async (req, res) => {
         description: rows[0]?.description || ''
       },
       latest_version: latestVersion,
-      download_url: lic.forgejo_repo
-        ? `/api/download/${lic.product_id}?key=${lic.license_key}`
-        : null,
+      download_url: lic.forgejo_repo ? '/download' : null,
       issued_at: lic.issued_at,
       expires_at: lic.expires_at
-    });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-router.get('/api/download/:product_id', async (req, res) => {
-  try {
-    const { key } = req.query;
-    if (!key) return res.status(400).json({ error: 'key Parameter fehlt' });
-
-    const lic = await license.validateLicense(key);
-    if (!lic) return res.status(403).json({ error: 'Ungueltiger Lizenzkey' });
-    if (lic.product_id !== req.params.product_id) {
-      return res.status(403).json({ error: 'Lizenzkey gehoert nicht zu diesem Produkt' });
-    }
-
-    // Download-Links fuer alle Plattformen zurueckgeben
-    const productId = req.params.product_id;
-    res.json({
-      product_id: productId,
-      license_key: key,
-      downloads: {
-        linux: `/api/download/${productId}/linux?key=${key}`,
-        macos: `/api/download/${productId}/macos?key=${key}`,
-        windows: `/api/download/${productId}/windows?key=${key}`,
-      },
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
