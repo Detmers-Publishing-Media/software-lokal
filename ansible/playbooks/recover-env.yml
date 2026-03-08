@@ -1,0 +1,182 @@
+---
+# Code-Fabrik — Recovery: Env-Dateien vom Server wiederherstellen
+# Fuer den Fall, dass .tokens-env oder .factory-passwords.env fehlen
+# (z.B. wegen Permissions-Bug beim Writeback)
+
+- name: "Recovery: Env-Dateien vom PROD-Server laden"
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: ".server-env muss existieren"
+      ansible.builtin.stat:
+        path: /output/.server-env
+      register: server_env_stat
+      failed_when: not server_env_stat.stat.exists
+
+    - name: "Server-IP laden"
+      ansible.builtin.shell: cat /output/.server-env
+      register: server_env_raw
+
+    - name: "server_ip setzen"
+      ansible.builtin.set_fact:
+        server_ip: "{{ (server_env_raw.stdout | regex_search('SERVER_IP=(.+)', '\\1'))[0] }}"
+
+    - name: "factory-prod registrieren"
+      ansible.builtin.add_host:
+        name: factory-prod
+        ansible_host: "{{ server_ip }}"
+        ansible_user: root
+        ansible_ssh_private_key_file: "~/.ssh/codefabrik_deploy"
+        groups: [prod]
+
+- name: "Recovery: Dateien extrahieren"
+  hosts: factory-prod
+  gather_facts: false
+  tasks:
+    # factory-passwords: aus Docker-Compose .env oder Forgejo-Config
+    - name: "Pruefe ob .factory-passwords.env lokal existiert"
+      ansible.builtin.stat:
+        path: /output/.factory-passwords.env
+      register: fp_stat
+      delegate_to: localhost
+
+    - name: "factory-passwords vom Server recovern"
+      when: not fp_stat.stat.exists
+      block:
+        - name: "Forgejo Admin-Passwort aus app.ini lesen"
+          ansible.builtin.shell: |
+            # Passwort steht nicht in app.ini, aber wir koennen es aus der Docker-Compose .env lesen
+            # oder aus dem letzten known-good State
+            echo "NICHT_VERFUEGBAR"
+          register: admin_pw_raw
+          changed_when: false
+
+        - name: "PostgreSQL-Passwort aus docker-compose.yml lesen"
+          ansible.builtin.shell: |
+            grep POSTGRES_PASSWORD /opt/codefabrik/docker-compose.yml | head -1 | sed 's/.*POSTGRES_PASSWORD[=:] *//' | tr -d '"'"'"' '
+          register: pg_pw_raw
+          changed_when: false
+
+        - name: "JWT-Secret aus app.ini lesen"
+          ansible.builtin.shell: |
+            docker exec factory-forgejo cat /data/gitea/conf/app.ini 2>/dev/null | grep -A1 '\[oauth2\]' | grep JWT_SECRET | cut -d= -f2 | tr -d ' '
+          register: jwt_raw
+          changed_when: false
+
+        - name: "Forgejo Admin-Passwort: neues setzen (Recovery)"
+          ansible.builtin.shell: |
+            NEW_PASS=$(openssl rand -hex 16)
+            docker exec -u git factory-forgejo forgejo admin user change-password \
+              --username factory-admin \
+              --password "$NEW_PASS" \
+              --must-change-password=false 2>&1
+            echo "$NEW_PASS"
+          register: new_admin_pw
+          no_log: true
+
+        - name: "factory-passwords.env schreiben"
+          ansible.builtin.copy:
+            content: |
+              forgejo_admin_password={{ new_admin_pw.stdout_lines[-1] }}
+              postgres_password={{ pg_pw_raw.stdout }}
+              jwt_secret={{ jwt_raw.stdout }}
+            dest: /output/.factory-passwords.env
+          delegate_to: localhost
+          no_log: true
+
+        - name: "Recovery: factory-passwords wiederhergestellt"
+          ansible.builtin.debug:
+            msg: "factory-passwords.env wiederhergestellt (Admin-Passwort neu gesetzt)"
+
+    # tokens-env: Token neu generieren
+    - name: "Pruefe ob .tokens-env lokal existiert"
+      ansible.builtin.stat:
+        path: /output/.tokens-env
+      register: te_stat
+      delegate_to: localhost
+
+    - name: "tokens-env recovern (Token neu generieren)"
+      when: not te_stat.stat.exists
+      block:
+        - name: "Admin-Passwort laden"
+          ansible.builtin.set_fact:
+            recovery_admin_pw: "{{ lookup('ini', 'forgejo_admin_password type=properties file=/output/.factory-passwords.env') }}"
+          delegate_to: localhost
+          no_log: true
+
+        - name: "Bestehenden Token loeschen"
+          ansible.builtin.shell: |
+            TOKEN_ID=$(curl -sf \
+              -u "factory-admin:{{ recovery_admin_pw }}" \
+              "http://localhost:3000/api/v1/users/factory-admin/tokens" \
+              | jq -r '.[] | select(.name == "factory-automation") | .id' 2>/dev/null || echo "")
+            if [ -n "$TOKEN_ID" ] && [ "$TOKEN_ID" != "null" ]; then
+              curl -sf -X DELETE \
+                -u "factory-admin:{{ recovery_admin_pw }}" \
+                "http://localhost:3000/api/v1/users/factory-admin/tokens/$TOKEN_ID" || true
+            fi
+          no_log: true
+
+        - name: "Neuen Token generieren"
+          ansible.builtin.shell: |
+            curl -sf -X POST \
+              -u "factory-admin:{{ recovery_admin_pw }}" \
+              -H "Content-Type: application/json" \
+              -d '{"name":"factory-automation","scopes":["all"]}' \
+              "http://localhost:3000/api/v1/users/factory-admin/tokens" \
+              | jq -r '.sha1'
+          register: new_token
+          retries: 5
+          delay: 5
+          until: new_token.stdout | length > 10
+          no_log: true
+
+        - name: "tokens-env schreiben"
+          ansible.builtin.copy:
+            content: |
+              FORGEJO_API_TOKEN={{ new_token.stdout }}
+              FORGEJO_ADMIN_PASSWORD={{ recovery_admin_pw }}
+            dest: /output/.tokens-env
+          delegate_to: localhost
+          no_log: true
+
+        - name: "Recovery: tokens-env wiederhergestellt"
+          ansible.builtin.debug:
+            msg: "tokens-env wiederhergestellt (neuer API-Token generiert)"
+
+    # portal-passwords: vom Portal-Server lesen
+    - name: "Pruefe ob .portal-passwords.env lokal existiert"
+      ansible.builtin.stat:
+        path: /output/.portal-passwords.env
+      register: pp_stat
+      delegate_to: localhost
+
+    - name: "portal-passwords Recovery Info"
+      ansible.builtin.debug:
+        msg: "portal-passwords.env fehlt — wird beim naechsten Portal-Upgrade/Reconcile aus der Portal-DB gelesen"
+      when: not pp_stat.stat.exists
+
+- name: "Recovery: Zusammenfassung"
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: "Dateien pruefen"
+      ansible.builtin.stat:
+        path: "/output/{{ item }}"
+      register: recovery_check
+      loop:
+        - .server-env
+        - .tokens-env
+        - .factory-passwords.env
+        - .portal-env
+
+    - name: "Recovery-Ergebnis"
+      ansible.builtin.debug:
+        msg: |
+          Recovery abgeschlossen:
+            .server-env:            {{ 'OK' if recovery_check.results[0].stat.exists else 'FEHLT' }}
+            .tokens-env:            {{ 'OK' if recovery_check.results[1].stat.exists else 'FEHLT' }}
+            .factory-passwords.env: {{ 'OK' if recovery_check.results[2].stat.exists else 'FEHLT' }}
+            .portal-env:            {{ 'OK' if recovery_check.results[3].stat.exists else 'FEHLT' }}

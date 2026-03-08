@@ -1,0 +1,70 @@
+---
+# Code-Fabrik — Forgejo Token-Rotation
+# Rotiert den API-Token und aktualisiert alle Konsumenten
+# Aufruf: run_ansible "playbooks/rotate-token.yml"
+
+- name: "Phase 0: Inventory"
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: ".server-env muss existieren"
+      ansible.builtin.stat:
+        path: /output/.server-env
+      register: server_env_stat
+      failed_when: not server_env_stat.stat.exists
+
+    - name: "Server-IP laden"
+      ansible.builtin.shell: cat /output/.server-env
+      register: server_env_raw
+
+    - name: "factory-prod registrieren"
+      ansible.builtin.add_host:
+        name: factory-prod
+        ansible_host: "{{ (server_env_raw.stdout | regex_search('SERVER_IP=(.+)', '\\1'))[0] }}"
+        ansible_user: root
+        ansible_ssh_private_key_file: "~/.ssh/codefabrik_deploy"
+        groups: [prod]
+
+    - name: "SSH-Verbindung pruefen"
+      ansible.builtin.wait_for:
+        host: "{{ (server_env_raw.stdout | regex_search('SERVER_IP=(.+)', '\\1'))[0] }}"
+        port: 22
+        timeout: 30
+
+- name: "Phase 1: Token rotieren"
+  hosts: factory-prod
+  gather_facts: false
+  vars:
+    forgejo_admin_password: "{{ lookup('ini', 'forgejo_admin_password type=properties file=/output/.factory-passwords.env') }}"
+    rotate_token: true
+  roles:
+    - forgejo
+
+- name: "Phase 2: Konsumenten aktualisieren"
+  hosts: factory-prod
+  gather_facts: false
+  vars:
+    forgejo_api_token: "{{ lookup('ini', 'FORGEJO_API_TOKEN type=properties file=/output/.tokens-env') }}"
+    prod_server_uuid: "{{ lookup('ini', 'SERVER_UUID type=properties file=/output/.server-env') }}"
+    prod_server_ip: "{{ lookup('ini', 'SERVER_IP type=properties file=/output/.server-env') }}"
+  roles:
+    - secrets
+    - poller
+
+- name: "Phase 3: Validierung"
+  hosts: factory-prod
+  gather_facts: false
+  tasks:
+    - name: "Token-Test: API-Zugriff"
+      ansible.builtin.uri:
+        url: "http://localhost:3000/api/v1/user"
+        method: GET
+        headers:
+          Authorization: "token {{ lookup('ini', 'FORGEJO_API_TOKEN type=properties file=/output/.tokens-env') }}"
+        status_code: [200]
+      delegate_to: localhost
+
+    - name: "Token-Rotation erfolgreich"
+      ansible.builtin.debug:
+        msg: "Forgejo API-Token rotiert und alle Konsumenten aktualisiert."

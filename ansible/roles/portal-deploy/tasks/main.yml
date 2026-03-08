@@ -75,6 +75,20 @@
   ansible.builtin.debug:
     msg: "{{ compose_result.stdout_lines[-5:] }}"
 
-- name: "Warte auf Docker-Services (30s)"
-  ansible.builtin.pause:
-    seconds: 30
+- name: "Warte auf Portal-PostgreSQL"
+  ansible.builtin.shell: |
+    for i in $(seq 1 30); do
+      docker exec portal-db pg_isready -U portal -q 2>/dev/null && exit 0
+      sleep 2
+    done
+    echo "Portal-PostgreSQL nicht bereit nach 60s"
+    exit 1
+  changed_when: false
+
+- name: "Warte auf Portal-App (HTTP-Ready, vor DB-Init)"
+  ansible.builtin.uri:
+    url: "http://localhost:3200/"
+    status_code: 200
+  retries: 15
+  delay: 5
+  register: portal_ready

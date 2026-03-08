@@ -6,14 +6,16 @@ const HMAC_PEPPER = 'codefabrik-support-v1';
 
 // Product prefix mapping (Code-Fabrik convention: CF + 2-char product code)
 const PRODUCT_PREFIXES = {
-  'mitglieder-simple': 'CFML',
+  'mitglieder-lokal': 'CFML',
   'finanz-rechner': 'CFFR',
+  'rechnung-lokal': 'CFRL',
 };
 
 // Trial key prefixes — must never collide with production prefixes
 const TRIAL_PREFIXES = {
-  'mitglieder-simple': 'CFTM',
+  'mitglieder-lokal': 'CFTM',
   'finanz-rechner': 'CFTR',
+  'rechnung-lokal': 'CFTL',
 };
 
 /**
@@ -42,7 +44,7 @@ function crc8(str) {
  * Generates a license key in CFML-XXXX-XXXX-XXXX-XXXX format.
  * Last 2 chars of final group = CRC-8 checksum.
  *
- * @param {string} productId - Internal product ID (e.g. 'mitglieder-simple')
+ * @param {string} productId - Internal product ID (e.g. 'mitglieder-lokal')
  * @returns {string} License key
  */
 function generateKey(productId) {

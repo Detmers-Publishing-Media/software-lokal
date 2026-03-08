@@ -1,4 +1,5 @@
 <script>
+  import { onMount } from 'svelte';
   import { currentView } from './lib/stores/navigation.js';
   import BeitragsAnpassung from './routes/BeitragsAnpassung.svelte';
   import Ratenzuschlag from './routes/Ratenzuschlag.svelte';
@@ -6,7 +7,11 @@
   import CourtagenBarwert from './routes/CourtagenBarwert.svelte';
   import SpartenDeckung from './routes/SpartenDeckung.svelte';
   import Settings from './routes/Settings.svelte';
-  import { SupportView } from '@codefabrik/vereins-shared/components';
+  import { SupportView } from '@codefabrik/app-shared/components';
+
+  onMount(() => {
+    window.electronAPI?.app?.rendererReady?.();
+  });
 
   const navItems = [
     { id: 'beitragsanpassung', label: 'Beitragsanpassung' },

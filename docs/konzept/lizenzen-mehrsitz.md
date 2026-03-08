@@ -59,9 +59,9 @@ Separate Digistore24-Produkte pro Stufe. Das Portal mappt `product_id` auf
 
 | Digistore24-Produkt | Portal product_id | seat_count |
 |---------------------|-------------------|------------|
-| MitgliederSimple 1-Platz | mitglieder-simple-1 | 1 |
-| MitgliederSimple 5-Platz | mitglieder-simple-5 | 5 |
-| MitgliederSimple 10-Platz | mitglieder-simple-10 | 10 |
+| MitgliederSimple 1-Platz | mitglieder-lokal-1 | 1 |
+| MitgliederSimple 5-Platz | mitglieder-lokal-5 | 5 |
+| MitgliederSimple 10-Platz | mitglieder-lokal-10 | 10 |
 | Finanz-Rechner | finanz-rechner | 1 |
 
 Das Mapping wird in der `products`-Tabelle gespeichert (neue Spalte `seat_count`).
@@ -347,8 +347,8 @@ Aenderungen:
 **1. `license.js` — Lizenz-Aktivierung einbauen:**
 
 ```javascript
-// products/mitglieder-simple/src/lib/license.js
-import { validateLicenseFormat, normalizeLicenseKey } from '@codefabrik/vereins-shared/license';
+// products/mitglieder-lokal/src/lib/license.js
+import { validateLicenseFormat, normalizeLicenseKey } from '@codefabrik/app-shared/license';
 import { getActiveMemberCount } from './db.js';
 
 const PROBE_LIMIT = 30;
@@ -371,14 +371,14 @@ export function activateLicense(key) {
   }
   _licenseKey = normalized;
   try {
-    localStorage.setItem('mitglieder-simple-license', normalized);
+    localStorage.setItem('mitglieder-lokal-license', normalized);
   } catch (_) { /* Tauri: localStorage evtl. nicht verfuegbar */ }
   return { valid: true };
 }
 
 export function loadStoredLicense() {
   try {
-    const stored = localStorage.getItem('mitglieder-simple-license');
+    const stored = localStorage.getItem('mitglieder-lokal-license');
     if (stored && validateLicenseFormat(stored)) {
       _licenseKey = stored;
     }
@@ -538,9 +538,9 @@ AP-1 bis AP-6 = Portal-Seite, AP-7/AP-8 = Desktop-Apps, AP-9/AP-10 = Abschluss.
 - `Settings.svelte`: Lizenz-Abschnitt mit Eingabefeld + Status-Anzeige
 - `App.svelte`: `loadStoredLicense()` beim Start, `onLicenseChange`-Callback
 - Speicherort: `localStorage` (MVP), spaeter SQLite
-- **Dateien**: `products/mitglieder-simple/src/lib/license.js`,
-  `products/mitglieder-simple/src/routes/Settings.svelte`,
-  `products/mitglieder-simple/src/App.svelte`
+- **Dateien**: `products/mitglieder-lokal/src/lib/license.js`,
+  `products/mitglieder-lokal/src/routes/Settings.svelte`,
+  `products/mitglieder-lokal/src/App.svelte`
 - **Test**: Unit-Tests fuer Aktivierung + Probe-Limit-Bypass,
   Smoke-Test: Key eingeben → Limit aufgehoben
 

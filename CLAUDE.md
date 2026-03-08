@@ -19,11 +19,14 @@ Monorepo mit Portal, Shared Packages, Produkten und Infrastruktur.
 code-fabrik/
   packages/
     electron-platform/     Electron Hauptprozess + IPC + Plattform-Libs
-    vereins-shared/        Svelte 5 Shared Components + DB/License Utils
+    app-shared/        Svelte 5 Shared Components + DB/License Utils
+    ui-shared/             Generische Svelte 5 UI-Komponenten
+    finanz-shared/         Geteilter Finanz-Kern (Schema, Models, EUeR)
     shared/                Reine JS-Utils (Crypto, CSV, License-Format)
   products/
-    mitglieder-simple/     Vereinsverwaltung (Electron + Svelte 5 + SQLite)
+    mitglieder-lokal/     Vereinsverwaltung (Electron + Svelte 5 + SQLite)
     finanz-rechner/        Versicherungsrechner (Electron + Svelte 5, kein DB)
+    rechnung-lokal/        Rechnungsstellung (Electron + Svelte 5 + SQLite)
     fruehwarnreport/       Fruehwarnbericht (Python, eigenstaendig)
     bundles.json           Produkt-Bundle-Registry
   portal/                  Backend-API (Express.js + PostgreSQL)
@@ -36,8 +39,9 @@ code-fabrik/
 ### Workspace (pnpm)
 
 Definiert in `pnpm-workspace.yaml`:
-- `packages/*` (electron-platform, shared, vereins-shared)
-- `products/mitglieder-simple`
+- `packages/*` (electron-platform, shared, app-shared)
+- `products/mitglieder-lokal`
+- `products/rechnung-lokal`
 - `products/finanz-rechner`
 
 ## Tech-Stack
@@ -46,11 +50,11 @@ Definiert in `pnpm-workspace.yaml`:
 |---------|-------------|
 | Desktop | Electron + Svelte 5 + SQLite |
 | Portal | Express.js + PostgreSQL + Caddy |
-| Shared Components | `@codefabrik/vereins-shared` (Svelte 5) |
+| Shared Components | `@codefabrik/app-shared` (Svelte 5) |
 | Shared Utils | `@codefabrik/shared` (Crypto, CSV, License) |
 | Plattform | `@codefabrik/electron-platform` (IPC, Backup, License, Support) |
 | Build | Vite, pnpm |
-| CI/CD | Forgejo Actions, GitHub Actions (Windows), OpenClaw |
+| CI/CD | Forgejo Actions (Infra), GitHub Actions (Electron-Builds: Win/Linux/macOS) |
 | Tests | Node.js native `test` module (kein Jest, kein Mocha) |
 | Infra | Ansible, UpCloud (VPS), Cloudflare (DNS+SSL), Digistore24 (Payment) |
 
@@ -82,7 +86,7 @@ Exponiert `window.electronAPI` mit Namespaces: `db`, `dialog`, `fs`, `update`, `
 
 **Tests:** 94 Tests in 9 Dateien.
 
-### vereins-shared (`@codefabrik/vereins-shared`)
+### app-shared (`@codefabrik/app-shared`)
 
 Svelte 5 Shared Components und Utils. ESM. Exports: `./components`, `./db`, `./license`.
 
@@ -99,6 +103,43 @@ Svelte 5 Shared Components und Utils. ESM. Exports: `./components`, `./db`, `./l
 
 Reine JS-Utilities ohne Framework-Abhaengigkeit. ESM. Exports: `./license`, `./crypto`, `./csv`.
 
+### ui-shared (`@codefabrik/ui-shared`)
+
+Generische Svelte 5 UI-Komponenten fuer alle Desktop-Produkte. ESM. Export: `./components`.
+
+**Components** (`src/components/`):
+- `StatusBadge.svelte` — Status-Badges mit automatischer Farb-/Label-Zuordnung
+- `SummaryCard.svelte` — Kennzahlen-Karten (Einnahmen, Ausgaben, Gewinn)
+- `FormSection.svelte` — Fieldset-Wrapper mit Titel und Hinweis
+- `FormRow.svelte` — Flex-Zeile fuer Formularfelder
+- `YearNavigator.svelte` — Jahres-Navigation (Pfeile + Label)
+- `SettingsSection.svelte` — Abschnitt fuer Einstellungsseiten
+- `PageHeader.svelte` — Seitenkopf mit Titel und Aktionen
+- `EmptyState.svelte` — Leerzustand-Nachricht
+
+### finanz-shared (`@codefabrik/finanz-shared`)
+
+Geteilter Finanz-Kern fuer Rechnung Lokal (und kuenftige Finanz-Produkte). ESM. Exports: `./db`, `./models`, `./euer`.
+
+**DB** (`src/db/`):
+- `schema.js` — Feature-aware Schema (16 Tabellen, 5 Feature-Gruppen: core, invoices, fees, donations, assembly)
+- `index.js` — Re-Export
+
+**Models** (`src/models/`):
+- `events.js` — EventLog (append-only, HMAC-SHA256 Hash-Kette)
+- `profile.js` — Geschaeftsprofil (Singleton)
+- `person.js` — Kunden/Mitglieder (Soft-Delete)
+- `invoice.js` — Rechnungen (Storno, Vorlagen, Nummernkreis RE-YYYY-NNNN)
+- `transaction.js` — Buchungen (Storno mit Gegenbuchung)
+- `category.js` — EUeR-Kategorien
+- `index.js` — Factory `createModels(deps, features)`
+
+**EUeR** (`src/euer/`):
+- `categories.js` — 23 BMF-Kategorien (4 Einnahmen, 19 Ausgaben), `seedCategories()`
+- `summary.js` — `annualSummary()`, `monthlySummary()`, `runningSaldo()`
+
+**Tests:** 48 Tests in 6 Dateien.
+
 ## Produkte
 
 ### Mitglieder lokal (v0.5.0)
@@ -109,6 +150,16 @@ Vereinsverwaltung. Bundle: `B-05-verein-ehrenamt`. Hat eigene `CLAUDE.md`.
 **Libs:** db.js (CRUD + Events + Migrations), crypto.js (HMAC), pdf.js/pdf-lists.js/pdf-mahnbrief.js, csv.js, license.js
 **Stores:** members.js, navigation.js (String-basiert: 'list', 'payments', 'add', 'edit:ID', 'detail:ID', 'import', 'settings', 'support')
 **Tests:** 74 Tests in 7 Kategorien (Unit, Integration, Migration, Ketten, Replay, Integritaet, Smoke)
+
+### Rechnung Lokal (v0.1.0)
+
+Rechnungsstellung mit E-Rechnung (ZUGFeRD). Bundle: `B-07-rechnung`. Hat eigene `CLAUDE.md`.
+Basiert auf `@codefabrik/finanz-shared` Kern mit Feature-Flags.
+
+**Routes:** InvoiceList, InvoiceForm, InvoiceDetail, CustomerList, CustomerForm, EuerOverview, TransactionForm, ProfileSettings, Support
+**Libs:** db.js (finanz-shared Init + EUeR Seed + Models)
+**Stores:** navigation.js (String-basiert: 'invoices', 'customers', 'euer', 'profile', 'support', 'invoice:ID', 'invoice:edit:ID', 'customer:new', etc.)
+**Tests:** (in Aufbau)
 
 ### FinanzRechner lokal (v0.2.0)
 
@@ -153,7 +204,8 @@ Backend-API. CommonJS (Express.js + PostgreSQL).
 ## Lizenz-System
 
 ### Key-Format
-`CFML-XXXX-XXXX-XXXX-XXXX` (Mitglieder lokal) / `CFFR-...` (FinanzRechner lokal)
+`CFML-XXXX-XXXX-XXXX-XXXX` (Mitglieder lokal) / `CFRL-...` (Rechnung Lokal) / `CFFR-...` (FinanzRechner lokal)
+Trial-Prefixes: `CFTM-...` / `CFTL-...` / `CFTR-...`
 - SAFE_ALPHABET: keine O/0/I/1/l (Verwechslungsgefahr)
 - Letzte 2 Zeichen: CRC-8 Pruefsumme
 - Prefix bestimmt Produkt
@@ -226,9 +278,10 @@ Kein Release ohne bestandene Tests. Node.js native `test` module.
 6. **Integritaet** — Hash-Kette erkennt Manipulation
 7. **Smoke** — App startet, CRUD, PDFs
 
-### Aktuelle Testzahlen (318 gesamt)
+### Aktuelle Testzahlen (366 gesamt)
 - electron-platform: 94 Tests
-- mitglieder-simple: 74 Tests
+- mitglieder-lokal: 74 Tests
+- finanz-shared: 48 Tests
 - finanz-rechner: 23 Tests
 - portal: 127 Tests
 
@@ -239,7 +292,8 @@ export PATH="$HOME/.local/share/fnm:$PATH" && eval "$(fnm env)" && fnm use 22
 
 # Einzelnes Package
 node --test packages/electron-platform/tests/test_*.js
-node --test products/mitglieder-simple/tests/test_*.js
+node --test products/mitglieder-lokal/tests/test_*.js
+node --test packages/finanz-shared/tests/test_*.js
 node --test products/finanz-rechner/tests/test_*.js
 node --test portal/test/unit/*.test.js
 ```
@@ -317,7 +371,7 @@ Aenderungen erfordern explizite PO-Freigabe:
 - Tests: `docs/test-conventions.md`
 - Gesamtkonzept: `docs/konzept/gesamtkonzept-v3.md`
 - Integritaet: `docs/konzept/architektur-integritaet-tests.md`
-- Produktspec MS: `products/mitglieder-simple/docs/produktspec.md`
+- Produktspec MS: `products/mitglieder-lokal/docs/produktspec.md`
 - Roadmap: `docs/roadmap/ROADMAP-v0.6.md`
 
 ## Infrastruktur (Kurzuebersicht)
@@ -327,3 +381,16 @@ Aenderungen erfordern explizite PO-Freigabe:
 - `install-portal.yml` (7 Phasen: Server → DNS → Setup → Secrets → Deploy → DB → Watchdog → Validate)
 - Secrets: Ansible Vault (3 Dateien, AES256), KeePass DB fuer Langzeitspeicher
 - Server: UpCloud DEV-1xCPU-4GB (PROD), DEV-1xCPU-1GB (Portal)
+
+### CI/CD Workflows
+
+**Forgejo Actions** (`.forgejo/workflows/`):
+- `lint.yml` — Lint + Validate (knip, ansible, migrations, shellcheck, import-boundaries)
+- `test-portal.yml` — Portal-Tests (127 Tests)
+- `test-packages.yml` — Package-Tests (electron-platform, finanz-shared)
+- `build-installer.yml` — Infra-Tarball + Release
+- `validate-governance.yml` — Story-Governance auf PRs
+
+**GitHub Actions** (`.github/workflows/` + `products/<name>/.github/workflows/`):
+- `electron-build.yml` — Reusable Workflow: Test → Build (Windows + Linux + macOS)
+- Produkt-Workflows rufen `electron-build.yml` auf mit `product_dir` + `artifact_prefix`

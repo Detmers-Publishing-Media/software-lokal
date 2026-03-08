@@ -1,0 +1,49 @@
+id: "FEAT-003"
+title: "PDF-Rechnungen mit Briefkopf"
+epic: "RECHNUNG-V1"
+status: "done"
+
+story_type: "product-fast"
+lane: "fast"
+platform_impact: "none"
+founder_gate_required: false
+force_approve_allowed: true
+auto_merge_allowed: true
+
+platform_rationale: ""
+
+reused_by_products: ["rechnung-lokal"]
+
+non_goals:
+  - "Kein ZUGFeRD (eigene Story FEAT-002)"
+  - "Kein individuelles Template-Design"
+
+description: |
+  PDF-Rechnungserstellung fuer Rechnung Lokal:
+  1. PDF-Generierung via pdfmake
+  2. Briefkopf aus Geschaeftsprofil (Name, Adresse, Steuernummer, Bank)
+  3. Kundendaten (Anschrift, ggf. USt-IdNr)
+  4. Rechnungsnummer, Datum, Faelligkeitsdatum
+  5. Positionstabelle (Beschreibung, Menge, Einzelpreis, Gesamt)
+  6. Netto, MwSt, Brutto (oder Kleinunternehmer-Hinweis)
+  7. Bankverbindung + Zahlungsziel
+  8. PDF speichern und oeffnen
+
+acceptance_criteria:
+  - "PDF wird aus Rechnungsdaten erzeugt"
+  - "Briefkopf enthaelt alle Pflichtangaben"
+  - "Positionstabelle korrekt formatiert"
+  - "Kleinunternehmer-Hinweis bei §19 UStG"
+  - "PDF kann gespeichert und geoeffnet werden"
+  - "spec.yml Feature pdf-invoice auf status: done"
+
+affected_files:
+  - "products/rechnung-lokal/src/lib/pdf.js"
+  - "products/rechnung-lokal/src/routes/InvoiceDetail.svelte"
+  - "products/rechnung-lokal/spec.yml"
+
+depends_on: []
+
+manual_steps: []
+
+estimated_effort: "L"

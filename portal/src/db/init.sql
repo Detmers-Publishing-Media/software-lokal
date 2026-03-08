@@ -162,13 +162,13 @@ INSERT INTO products (id, name, description, price_cents, status, forgejo_repo)
 VALUES ('factory-gateway', 'Factory Gateway', 'API-Gateway fuer die Code-Fabrik', 0, 'active', 'factory/factory-gateway')
 ON CONFLICT (id) DO NOTHING;
 
--- mitglieder-simple (v0.5.6)
+-- mitglieder-lokal (v0.5.6)
 INSERT INTO products (id, name, description, price_cents, status, forgejo_repo)
 VALUES (
-  'mitglieder-simple',
+  'mitglieder-lokal',
   'Mitglieder lokal',
   'Mitgliederverwaltung fuer Vereine — einfach, offline, DSGVO-konform',
   4900,
   'active',
-  'factory/mitglieder-simple'
+  'factory/mitglieder-lokal'
 ) ON CONFLICT (id) DO NOTHING;

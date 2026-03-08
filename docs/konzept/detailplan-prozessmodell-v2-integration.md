@@ -719,7 +719,7 @@ Alle drei Stories sind Slow Lane mit Founder Gate. Bei Problemen:
 1. Test-Datei mit Kreuzimport → CI meldet ERROR
 2. Test-Datei mit dynamischem Kreuzimport `import()` → CI meldet ERROR
 3. Produkt importiert eigene Dateien → Kein Fehler
-4. Produkt importiert `@codefabrik/vereins-shared` → Kein Fehler
+4. Produkt importiert `@codefabrik/app-shared` → Kein Fehler
 
 ### PLAT-049
 

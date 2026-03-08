@@ -43,7 +43,7 @@ Lizenzmodell: GPL 3.0 — Private Repos bis v1.0, dann Public (siehe `docs/konze
 ```
 Forgejo (intern, Fabrik-Infra)        GitHub (Produkt-Repos)
 ────────────────────────              ─────────────────────────
-code-fabrik (Monorepo)                Detmers-Publishing-Media/mitglieder-simple
+code-fabrik (Monorepo)                Detmers-Publishing-Media/mitglieder-lokal
   - Ansible, Portal, Scripts            - Privat bis v1.0, dann Public
   - Infrastruktur-Code                  - GitHub Actions → Windows EXE
   - Nicht auf GitHub                    - GPL 3.0 Lizenz
@@ -90,7 +90,7 @@ Ab v1.0: Repos auf Public umschalten
 ```
 github.com/detmerspublish                              ← Persoenlicher Account
 github.com/Detmers-Publishing-Media/                    ← Organisation (Team-Plan)
-  Detmers-Publishing-Media/mitglieder-simple            ← Privat (Public ab v1.0), GPL-3.0
+  Detmers-Publishing-Media/mitglieder-lokal            ← Privat (Public ab v1.0), GPL-3.0
   Detmers-Publishing-Media/finanz-rechner               ← Privat (Public ab v1.0), GPL-3.0
 ```
 
@@ -211,7 +211,7 @@ GITHUB_REMOTE="github"
 if ! git remote get-url "$GITHUB_REMOTE" &>/dev/null; then
     echo "GitHub Remote '$GITHUB_REMOTE' nicht konfiguriert."
     echo "Einmalig einrichten:"
-    echo "  git remote add github git@github.com:Detmers-Publishing-Media/mitglieder-simple.git"
+    echo "  git remote add github git@github.com:Detmers-Publishing-Media/mitglieder-lokal.git"
     exit 1
 fi
 
@@ -227,7 +227,7 @@ echo "GitHub Actions baut jetzt automatisch die Windows-EXE."
 
 ```bash
 # GitHub als zusaetzliches Remote hinzufuegen
-git remote add github git@github.com:Detmers-Publishing-Media/mitglieder-simple.git
+git remote add github git@github.com:Detmers-Publishing-Media/mitglieder-lokal.git
 ```
 
 ---
@@ -237,11 +237,11 @@ git remote add github git@github.com:Detmers-Publishing-Media/mitglieder-simple.
 ### Voraussetzungen
 
 - [x] GitHub Org `Detmers-Publishing-Media` erstellt (unter `detmerspublish`)
-- [x] Repo `Detmers-Publishing-Media/mitglieder-simple` erstellt (privat, GPL-3.0)
+- [x] Repo `Detmers-Publishing-Media/mitglieder-lokal` erstellt (privat, GPL-3.0)
 - [x] Repo `Detmers-Publishing-Media/finanz-rechner` erstellt (privat, GPL-3.0)
 - [x] GitHub CLI (`gh`) installiert und authentifiziert
 - [x] `gh auth setup-git` — Credential-Helper konfiguriert
-- [x] Code gepusht (mitglieder-simple v0.4.0, finanz-rechner v0.1.0)
+- [x] Code gepusht (mitglieder-lokal v0.4.0, finanz-rechner v0.1.0)
 - [x] `.github/workflows/build-windows.yml` in beiden Repos
 
 ### Schritt 1: Erster Build-Test
@@ -262,7 +262,7 @@ Erfolgskriterien:
 
 Download-Link in Digistore auf GitHub Release Asset zeigen:
 ```
-https://github.com/Detmers-Publishing-Media/mitglieder-simple/releases/latest/download/MitgliederSimple_x64-setup.exe
+https://github.com/Detmers-Publishing-Media/mitglieder-lokal/releases/latest/download/MitgliederSimple_x64-setup.exe
 ```
 
 ### Schritt 5: Zweites Produkt (Finanz-Rechner)

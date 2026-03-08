@@ -49,7 +49,7 @@ describe('license-service', () => {
     ]);
     const result = await license.activateFromIPN({
       order_id: 'ORD-1',
-      product_id: 'mitglieder-simple',
+      product_id: 'mitglieder-lokal',
       buyer_email: 'test@example.com',
       buyer_name: 'Test User',
       payment_id: 'PAY-1',
@@ -69,7 +69,7 @@ describe('license-service', () => {
     ]);
     const result = await license.activateFromIPN({
       order_id: 'ORD-1',
-      product_id: 'mitglieder-simple',
+      product_id: 'mitglieder-lokal',
       buyer_email: 'test@example.com',
       buyer_name: null,
       payment_id: 'PAY-2',
@@ -112,9 +112,9 @@ describe('license-service', () => {
   });
 
   it('10: createLicense — generiert CFML-Key und gibt Row zurueck', async () => {
-    const row = { license_key: 'CFML-GEN1-GEN2-GEN3-GE45', product_id: 'mitglieder-simple', customer_email: 'e@e.com' };
+    const row = { license_key: 'CFML-GEN1-GEN2-GEN3-GE45', product_id: 'mitglieder-lokal', customer_email: 'e@e.com' };
     mockPool.mockResult({ rows: [row], rowCount: 1 });
-    const result = await license.createLicense('mitglieder-simple', 'e@e.com', 'Name');
+    const result = await license.createLicense('mitglieder-lokal', 'e@e.com', 'Name');
     assert.deepEqual(result, row);
     assert.ok(mockPool._calls[0].sql.includes('RETURNING'));
     assert.ok(mockPool._calls[0].sql.includes('license_hash'));
@@ -122,7 +122,7 @@ describe('license-service', () => {
 
   it('11: validateForApp — unknown key → { valid: false, reason: unknown }', async () => {
     mockPool.mockResult({ rows: [], rowCount: 0 });
-    const result = await license.validateForApp('CFML-XXXX-YYYY-ZZZZ-WWWW', 'mitglieder-simple');
+    const result = await license.validateForApp('CFML-XXXX-YYYY-ZZZZ-WWWW', 'mitglieder-lokal');
     assert.equal(result.valid, false);
     assert.equal(result.reason, 'unknown');
   });
@@ -130,7 +130,7 @@ describe('license-service', () => {
   it('12: validateForApp — wrong product → { valid: false, reason: wrong_product }', async () => {
     mockPool.mockResult({
       rows: [{
-        id: 1, product_id: 'mitglieder-simple', status: 'active',
+        id: 1, product_id: 'mitglieder-lokal', status: 'active',
         expires_at: new Date(Date.now() + 86400000).toISOString(),
       }],
       rowCount: 1,
@@ -144,16 +144,16 @@ describe('license-service', () => {
     mockPool.mockResults([
       {
         rows: [{
-          id: 42, product_id: 'mitglieder-simple', status: 'active',
+          id: 42, product_id: 'mitglieder-lokal', status: 'active',
           expires_at: new Date(Date.now() + 86400000).toISOString(),
         }],
         rowCount: 1,
       },
       { rows: [], rowCount: 1 },
     ]);
-    const result = await license.validateForApp('CFML-ABCD-EFGH-JKMN-PQRS', 'mitglieder-simple');
+    const result = await license.validateForApp('CFML-ABCD-EFGH-JKMN-PQRS', 'mitglieder-lokal');
     assert.equal(result.valid, true);
-    assert.equal(result.productId, 'mitglieder-simple');
+    assert.equal(result.productId, 'mitglieder-lokal');
     assert.ok(result.features.includes('support'));
     // Validation tracking update
     assert.equal(mockPool._calls.length, 2);
@@ -170,7 +170,7 @@ describe('license-service', () => {
     mockPool.mockResult({
       rows: [{
         license_key: 'CFML-ABCD-EFGH-JKMN-PQRS',
-        product_id: 'mitglieder-simple',
+        product_id: 'mitglieder-lokal',
         status: 'active',
         expires_at: '2027-03-07T00:00:00Z',
       }],
@@ -180,22 +180,22 @@ describe('license-service', () => {
     assert.equal(result.found, true);
     assert.ok(result.licenseKey.includes('****'), 'Key should be masked');
     assert.equal(result.licenseKeyFull, 'CFML-ABCD-EFGH-JKMN-PQRS');
-    assert.equal(result.productId, 'mitglieder-simple');
+    assert.equal(result.productId, 'mitglieder-lokal');
   });
 
   it('16: resolveProductId — direkter Match', async () => {
-    mockPool.mockResult({ rows: [{ id: 'mitglieder-simple' }], rowCount: 1 });
-    const result = await license.resolveProductId('mitglieder-simple');
-    assert.equal(result, 'mitglieder-simple');
+    mockPool.mockResult({ rows: [{ id: 'mitglieder-lokal' }], rowCount: 1 });
+    const result = await license.resolveProductId('mitglieder-lokal');
+    assert.equal(result, 'mitglieder-lokal');
   });
 
   it('17: resolveProductId — Digistore-Mapping', async () => {
     mockPool.mockResults([
       { rows: [], rowCount: 0 },
-      { rows: [{ id: 'mitglieder-simple' }], rowCount: 1 },
+      { rows: [{ id: 'mitglieder-lokal' }], rowCount: 1 },
     ]);
     const result = await license.resolveProductId('DS-12345');
-    assert.equal(result, 'mitglieder-simple');
+    assert.equal(result, 'mitglieder-lokal');
   });
 
   it('18: resolveProductId — nicht gefunden → null', async () => {
@@ -210,12 +210,12 @@ describe('license-service', () => {
   it('19: createTrialLicense — generiert CFTM-Key mit 30 Tagen', async () => {
     const row = {
       license_key: 'CFTM-TEST-ABCD-EFGH-JK12',
-      product_id: 'mitglieder-simple',
+      product_id: 'mitglieder-lokal',
       source: 'manual',
       note: 'Pilotkunde Mueller',
     };
     mockPool.mockResult({ rows: [row], rowCount: 1 });
-    const result = await license.createTrialLicense('mitglieder-simple', 'Pilotkunde Mueller');
+    const result = await license.createTrialLicense('mitglieder-lokal', 'Pilotkunde Mueller');
     assert.deepEqual(result, row);
     // Check INSERT contains correct values
     const sql = mockPool._calls[0].sql;
@@ -229,14 +229,14 @@ describe('license-service', () => {
 
   it('20: createTrialLicense — Key beginnt mit CFTM', async () => {
     mockPool.mockResult({ rows: [{}], rowCount: 1 });
-    await license.createTrialLicense('mitglieder-simple');
+    await license.createTrialLicense('mitglieder-lokal');
     const params = mockPool._calls[0].params;
     assert.ok(params[0].startsWith('CFTM-'), `Trial key should start with CFTM: ${params[0]}`);
   });
 
   it('21: createTrialLicense — note ist optional (null)', async () => {
     mockPool.mockResult({ rows: [{}], rowCount: 1 });
-    await license.createTrialLicense('mitglieder-simple');
+    await license.createTrialLicense('mitglieder-lokal');
     const params = mockPool._calls[0].params;
     assert.equal(params[3], null);
   });

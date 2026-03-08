@@ -43,7 +43,7 @@
     function esc(s) { if (!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
     const path = location.pathname.split('/');
-    const productId = path[2] || 'mitglieder-simple';
+    const productId = path[2] || 'mitglieder-lokal';
 
     async function loadReports() {
       const el = document.getElementById('reports');

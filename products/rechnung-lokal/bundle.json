@@ -1,0 +1,9 @@
+{
+  "product": "rechnung-lokal",
+  "type": "app",
+  "bundles": ["B-07-rechnung"],
+  "description": "Rechnungsstellung mit E-Rechnung (ZUGFeRD) fuer Nebenberufler und Kleinunternehmer",
+  "depends_on": ["@codefabrik/finanz-shared", "@codefabrik/electron-platform"],
+  "platforms": ["linux", "windows", "macos"],
+  "license": "GPL-3.0-only"
+}

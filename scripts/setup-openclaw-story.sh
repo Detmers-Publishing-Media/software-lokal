@@ -1,5 +1,5 @@
 #!/bin/bash
-# setup-openclaw-story.sh — Erstellt mitglieder-simple Repo auf Forgejo + schiebt Story in Inbox
+# setup-openclaw-story.sh — Erstellt mitglieder-lokal Repo auf Forgejo + schiebt Story in Inbox
 # Ausfuehren NACH erfolgreichem Install (PROD-Server muss laufen)
 set -euo pipefail
 
@@ -42,14 +42,14 @@ echo "Token gefunden: ${FORGEJO_TOKEN:0:8}..."
 
 FORGEJO_URL="http://$SERVER_IP:3000"
 
-# 2. mitglieder-simple Repo erstellen
+# 2. mitglieder-lokal Repo erstellen
 echo ""
-echo "--- Schritt 2: mitglieder-simple Repo auf Forgejo erstellen ---"
+echo "--- Schritt 2: mitglieder-lokal Repo auf Forgejo erstellen ---"
 HTTP_CODE=$(curl -sf -o /dev/null -w "%{http_code}" \
   -X POST \
   -H "Authorization: token $FORGEJO_TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"name":"mitglieder-simple","private":true,"auto_init":true}' \
+  -d '{"name":"mitglieder-lokal","private":true,"auto_init":true}' \
   "$FORGEJO_URL/api/v1/orgs/factory/repos" 2>/dev/null || echo "000")
 
 case "$HTTP_CODE" in
@@ -68,7 +68,7 @@ if [ -n "$DEPLOY_KEY" ]; then
     -H "Authorization: token $FORGEJO_TOKEN" \
     -H "Content-Type: application/json" \
     -d "{\"title\":\"openclaw-deploy\",\"key\":\"$DEPLOY_KEY\",\"read_only\":false}" \
-    "$FORGEJO_URL/api/v1/repos/factory/mitglieder-simple/keys" 2>/dev/null || true
+    "$FORGEJO_URL/api/v1/repos/factory/mitglieder-lokal/keys" 2>/dev/null || true
   echo "Deploy Key registriert"
 else
   echo "WARNUNG: Deploy Key nicht gefunden — OpenClaw kann eventuell nicht pushen"
@@ -76,18 +76,18 @@ fi
 
 # 4. Produktcode auf Forgejo pushen
 echo ""
-echo "--- Schritt 4: mitglieder-simple Code auf Forgejo pushen ---"
+echo "--- Schritt 4: mitglieder-lokal Code auf Forgejo pushen ---"
 TMPDIR=$(mktemp -d)
 cd "$TMPDIR"
 
 # Nur die relevanten Dateien kopieren (kein node_modules, kein .git)
-mkdir -p mitglieder-simple
+mkdir -p mitglieder-lokal
 rsync -a --exclude='node_modules' --exclude='.git' --exclude='release' --exclude='dist' \
-  "$PROJECT_DIR/products/mitglieder-simple/" mitglieder-simple/
+  "$PROJECT_DIR/products/mitglieder-lokal/" mitglieder-lokal/
 
 # Auch die shared packages kopieren (OpenClaw braucht sie fuer Tests)
 mkdir -p packages
-for pkg in shared vereins-shared electron-platform; do
+for pkg in shared app-shared electron-platform; do
   rsync -a --exclude='node_modules' --exclude='.git' \
     "$PROJECT_DIR/packages/$pkg/" "packages/$pkg/" 2>/dev/null || true
 done
@@ -98,7 +98,7 @@ cp "$PROJECT_DIR/pnpm-workspace.yaml" . 2>/dev/null || true
 cp "$PROJECT_DIR/pnpm-lock.yaml" . 2>/dev/null || true
 cp "$PROJECT_DIR/CLAUDE.md" . 2>/dev/null || true
 
-cd mitglieder-simple
+cd mitglieder-lokal
 git init
 git config user.name "Factory Setup"
 git config user.email "setup@factory.local"
@@ -109,17 +109,17 @@ git init
 git config user.name "Factory Setup"
 git config user.email "setup@factory.local"
 git add -A
-git commit -m "Initial: mitglieder-simple v0.5.0 + shared packages"
+git commit -m "Initial: mitglieder-lokal v0.5.0 + shared packages"
 
 # Force push zu Forgejo (ueberschreibt auto_init)
-git remote add origin "http://factory-admin:${FORGEJO_TOKEN}@${SERVER_IP}:3000/factory/mitglieder-simple.git"
+git remote add origin "http://factory-admin:${FORGEJO_TOKEN}@${SERVER_IP}:3000/factory/mitglieder-lokal.git"
 git push --force origin main 2>/dev/null
 
 echo "Code gepusht"
 cd /
 rm -rf "$TMPDIR"
 
-# 5. Backlog-Verzeichnis fuer mitglieder-simple im Process-Repo erstellen
+# 5. Backlog-Verzeichnis fuer mitglieder-lokal im Process-Repo erstellen
 echo ""
 echo "--- Schritt 5: Backlog-Verzeichnis erstellen ---"
 TMPDIR2=$(mktemp -d)
@@ -129,8 +129,8 @@ cd process-repo
 git config user.name "Factory Setup"
 git config user.email "setup@factory.local"
 
-mkdir -p "work/03-backlog/by-product/mitglieder-simple"
-touch "work/03-backlog/by-product/mitglieder-simple/.gitkeep"
+mkdir -p "work/03-backlog/by-product/mitglieder-lokal"
+touch "work/03-backlog/by-product/mitglieder-lokal/.gitkeep"
 
 # 6. Story in Inbox kopieren
 echo ""
@@ -138,7 +138,7 @@ echo "--- Schritt 6: DSGVO-Story in Inbox einstellen ---"
 cp "$PROJECT_DIR/.stories/FEAT-001-dsgvo-auskunft.yml" "work/01-inbox/FEAT-001.yml"
 
 git add -A
-git commit -m "Setup: mitglieder-simple Backlog + FEAT-001 Story" 2>/dev/null || echo "Keine Aenderungen"
+git commit -m "Setup: mitglieder-lokal Backlog + FEAT-001 Story" 2>/dev/null || echo "Keine Aenderungen"
 git push origin main 2>/dev/null
 
 echo "Story FEAT-001 in Inbox eingestellt"

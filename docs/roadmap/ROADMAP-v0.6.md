@@ -109,7 +109,7 @@
 **Typ:** Produkt + Pipeline-Validierung.
 
 - [ ] Zweites B-05-Tool (wird nach Referenzkunden-Feedback definiert)
-- [ ] Shared Components `@codefabrik/vereins-shared` extrahieren
+- [ ] Shared Components `@codefabrik/app-shared` extrahieren
 - [ ] Zweites Produkt durch Pipeline schleusen (Ziel: < 1 Woche)
 - [ ] Portal: zweites Produkt gelistet + downloadbar
 - [ ] Beide Produkte im selben Bundle B-05

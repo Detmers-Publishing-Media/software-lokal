@@ -1,214 +1,224 @@
 ---
-- name: "Process-Repo erstellen"
-  ansible.builtin.uri:
-    url: "http://localhost:3000/api/v1/orgs/{{ factory_org }}/repos"
-    method: POST
-    headers:
-      Authorization: "token {{ forgejo_api_token }}"
-      Content-Type: "application/json"
-    body_format: json
-    body:
-      name: "{{ process_repo }}"
-      private: true
-      auto_init: true
-    status_code: [201, 409]
+# Repos werden nur im Bootstrap erstellt (nicht bei upgrade/reconcile)
+- name: "Repos ueberspringen (kein Bootstrap)"
+  ansible.builtin.debug:
+    msg: "Repos-Rolle uebersprungen (ops_mode={{ ops_mode | default('nicht gesetzt') }})"
+  when: ops_mode is defined and ops_mode != 'bootstrap'
 
-- name: "Produkt-Repo erstellen"
-  ansible.builtin.uri:
-    url: "http://localhost:3000/api/v1/orgs/{{ factory_org }}/repos"
-    method: POST
-    headers:
-      Authorization: "token {{ forgejo_api_token }}"
-      Content-Type: "application/json"
-    body_format: json
-    body:
-      name: "{{ product_repo }}"
-      private: true
-      auto_init: true
-    status_code: [201, 409]
+- name: "Repos erstellen (nur Bootstrap)"
+  when: ops_mode is not defined or ops_mode == 'bootstrap'
+  block:
+    - name: "Process-Repo erstellen"
+      ansible.builtin.uri:
+        url: "http://localhost:3000/api/v1/orgs/{{ factory_org }}/repos"
+        method: POST
+        headers:
+          Authorization: "token {{ forgejo_api_token }}"
+          Content-Type: "application/json"
+        body_format: json
+        body:
+          name: "{{ process_repo }}"
+          private: true
+          auto_init: true
+        status_code: [201, 409]
 
-- name: "Deploy Key bei Repos registrieren"
-  ansible.builtin.uri:
-    url: "http://localhost:3000/api/v1/repos/{{ factory_org }}/{{ item }}/keys"
-    method: POST
-    headers:
-      Authorization: "token {{ forgejo_api_token }}"
-      Content-Type: "application/json"
-    body_format: json
-    body:
-      title: "openclaw-deploy"
-      key: "{{ deploy_key_pub.stdout }}"
-      read_only: false
-    status_code: [201, 422]
-  loop:
-    - "{{ process_repo }}"
-    - "{{ product_repo }}"
+    - name: "Produkt-Repo erstellen"
+      ansible.builtin.uri:
+        url: "http://localhost:3000/api/v1/orgs/{{ factory_org }}/repos"
+        method: POST
+        headers:
+          Authorization: "token {{ forgejo_api_token }}"
+          Content-Type: "application/json"
+        body_format: json
+        body:
+          name: "{{ product_repo }}"
+          private: true
+          auto_init: true
+        status_code: [201, 409]
 
-- name: "Repo-Strukturen erstellen"
-  ansible.builtin.shell: |
-    TMPDIR=$(mktemp -d)
-    cd $TMPDIR
+    - name: "Deploy Key bei Repos registrieren"
+      ansible.builtin.uri:
+        url: "http://localhost:3000/api/v1/repos/{{ factory_org }}/{{ item }}/keys"
+        method: POST
+        headers:
+          Authorization: "token {{ forgejo_api_token }}"
+          Content-Type: "application/json"
+        body_format: json
+        body:
+          title: "openclaw-deploy"
+          key: "{{ deploy_key_pub.stdout }}"
+          read_only: false
+        status_code: [201, 422]
+      loop:
+        - "{{ process_repo }}"
+        - "{{ product_repo }}"
 
-    # Process-Repo Struktur
-    git clone http://factory-admin:{{ forgejo_admin_password }}@localhost:3000/{{ factory_org }}/{{ process_repo }}.git
-    cd {{ process_repo }}
+    - name: "Repo-Strukturen erstellen"
+      no_log: true
+      ansible.builtin.shell: |
+        TMPDIR=$(mktemp -d)
+        cd $TMPDIR
 
-    mkdir -p work/{01-inbox,02-triage,"03-backlog/by-product/{{ product_repo }}",04-in-progress,05-review,06-quality-gate,07-release,08-done,"09-blocked/needs-po"}
-    mkdir -p agents/{dispatcher,architect,reviewer}
-    mkdir -p rules templates metrics adr .context
-    mkdir -p .forgejo/workflows
+        # Process-Repo Struktur
+        git clone http://x-access-token:{{ forgejo_api_token }}@localhost:3000/{{ factory_org }}/{{ process_repo }}.git
+        cd {{ process_repo }}
 
-    cat > .forgejo/workflows/test-simple.yml << 'WFEOF'
-    name: Test Simple
-    on:
-      push:
-        branches: [main]
-    jobs:
-      test:
-        runs-on: ubuntu-latest
-        steps:
-          - uses: actions/checkout@v4
-          - run: echo "Process-Repo OK"
-    WFEOF
+        mkdir -p work/{01-inbox,02-triage,"03-backlog/by-product/{{ product_repo }}",04-in-progress,05-review,06-quality-gate,07-release,08-done,"09-blocked/needs-po"}
+        mkdir -p agents/{dispatcher,architect,reviewer}
+        mkdir -p rules templates metrics adr .context
+        mkdir -p .forgejo/workflows
 
-    cat > CLAUDE.md << 'CLEOF'
-    # CLAUDE.md
-    ## Modus: Vollautomatisch / Headless
-    Du arbeitest im Headless-Modus. KEINE Rückfragen. KEINE TODOs.
-    Implementiere sofort die beste Lösung.
-    CLEOF
+        cat > .forgejo/workflows/test-simple.yml << 'WFEOF'
+        name: Test Simple
+        on:
+          push:
+            branches: [main]
+        jobs:
+          test:
+            runs-on: ubuntu-latest
+            steps:
+              - uses: actions/checkout@v4
+              - run: echo "Process-Repo OK"
+        WFEOF
 
-    echo "# Code-Fabrik Process Repository" > .context/PRODUCT.md
-    echo "# Architektur" > .context/ARCHITECTURE.md
-    echo "# Konventionen" > .context/CONVENTIONS.md
-    echo "# Entscheidungen" > .context/DECISIONS.md
+        cat > CLAUDE.md << 'CLEOF'
+        # CLAUDE.md
+        ## Modus: Vollautomatisch / Headless
+        Du arbeitest im Headless-Modus. KEINE Rückfragen. KEINE TODOs.
+        Implementiere sofort die beste Lösung.
+        CLEOF
 
-    cat > work/01-inbox/STORY-000099.yml << 'STEOF'
-    id: STORY-000099
-    type: story
-    title: "Health-Endpoint für Gateway"
-    beschreibung: |
-      Als Betreiber möchte ich einen /health Endpoint am Gateway,
-      der den Status aller Services zurückgibt.
-    akzeptanzkriterien:
-      - GET /health antwortet mit HTTP 200
-      - Response enthält status und version
-    produkt: {{ product_repo }}
-    prioritaet: hoch
-    STEOF
+        echo "# Code-Fabrik Process Repository" > .context/PRODUCT.md
+        echo "# Architektur" > .context/ARCHITECTURE.md
+        echo "# Konventionen" > .context/CONVENTIONS.md
+        echo "# Entscheidungen" > .context/DECISIONS.md
 
-    touch "work/02-triage/.gitkeep" \
-          "work/03-backlog/by-product/{{ product_repo }}/.gitkeep" \
-          "work/04-in-progress/.gitkeep" \
-          "work/05-review/.gitkeep" \
-          "work/06-quality-gate/.gitkeep" \
-          "work/07-release/.gitkeep" \
-          "work/08-done/.gitkeep" \
-          "work/09-blocked/needs-po/.gitkeep"
-    touch metrics/.gitkeep agents/dispatcher/.gitkeep agents/architect/.gitkeep agents/reviewer/.gitkeep
-    touch rules/.gitkeep templates/.gitkeep adr/.gitkeep
+        cat > work/01-inbox/STORY-000099.yml << 'STEOF'
+        id: STORY-000099
+        type: story
+        title: "Health-Endpoint für Gateway"
+        beschreibung: |
+          Als Betreiber möchte ich einen /health Endpoint am Gateway,
+          der den Status aller Services zurückgibt.
+        akzeptanzkriterien:
+          - GET /health antwortet mit HTTP 200
+          - Response enthält status und version
+        produkt: {{ product_repo }}
+        prioritaet: hoch
+        STEOF
 
-    git add -A
-    git commit -m "Initiale Struktur + STORY-000099"
-    git push origin main
+        touch "work/02-triage/.gitkeep" \
+              "work/03-backlog/by-product/{{ product_repo }}/.gitkeep" \
+              "work/04-in-progress/.gitkeep" \
+              "work/05-review/.gitkeep" \
+              "work/06-quality-gate/.gitkeep" \
+              "work/07-release/.gitkeep" \
+              "work/08-done/.gitkeep" \
+              "work/09-blocked/needs-po/.gitkeep"
+        touch metrics/.gitkeep agents/dispatcher/.gitkeep agents/architect/.gitkeep agents/reviewer/.gitkeep
+        touch rules/.gitkeep templates/.gitkeep adr/.gitkeep
 
-    # Produkt-Repo Struktur
-    cd $TMPDIR
-    git clone http://factory-admin:{{ forgejo_admin_password }}@localhost:3000/{{ factory_org }}/{{ product_repo }}.git
-    cd {{ product_repo }}
+        git add -A
+        git commit -m "Initiale Struktur + STORY-000099"
+        git push origin main
 
-    mkdir -p .forgejo/workflows .context src tests/fixtures tests/windows
-    echo '*' > tests/windows/.gitkeep
-    touch tests/fixtures/.gitkeep
+        # Produkt-Repo Struktur
+        cd $TMPDIR
+        git clone http://x-access-token:{{ forgejo_api_token }}@localhost:3000/{{ factory_org }}/{{ product_repo }}.git
+        cd {{ product_repo }}
 
-    # test-results/ soll nicht committet werden
-    cat > .gitignore << 'GIEOF'
-    test-results/
-    __pycache__/
-    *.pyc
-    .pytest_cache/
-    node_modules/
-    GIEOF
+        mkdir -p .forgejo/workflows .context src tests/fixtures tests/windows
+        echo '*' > tests/windows/.gitkeep
+        touch tests/fixtures/.gitkeep
 
-    cat > .forgejo/workflows/auto-test.yml << 'ATEOF'
-    name: Auto-Test
-    on:
-      pull_request:
-        types: [opened, synchronize]
-      push:
-        branches: [main]
-    jobs:
-      test-python:
-        runs-on: ubuntu-latest
-        if: hashFiles('requirements.txt') != '' || hashFiles('pyproject.toml') != ''
-        steps:
-          - uses: actions/checkout@v4
-          - name: Python + Dependencies
-            run: |
-              python3 -m venv .venv
-              source .venv/bin/activate
-              pip install --upgrade pip
-              pip install -r requirements.txt 2>/dev/null || true
-              pip install pytest pytest-cov
-          - name: pytest
-            run: |
-              source .venv/bin/activate
-              pytest tests/ \
-                --ignore=tests/windows \
-                --cov=src \
-                --cov-report=term-missing \
-                --cov-fail-under=70 \
-                --junitxml=test-results/results.xml \
-                -v
-      test-node:
-        runs-on: ubuntu-latest
-        if: hashFiles('package.json') != ''
-        steps:
-          - uses: actions/checkout@v4
-          - run: npm ci
-          - run: npm test
-      test-bash:
-        runs-on: ubuntu-latest
-        if: hashFiles('tests/test_*.sh') != ''
-        steps:
-          - uses: actions/checkout@v4
-          - run: bats tests/test_*.sh
-    ATEOF
+        # test-results/ soll nicht committet werden
+        cat > .gitignore << 'GIEOF'
+        test-results/
+        __pycache__/
+        *.pyc
+        .pytest_cache/
+        node_modules/
+        GIEOF
 
-    cat > .forgejo/workflows/auto-release.yml << 'AREOF'
-    name: Auto-Release
-    on:
-      push:
-        branches: [main]
-    jobs:
-      release:
-        runs-on: ubuntu-latest
-        steps:
-          - uses: actions/checkout@v4
-          - run: echo "Release created"
-    AREOF
+        cat > .forgejo/workflows/auto-test.yml << 'ATEOF'
+        name: Auto-Test
+        on:
+          pull_request:
+            types: [opened, synchronize]
+          push:
+            branches: [main]
+        jobs:
+          test-python:
+            runs-on: ubuntu-latest
+            if: hashFiles('requirements.txt') != '' || hashFiles('pyproject.toml') != ''
+            steps:
+              - uses: actions/checkout@v4
+              - name: Python + Dependencies
+                run: |
+                  python3 -m venv .venv
+                  source .venv/bin/activate
+                  pip install --upgrade pip
+                  pip install -r requirements.txt 2>/dev/null || true
+                  pip install pytest pytest-cov
+              - name: pytest
+                run: |
+                  source .venv/bin/activate
+                  pytest tests/ \
+                    --ignore=tests/windows \
+                    --cov=src \
+                    --cov-report=term-missing \
+                    --cov-fail-under=70 \
+                    --junitxml=test-results/results.xml \
+                    -v
+          test-node:
+            runs-on: ubuntu-latest
+            if: hashFiles('package.json') != ''
+            steps:
+              - uses: actions/checkout@v4
+              - run: npm ci
+              - run: npm test
+          test-bash:
+            runs-on: ubuntu-latest
+            if: hashFiles('tests/test_*.sh') != ''
+            steps:
+              - uses: actions/checkout@v4
+              - run: bats tests/test_*.sh
+        ATEOF
 
-    cat > CLAUDE.md << 'CLEOF'
-    # CLAUDE.md
-    ## Modus: Vollautomatisch / Headless
-    Du arbeitest im Headless-Modus. KEINE Rückfragen. KEINE TODOs.
+        cat > .forgejo/workflows/auto-release.yml << 'AREOF'
+        name: Auto-Release
+        on:
+          push:
+            branches: [main]
+        jobs:
+          release:
+            runs-on: ubuntu-latest
+            steps:
+              - uses: actions/checkout@v4
+              - run: echo "Release created"
+        AREOF
 
-    ## Test-Konventionen
-    - tests/ = Phase 0 (Linux-Runner, immer)
-    - tests/windows/ = Phase 1+2 (Azure, nur wenn vorhanden)
-    - tests/fixtures/ = Statische Testdaten, committet
-    - test-results/ = Generiert, in .gitignore
-    CLEOF
+        cat > CLAUDE.md << 'CLEOF'
+        # CLAUDE.md
+        ## Modus: Vollautomatisch / Headless
+        Du arbeitest im Headless-Modus. KEINE Rückfragen. KEINE TODOs.
 
-    echo "# Factory Gateway" > .context/PRODUCT.md
-    echo "# Architektur" > .context/ARCHITECTURE.md
-    echo "# Konventionen" > .context/CONVENTIONS.md
-    echo "# Entscheidungen" > .context/DECISIONS.md
+        ## Test-Konventionen
+        - tests/ = Phase 0 (Linux-Runner, immer)
+        - tests/windows/ = Phase 1+2 (Azure, nur wenn vorhanden)
+        - tests/fixtures/ = Statische Testdaten, committet
+        - test-results/ = Generiert, in .gitignore
+        CLEOF
 
-    git add -A
-    git commit -m "Initiale Struktur + Phase-0-Workflows + Test-Konventionen"
-    git push origin main
+        echo "# Factory Gateway" > .context/PRODUCT.md
+        echo "# Architektur" > .context/ARCHITECTURE.md
+        echo "# Konventionen" > .context/CONVENTIONS.md
+        echo "# Entscheidungen" > .context/DECISIONS.md
 
-    rm -rf $TMPDIR
-  args:
-    executable: /bin/bash
+        git add -A
+        git commit -m "Initiale Struktur + Phase-0-Workflows + Test-Konventionen"
+        git push origin main
+
+        rm -rf $TMPDIR
+      args:
+        executable: /bin/bash

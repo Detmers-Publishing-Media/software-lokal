@@ -58,8 +58,10 @@ tar czf "$DIST_DIR/$TARBALL_NAME" \
 # Symlink codefabrik.tar.gz → aktuellen Release (damit install.sh ihn findet)
 ln -sf "$TARBALL_NAME" "$DIST_DIR/codefabrik.tar.gz"
 
-# install.sh + control.sh kopieren
+# install.sh + lib/ + control.sh kopieren
 cp "$SCRIPT_DIR/install.sh" "$DIST_DIR/install.sh"
+mkdir -p "$DIST_DIR/lib"
+cp "$SCRIPT_DIR/lib/"*.sh "$DIST_DIR/lib/"
 cp "$SCRIPT_DIR/control.sh" "$DIST_DIR/control.sh"
 cp "$PROJECT_DIR/VERSION" "$DIST_DIR/VERSION"
 chmod +x "$DIST_DIR/install.sh" "$DIST_DIR/control.sh"

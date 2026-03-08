@@ -122,7 +122,7 @@ describe('license-client', () => {
       assert.ok(validateKeyFormat(key, 'CFFR').valid);
     });
 
-    it('accepts trial key CFTM for mitglieder-simple product (CFML prefix)', () => {
+    it('accepts trial key CFTM for mitglieder-lokal product (CFML prefix)', () => {
       const key = generateValidKey('CFTM');
       const result = validateKeyFormat(key, 'CFML');
       assert.ok(result.valid, `Trial key ${key} should be valid for CFML: ${result.reason}`);
@@ -149,12 +149,12 @@ describe('license-client', () => {
 
   describe('PREFIX_TO_PRODUCT', () => {
     it('maps production prefixes correctly', () => {
-      assert.equal(PREFIX_TO_PRODUCT['CFML'], 'mitglieder-simple');
+      assert.equal(PREFIX_TO_PRODUCT['CFML'], 'mitglieder-lokal');
       assert.equal(PREFIX_TO_PRODUCT['CFFR'], 'finanz-rechner');
     });
 
     it('maps trial prefixes to same products', () => {
-      assert.equal(PREFIX_TO_PRODUCT['CFTM'], 'mitglieder-simple');
+      assert.equal(PREFIX_TO_PRODUCT['CFTM'], 'mitglieder-lokal');
       assert.equal(PREFIX_TO_PRODUCT['CFTR'], 'finanz-rechner');
     });
 
@@ -199,13 +199,13 @@ describe('license-client', () => {
 
     it('round-trips key through write/read', () => {
       const key = 'CFML-ABCD-EFGH-JKMN-PQRS';
-      writeLicenseCache(mockSafeStorage, tmpDir, key, 'mitglieder-simple', {
+      writeLicenseCache(mockSafeStorage, tmpDir, key, 'mitglieder-lokal', {
         valid: true, status: 'active', expiresAt: '2027-03-07T00:00:00Z',
       });
 
       const cache = readLicenseCache(mockSafeStorage, tmpDir);
       assert.equal(cache.licenseKey, key);
-      assert.equal(cache.productId, 'mitglieder-simple');
+      assert.equal(cache.productId, 'mitglieder-lokal');
       assert.ok(cache.lastValidation);
       assert.equal(cache.lastValidation.valid, true);
     });

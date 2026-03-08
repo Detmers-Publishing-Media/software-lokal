@@ -8,7 +8,7 @@ Kopieren und als eigene Story abarbeiten.
 ### Code
 
 - [ ] Keine Imports des alten Frameworks in `src/` (alle Produkte)
-- [ ] Keine Imports in `packages/` (shared, vereins-shared, electron-platform)
+- [ ] Keine Imports in `packages/` (shared, app-shared, electron-platform)
 - [ ] Keine Imports in `tests/`
 - [ ] `grep -rn "ALTER_FRAMEWORK" . --include="*.js" --include="*.svelte"` liefert 0 Treffer
 

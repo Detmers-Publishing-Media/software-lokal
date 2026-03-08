@@ -46,32 +46,83 @@
   retries: 3
   delay: 5
 
-- name: "Smoke-Test: Warte auf Poller-Verarbeitung von STORY-000099"
-  ansible.builtin.shell: |
-    for i in $(seq 1 60); do
-      STATE=$(docker exec factory-postgres psql -U forgejo -d forgejo -tAq -c \
-        "SELECT stage FROM poller_state WHERE object_id='STORY-000099'" 2>/dev/null | tr -d '[:space:]')
-      if [ "$STATE" = "pr_created" ] || [ "$STATE" = "done" ]; then
-        echo "SMOKE_SUCCESS: STORY-000099 reached stage $STATE"
+- name: "Deep-Smoke: Poller-Verarbeitung von STORY-000099 (nur Bootstrap)"
+  when: ops_mode is not defined or ops_mode == 'bootstrap'
+  block:
+    - name: "Deep-Smoke: Poller-Verarbeitung von STORY-000099 (nicht-blockierend)"
+      ansible.builtin.shell: |
+        for i in $(seq 1 60); do
+          STATE=$(docker exec factory-postgres psql -U forgejo -d forgejo -tAq -c \
+            "SELECT stage FROM poller_state WHERE object_id='STORY-000099'" 2>/dev/null | tr -d '[:space:]')
+          if [ "$STATE" = "pr_created" ] || [ "$STATE" = "done" ]; then
+            echo "DEEP_SMOKE_SUCCESS: STORY-000099 reached stage $STATE"
+            exit 0
+          fi
+          echo "Warte... stage=$STATE ($(($i * 10))s)"
+          sleep 10
+        done
+        echo "DEEP_SMOKE_TIMEOUT: STORY-000099 did not complete in 10 minutes (stage=$STATE)"
         exit 0
-      fi
-      echo "Warte... stage=$STATE ($(($i * 10))s)"
-      sleep 10
-    done
-    echo "SMOKE_TIMEOUT: STORY-000099 did not complete in 10 minutes"
-    exit 0
-  register: smoke_result
+      register: smoke_result
+      changed_when: false
+
+    - name: "Deep-Smoke Ergebnis"
+      ansible.builtin.debug:
+        msg: "{{ smoke_result.stdout_lines[-1] }}"
+
+    - name: "Deep-Smoke Warnung bei Timeout"
+      ansible.builtin.debug:
+        msg: "WARNUNG: Poller/OpenClaw Pipeline hat STORY-000099 nicht verarbeitet. Bitte manuell pruefen."
+      when: "'DEEP_SMOKE_TIMEOUT' in smoke_result.stdout"
+
+- name: "Deep-Smoke uebersprungen"
+  ansible.builtin.debug:
+    msg: "Deep-Smoke uebersprungen (ops_mode={{ ops_mode }})"
+  when: ops_mode is defined and ops_mode != 'bootstrap'
+
+- name: "Smoke-Test: Nightstop Timer"
+  ansible.builtin.shell: systemctl is-active codefabrik-nightstop.timer
+  register: nightstop_check
   changed_when: false
+
+- name: "Smoke-Test: Nightstart Timer"
+  ansible.builtin.shell: systemctl is-active codefabrik-nightstart.timer
+  register: nightstart_check
+  changed_when: false
+
+- name: "Smoke-Test: Externer HTTPS-Zugriff Forgejo"
+  ansible.builtin.uri:
+    url: "https://{{ forgejo_domain }}/api/v1/version"
+    status_code: 200
+    validate_certs: false
+  register: ext_forgejo_check
+  retries: 6
+  delay: 10
+  delegate_to: localhost
+
+- name: "Smoke-Test: Externer HTTPS-Zugriff Gateway"
+  ansible.builtin.uri:
+    url: "https://gateway-codefabrik.{{ cloudflare_zone }}/health"
+    status_code: 200
+    validate_certs: false
+  register: ext_gateway_check
+  retries: 6
+  delay: 10
+  delegate_to: localhost
 
 - name: "Smoke-Test Ergebnis"
   ansible.builtin.debug:
     msg: |
       Smoke-Test Ergebnis:
-        Forgejo:  ✅
-        Postgres: ✅
-        OpenClaw: ✅
-        Runner:   ✅
-        Poller:   ✅
-        /health:  ✅
-        /ready:   ✅
-        Pipeline: {{ smoke_result.stdout_lines[-1] }}
+        Forgejo:       ✅
+        Postgres:      ✅
+        OpenClaw:      ✅
+        Runner:        ✅
+        Poller:        ✅
+        Nightstop:     ✅
+        Nightstart:    ✅
+        /health:       ✅
+        /ready:        ✅
+        HTTPS Forgejo: ✅ (extern)
+        HTTPS Gateway: ✅ (extern)
+        Pipeline:      {{ smoke_result.stdout_lines[-1] | default('uebersprungen') }} ({{ 'nicht-blockierend' if smoke_result is defined else 'nur bei Bootstrap' }})

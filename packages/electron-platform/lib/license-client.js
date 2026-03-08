@@ -19,9 +19,9 @@ const LICENSE_FILE = 'license.json';
 
 // Maps product prefix to product ID (production + trial keys)
 const PREFIX_TO_PRODUCT = {
-  'CFML': 'mitglieder-simple',
+  'CFML': 'mitglieder-lokal',
   'CFFR': 'finanz-rechner',
-  'CFTM': 'mitglieder-simple',
+  'CFTM': 'mitglieder-lokal',
   'CFTR': 'finanz-rechner',
 };
 

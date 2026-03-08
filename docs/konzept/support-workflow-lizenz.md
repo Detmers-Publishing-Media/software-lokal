@@ -79,7 +79,7 @@ Response (gefunden):
 {
   "found": true,
   "licenseKey": "CFML-****-****-****-WXYZ",
-  "productId": "mitglieder-simple",
+  "productId": "mitglieder-lokal",
   "status": "active",
   "expiresAt": "2027-03-07T00:00:00Z"
 }
@@ -115,7 +115,7 @@ Validierbar:
 CREATE TABLE licenses (
   id           SERIAL PRIMARY KEY,
   license_key  VARCHAR(24) UNIQUE NOT NULL,  -- CFML-XXXX-XXXX-XXXX-XXXX
-  product_id   VARCHAR(50) NOT NULL,         -- 'mitglieder-simple', 'finanz-rechner'
+  product_id   VARCHAR(50) NOT NULL,         -- 'mitglieder-lokal', 'finanz-rechner'
   digistore_order_id VARCHAR(50),
   status       VARCHAR(20) NOT NULL DEFAULT 'active',
     -- active, expired, revoked, suspended
@@ -179,7 +179,7 @@ Content-Type: application/json
 Request:
 {
   "licenseKey": "CFML-XXXX-XXXX-XXXX-XXXX",
-  "productId": "mitglieder-simple",
+  "productId": "mitglieder-lokal",
   "appVersion": "0.5.0"
 }
 
@@ -188,7 +188,7 @@ Response (gueltig):
   "valid": true,
   "status": "active",
   "expiresAt": "2027-03-07T00:00:00Z",
-  "productId": "mitglieder-simple",
+  "productId": "mitglieder-lokal",
   "features": ["support", "updates", "templates"]
 }
 
@@ -209,7 +209,7 @@ userData/
 ```json
 {
   "licenseKey": "<verschluesselt>",
-  "productId": "mitglieder-simple",
+  "productId": "mitglieder-lokal",
   "lastValidation": {
     "timestamp": "2026-03-07T10:00:00Z",
     "valid": true,

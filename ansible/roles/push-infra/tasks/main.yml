@@ -19,6 +19,7 @@
     mode: preserve
 
 - name: "Paket-Dateien nach Forgejo pushen"
+  no_log: true
   ansible.builtin.shell: |
     set -euo pipefail
     TMPDIR="/tmp/infra-push"
@@ -33,7 +34,7 @@
     git add -A
     git commit -m "Infra-Stand nach Installation v{{ factory_version }}"
     git remote add origin \
-      "http://factory-admin:{{ forgejo_admin_password }}@localhost:3000/{{ factory_org }}/infra-local.git"
+      "http://x-access-token:{{ forgejo_api_token }}@localhost:3000/{{ factory_org }}/infra-local.git"
     git push -u origin main --force
 
     rm -rf "$TMPDIR"

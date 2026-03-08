@@ -1,9 +1,18 @@
 ---
-- name: "Inventory laden"
+# Code-Fabrik — Portal Upgrade
+# Server bleibt stehen, Portal-Code wird aktualisiert
+# Voraussetzung: ops_mode=upgrade, Portal muss existieren
+
+- name: "Phase 0: Modus + Inventory"
   hosts: localhost
   connection: local
   gather_facts: false
   tasks:
+    - name: "ops_mode validieren"
+      ansible.builtin.assert:
+        that: ops_mode is defined and ops_mode == 'upgrade'
+        fail_msg: "upgrade-portal.yml darf nur im Upgrade-Modus laufen (ops_mode={{ ops_mode | default('NICHT_GESETZT') }})"
+
     - name: "Portal-IP aus .portal-env laden"
       ansible.builtin.shell: cat /output/.portal-env
       register: portal_env_raw
@@ -38,10 +47,6 @@
     - name: "Rebuild Ergebnis"
       ansible.builtin.debug:
         msg: "{{ rebuild_result.stdout_lines[-5:] }}"
-
-    - name: "Warte auf Container-Start"
-      ansible.builtin.pause:
-        seconds: 15
 
     - name: "Warte auf PostgreSQL"
       ansible.builtin.shell: docker exec portal-db pg_isready -U portal

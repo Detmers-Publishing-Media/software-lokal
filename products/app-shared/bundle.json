@@ -1,0 +1,7 @@
+{
+  "product": "app-shared",
+  "type": "library",
+  "bundles": ["B-05-verein-ehrenamt"],
+  "description": "Geteilte Komponenten und Helfer fuer alle Vereins-Apps",
+  "license": "MIT"
+}

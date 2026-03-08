@@ -4,6 +4,11 @@
   connection: local
   gather_facts: false
   tasks:
+    - name: "ops_mode validieren"
+      ansible.builtin.assert:
+        that: ops_mode is defined and ops_mode == 'teardown'
+        fail_msg: "teardown-portal.yml darf nur im Teardown-Modus laufen (ops_mode={{ ops_mode | default('NICHT_GESETZT') }})"
+
     - name: "Portal-Info aus .portal-env laden"
       ansible.builtin.shell: |
         cat /output/.portal-env 2>/dev/null
@@ -48,7 +53,7 @@
 
     - name: "Portal DNS-Record finden"
       ansible.builtin.uri:
-        url: "https://api.cloudflare.com/client/v4/zones/{{ cloudflare_zone_id }}/dns_records?name=portal.codefabrik.{{ cloudflare_zone }}"
+        url: "https://api.cloudflare.com/client/v4/zones/{{ cloudflare_zone_id }}/dns_records?name=portal-codefabrik.{{ cloudflare_zone }}"
         method: GET
         headers:
           Authorization: "Bearer {{ vault_cloudflare_api_token }}"

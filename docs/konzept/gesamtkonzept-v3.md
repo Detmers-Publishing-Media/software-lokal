@@ -1,4 +1,16 @@
-# Code-Fabrik — Das komplette Bild (v3)
+# Code-Fabrik — Das komplette Bild (v3) — ABGELÖST
+
+> **Dieses Dokument ist abgelöst durch [Gesamtkonzept v4](gesamtkonzept-v4.md).**
+> v3 bleibt als Referenz erhalten. Für aktuelle Entscheidungen gilt v4.
+>
+> Wesentliche Änderungen in v4:
+> - Preis: 39 EUR/Jahr Servicepaket (statt 29 EUR Abo / 39 EUR Einmalkauf)
+> - Framework: Electron + Svelte 5 (statt Tauri)
+> - Produktschnitt: Fokussierte Einzelprodukte (statt 50 Micro-Tools pro Bundle)
+> - Neues Produkt: Rechnung Lokal (E-Rechnung / ZUGFeRD für Kleinunternehmer)
+> - Architektur: Shared finanz-shared Package mit Feature-Flags pro Produkt
+> - Reihenfolge: Rechnung Lokal → Mitglieder Lokal v2.0 (statt parallel)
+> - Produktdetails: siehe `docs/produktstrategie-lokal-tools.md`
 
 *Konsolidierung aller Konzeptdiskussionen, Stand März 2026*
 *Dieses Dokument geht in die Dokumentation von Release 0.5.7 ein.*

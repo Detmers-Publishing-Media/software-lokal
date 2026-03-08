@@ -30,7 +30,7 @@ auf einem persistenten Drive — nicht im Tarball:
 ```
 /persistent/
   binaries/
-    mitglieder-simple/
+    mitglieder-lokal/
       v0.4.0/
         MitgliederSimple-0.4.0-setup.exe
         MitgliederSimple-0.4.0.dmg

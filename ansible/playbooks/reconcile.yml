@@ -1,0 +1,114 @@
+---
+# Code-Fabrik — PROD Reconcile (Drift-Korrektur)
+# Idempotent: alle Rollen laufen, korrigieren nur Abweichungen
+# Voraussetzung: ops_mode=reconcile, Server muss existieren + erreichbar sein
+
+- name: "Phase 0: Modus + Inventory"
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: "ops_mode validieren"
+      ansible.builtin.assert:
+        that: ops_mode is defined and ops_mode == 'reconcile'
+        fail_msg: "reconcile.yml darf nur im Reconcile-Modus laufen (ops_mode={{ ops_mode | default('NICHT_GESETZT') }})"
+
+    - name: ".server-env muss existieren"
+      ansible.builtin.stat:
+        path: /output/.server-env
+      register: server_env_stat
+      failed_when: not server_env_stat.stat.exists
+
+    - name: "Server-IP laden"
+      ansible.builtin.shell: cat /output/.server-env
+      register: server_env_raw
+
+    - name: "server_ip setzen"
+      ansible.builtin.set_fact:
+        server_ip: "{{ (server_env_raw.stdout | regex_search('SERVER_IP=(.+)', '\\1'))[0] }}"
+
+    - name: "factory-prod registrieren"
+      ansible.builtin.add_host:
+        name: factory-prod
+        ansible_host: "{{ server_ip }}"
+        ansible_user: root
+        ansible_ssh_private_key_file: "~/.ssh/codefabrik_deploy"
+        groups: [prod]
+
+    - name: "SSH-Verbindung pruefen"
+      ansible.builtin.wait_for:
+        host: "{{ server_ip }}"
+        port: 22
+        timeout: 30
+
+    - name: "DNS verifizieren (ohne Neuanlage)"
+      ansible.builtin.include_role:
+        name: dns
+
+- name: "Phase 1: Server-Config abgleichen"
+  hosts: factory-prod
+  gather_facts: true
+  vars:
+    forgejo_admin_password: "{{ lookup('ini', 'forgejo_admin_password type=properties file=/output/.factory-passwords.env') }}"
+    postgres_password: "{{ lookup('ini', 'postgres_password type=properties file=/output/.factory-passwords.env') }}"
+    jwt_secret: "{{ lookup('ini', 'jwt_secret type=properties file=/output/.factory-passwords.env') }}"
+    ops_mode: reconcile
+  roles:
+    - base
+    - caddy
+    - gateway
+
+  post_tasks:
+    - name: "docker-compose.yml abgleichen"
+      ansible.builtin.template:
+        src: ../templates/docker-compose.yml.j2
+        dest: "{{ docker_compose_dir }}/docker-compose.yml"
+      register: compose_changed
+
+    - name: "Docker Stack neu starten (nur bei Aenderungen)"
+      ansible.builtin.shell: |
+        cd {{ docker_compose_dir }} && docker compose up -d --build 2>&1
+      when: compose_changed.changed
+
+    - name: "Docker Stack sicherstellen"
+      ansible.builtin.shell: |
+        cd {{ docker_compose_dir }} && docker compose up -d
+      changed_when: false
+      when: not compose_changed.changed
+
+    - name: "Warte auf PostgreSQL"
+      ansible.builtin.shell: |
+        for i in $(seq 1 30); do
+          docker exec factory-postgres pg_isready -U forgejo -q 2>/dev/null && exit 0
+          sleep 2
+        done
+        exit 1
+      changed_when: false
+
+    - name: "Warte auf Forgejo"
+      ansible.builtin.uri:
+        url: "http://localhost:3000/api/v1/version"
+        status_code: 200
+      retries: 12
+      delay: 5
+
+- name: "Phase 2: Services abgleichen"
+  hosts: factory-prod
+  gather_facts: false
+  vars:
+    forgejo_admin_password: "{{ lookup('ini', 'forgejo_admin_password type=properties file=/output/.factory-passwords.env') }}"
+    postgres_password: "{{ lookup('ini', 'postgres_password type=properties file=/output/.factory-passwords.env') }}"
+    jwt_secret: "{{ lookup('ini', 'jwt_secret type=properties file=/output/.factory-passwords.env') }}"
+    ops_mode: reconcile
+  roles:
+    - postgres
+    - forgejo
+    - secrets
+    - poller
+    - nightstop
+
+- name: "Phase 3: Smoke-Test"
+  hosts: factory-prod
+  gather_facts: false
+  roles:
+    - smoke-test

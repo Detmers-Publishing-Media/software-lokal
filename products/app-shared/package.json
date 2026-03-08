@@ -1,0 +1,21 @@
+{
+  "name": "@codefabrik/app-shared",
+  "version": "0.1.0",
+  "license": "MIT",
+  "description": "Geteilte Svelte-Komponenten, SQLite-Helfer und Lizenz-Validierung fuer Vereins-Apps",
+  "type": "module",
+  "exports": {
+    "./components": "./src/components/index.js",
+    "./db": "./src/db/index.js",
+    "./license": "./src/license/index.js"
+  },
+  "dependencies": {
+    "@codefabrik/shared": "file:../shared"
+  },
+  "peerDependencies": {
+    "svelte": "^5.0.0"
+  },
+  "publishConfig": {
+    "registry": "https://forgejo.codefabrik.detmers-publish.de/api/packages/factory-admin/npm/"
+  }
+}

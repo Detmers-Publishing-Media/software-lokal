@@ -4,6 +4,11 @@
   connection: local
   gather_facts: false
   tasks:
+    - name: "ops_mode validieren"
+      ansible.builtin.assert:
+        that: ops_mode is defined and ops_mode == 'teardown'
+        fail_msg: "teardown.yml darf nur im Teardown-Modus laufen (ops_mode={{ ops_mode | default('NICHT_GESETZT') }})"
+
     - name: "Server-Info aus .server-env laden"
       ansible.builtin.shell: |
         source /output/.server-env && echo "UUID=$SERVER_UUID IP=$SERVER_IP"

@@ -14,6 +14,20 @@
       content: "{{ server_ip }}"
       ttl: 1
       proxied: "{{ item.proxied | default(true) }}"
-    status_code: [200, 201, 409]
+    status_code: [200, 201]
   loop: "{{ dns_records }}"
-  ignore_errors: true
+  register: dns_results
+
+- name: "DNS-Validierung via Cloudflare API"
+  delegate_to: localhost
+  ansible.builtin.uri:
+    url: "https://api.cloudflare.com/client/v4/zones/{{ cloudflare_zone_id }}/dns_records?name={{ item.name }}.{{ cloudflare_zone }}&type=A"
+    method: GET
+    headers:
+      Authorization: "Bearer {{ vault_cloudflare_api_token }}"
+    status_code: [200]
+  register: dns_verify
+  loop: "{{ dns_records }}"
+  failed_when: >
+    dns_verify.json.result | length == 0 or
+    dns_verify.json.result[0].content != server_ip

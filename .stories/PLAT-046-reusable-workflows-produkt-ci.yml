@@ -1,0 +1,63 @@
+id: "PLAT-046"
+title: "Reusable Workflows — Produkt-CI fuer alle Electron-Apps"
+epic: "PLAT-CI"
+status: "done"
+
+story_type: "infra-factory"
+lane: "slow"
+platform_impact: "high"
+founder_gate_required: true
+force_approve_allowed: false
+auto_merge_allowed: false
+
+platform_rationale: |
+  Erstellt wiederverwendbare CI-Workflows fuer alle Electron-Produkte.
+  Reduziert Duplikation zwischen Produkt-Workflows (aktuell 3x identische Jobs).
+
+reused_by_products: ["mitglieder-lokal", "rechnung-lokal", "finanz-rechner"]
+
+non_goals:
+  - "Keine Aenderung an Produkt-Code"
+  - "Kein Code-Signing (kommt spaeter)"
+  - "Keine Auto-Update-Integration"
+
+description: |
+  Reusable Workflow fuer Electron-Produkt-Builds:
+  1. Gemeinsamer Workflow (.github/workflows/electron-build.yml) als reusable workflow
+  2. Produkt-Workflows rufen den gemeinsamen Workflow auf mit Parametern:
+     - product_dir (z.B. products/rechnung-lokal)
+     - artifact_prefix (z.B. rechnung-lokal)
+     - test_command (optional, z.B. pnpm test)
+     - platforms (windows, linux, macos)
+  3. Jobs: test-linux → build-windows + build-linux + build-macos (parallel)
+  4. Artefakte: .exe, .AppImage, .dmg
+  5. GitHub Release bei v*-Tag
+
+  Aktuell haben alle 3 Produkte nahezu identische Workflows in
+  products/<name>/.github/workflows/build.yml. Diese werden durch
+  Aufrufe des reusable Workflows ersetzt.
+
+acceptance_criteria:
+  - "Reusable Workflow .github/workflows/electron-build.yml existiert"
+  - "Mitglieder-lokal Workflow ruft reusable Workflow auf"
+  - "Rechnung-lokal Workflow ruft reusable Workflow auf"
+  - "FinanzRechner Workflow ruft reusable Workflow auf"
+  - "Alle 3 Plattformen (Windows, Linux, macOS) werden gebaut"
+  - "Tests laufen vor dem Build"
+  - "GitHub Release wird bei v*-Tag erstellt"
+  - "CLAUDE.md aktualisiert"
+
+affected_files:
+  - ".github/workflows/electron-build.yml"
+  - "products/mitglieder-lokal/.github/workflows/build.yml"
+  - "products/rechnung-lokal/.github/workflows/build.yml"
+  - "products/finanz-rechner/.github/workflows/build.yml"
+  - "CLAUDE.md"
+
+depends_on:
+  - "PLAT-042"
+  - "PLAT-044"
+
+manual_steps: []
+
+estimated_effort: "M"

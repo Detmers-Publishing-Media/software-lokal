@@ -17,8 +17,8 @@ products/
   shared/                         @codefabrik/shared (produktuebergreifend)
     src/license/index.js            validateLicenseFormat, normalizeLicenseKey
 
-  mitglieder-simple/
-    vereins-shared/               @codefabrik/vereins-shared (eingebettet)
+  mitglieder-lokal/
+    app-shared/               @codefabrik/app-shared (eingebettet)
       src/db/index.js               openDb, query, execute, migrate (Tauri-spezifisch)
       src/components/               DataTable, SearchBar, ExportButton (Svelte)
       src/license/                  Re-Export aus @codefabrik/shared
@@ -45,7 +45,7 @@ products/
 ### Probleme mit dem aktuellen Aufbau
 
 1. **Tauri funktioniert nicht auf Windows 10** — Show-Stopper (siehe desktop-framework-review.md)
-2. **vereins-shared ist eingebettet** — Aenderungen muessen manuell kopiert werden
+2. **app-shared ist eingebettet** — Aenderungen muessen manuell kopiert werden
 3. **shared existiert doppelt** — einmal unter products/shared, einmal als Kopie in finanz-rechner/shared
 4. **DB-Schicht ist Tauri-spezifisch** — @tauri-apps/plugin-sql, nicht wiederverwendbar
 5. **Kein geteilter Electron-Boilerplate** — bei 20 Produkten waere das 20x Copy-Paste
@@ -102,14 +102,14 @@ code-fabrik/
         csv/index.js                generateCsv(), downloadCsv() (aus csv.js, unveraendert)
         license/index.js            validateLicenseFormat() (existiert bereits)
 
-    vereins-shared/               @codefabrik/vereins-shared
+    app-shared/               @codefabrik/app-shared
       package.json
       src/
         components/                 DataTable, SearchBar, ExportButton (unveraendert)
 
   products/
-    mitglieder-simple/
-      package.json                  Deps: @codefabrik/electron-platform, shared, vereins-shared
+    mitglieder-lokal/
+      package.json                  Deps: @codefabrik/electron-platform, shared, app-shared
       app.config.js                 { name, dbName, windowTitle, width, height, icon }
       src/
         lib/
@@ -149,12 +149,12 @@ lib/support-bundle.js → reine Logik: Diagnosedaten sammeln (testbar)
 
 | Datei heute | Ziel-Paket | Aenderung |
 |---|---|---|
-| `vereins-shared/src/db/index.js` | `packages/shared/src/db/` | Tauri → injizierbares Backend (IPC oder Mock) |
+| `app-shared/src/db/index.js` | `packages/shared/src/db/` | Tauri → injizierbares Backend (IPC oder Mock) |
 | `src/lib/crypto.js` | `packages/shared/src/crypto/` | Unveraendert |
 | `src/lib/csv.js` | `packages/shared/src/csv/` | Unveraendert |
 | `src/lib/license.js` | Bleibt im Produkt | Importiert getActiveMemberCount aus eigenem db.js |
 | `products/shared/src/license/` | `packages/shared/src/license/` | Unveraendert |
-| `vereins-shared/src/components/` | `packages/vereins-shared/src/components/` | Unveraendert |
+| `app-shared/src/components/` | `packages/app-shared/src/components/` | Unveraendert |
 | `src-tauri/` | Geloescht | Durch electron-platform ersetzt |
 | `src/lib/db.js` | Bleibt im Produkt | appendEvent/verifyChain → Import aus shared/audit-log |
 | `src/lib/pdf.js` | Bleibt im Produkt | Koennte spaeter nach shared, aber nicht jetzt |
@@ -1660,7 +1660,7 @@ export default {
   windowTitle: 'MitgliederSimple — Mitgliederverwaltung',
   width: 1024,
   height: 768,
-  identifier: 'de.detmers-publish.mitglieder-simple',
+  identifier: 'de.detmers-publish.mitglieder-lokal',
   autoUpdate: false,
   updateUrl: null,
   backupRotation: {
@@ -2163,7 +2163,7 @@ createApp(config);
 | Datei | Grund |
 |---|---|
 | `src-tauri/` | Durch electron-platform ersetzt |
-| `vereins-shared/` (eingebettet) | Wird Paket unter packages/ |
+| `app-shared/` (eingebettet) | Wird Paket unter packages/ |
 
 ---
 
@@ -2178,11 +2178,11 @@ packages:
 
 ```json
 {
-  "name": "@codefabrik/mitglieder-simple",
+  "name": "@codefabrik/mitglieder-lokal",
   "dependencies": {
     "@codefabrik/electron-platform": "workspace:*",
     "@codefabrik/shared": "workspace:*",
-    "@codefabrik/vereins-shared": "workspace:*",
+    "@codefabrik/app-shared": "workspace:*",
     "pdfmake": "^0.2.0"
   }
 }
@@ -2216,7 +2216,7 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: 'pnpm' }
       - run: pnpm install --frozen-lockfile
-      - run: cd products/mitglieder-simple && pnpm electron:build
+      - run: cd products/mitglieder-lokal && pnpm electron:build
 ```
 
 ---
@@ -2228,7 +2228,7 @@ jobs:
 1. `pnpm-workspace.yaml`
 2. `packages/shared/` — db (setBackend), audit-log, crypto, csv
 3. `packages/electron-platform/` — Main, Preload, alle lib/-Module, alle IPC-Handler
-4. `packages/vereins-shared/` — Svelte-Components
+4. `packages/app-shared/` — Svelte-Components
 5. Plattform-Tests: db-core, backup-core, logger, health, recovery, support-bundle
 
 ### Phase 2: MitgliederSimple umbauen

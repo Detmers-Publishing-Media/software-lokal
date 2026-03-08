@@ -1,0 +1,22 @@
+{
+  "name": "@codefabrik/finanz-shared",
+  "version": "0.1.0",
+  "private": true,
+  "license": "GPL-3.0-only",
+  "type": "module",
+  "description": "Shared finance kernel for Code-Fabrik desktop products (schema, models, EUeR, events)",
+  "exports": {
+    "./db": "./src/db/index.js",
+    "./models": "./src/models/index.js",
+    "./euer": "./src/euer/index.js"
+  },
+  "scripts": {
+    "test": "node --test tests/test_*.js"
+  },
+  "dependencies": {
+    "@codefabrik/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "sql.js": "^1.14.1"
+  }
+}

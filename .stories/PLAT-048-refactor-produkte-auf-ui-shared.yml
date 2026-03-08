@@ -1,0 +1,46 @@
+id: "PLAT-048"
+title: "Produkte auf ui-shared Komponenten migrieren"
+epic: "PLAT-SHARED"
+status: "inbox"
+
+story_type: "shared-pattern"
+lane: "fast"
+platform_impact: "low"
+founder_gate_required: false
+force_approve_allowed: true
+auto_merge_allowed: true
+
+platform_rationale: |
+  Bestehende Produkte nutzen inline-Badges, Form-Layouts und Summary-Cards.
+  Migration auf ui-shared eliminiert Duplikation und vereinheitlicht Styling.
+
+reused_by_products: ["mitglieder-lokal", "rechnung-lokal", "finanz-rechner"]
+
+non_goals:
+  - "Keine neuen Features"
+  - "Keine Aenderung an Geschaeftslogik"
+
+description: |
+  Schrittweise Migration der bestehenden Produkte auf @codefabrik/ui-shared Komponenten:
+  1. StatusBadge statt inline .badge-* CSS
+  2. SummaryCard statt inline .card/.summary-* CSS
+  3. FormSection + FormRow statt inline fieldset/flex Layouts
+  4. PageHeader statt inline .header Divs
+  5. YearNavigator statt inline Jahres-Navigation
+  6. EmptyState statt inline .empty Divs
+
+acceptance_criteria:
+  - "Mitglieder-lokal nutzt StatusBadge, SummaryCard, PageHeader"
+  - "Rechnung-lokal nutzt StatusBadge, SummaryCard, PageHeader, YearNavigator"
+  - "Keine doppelten Badge/Card/Header CSS-Definitionen in Produkten"
+  - "Alle Tests bestehen"
+
+affected_files:
+  - "products/mitglieder-lokal/src/routes/*.svelte"
+  - "products/rechnung-lokal/src/routes/*.svelte"
+
+depends_on: []
+
+manual_steps: []
+
+estimated_effort: "M"

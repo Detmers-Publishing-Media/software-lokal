@@ -270,7 +270,7 @@ code-fabrik/
     roadmap/
       ROADMAP-v0.6.md                   Detaillierte Roadmap
       RELEASES.md                        Release-History + Infra-Status
-  products/mitglieder-simple/
+  products/mitglieder-lokal/
     CLAUDE.md                            Produkt-spezifische Agent-Anweisungen
     docs/
       produktspec.md                     Produktspezifikation (5 Stufen)

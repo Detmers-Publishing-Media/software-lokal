@@ -87,6 +87,26 @@ SQLite-WAL/SHM-Dateien.
 
 ## Installation starten
 
+### Voraussetzung: KeePass Runtime-Eintraege leeren
+
+**Bei jeder Komplett-Neuinstallation** muessen die Runtime-Eintraege in KeePass
+geleert werden (Passwort-Feld loeschen):
+
+```
+Studio Ops/00-Vault/Code-Fabrik/Runtime/
+  server-env          → Passwort loeschen
+  tokens-env          → Passwort loeschen
+  portal-env          → Passwort loeschen
+```
+
+(`factory-passwords` und `portal-passwords` werden beim Install frisch generiert
+und sind nach Teardown bereits leer.)
+
+**Warum?** Die Env-Eintraege enthalten Server-IPs und Konfiguration der alten
+Instanz. Sind alte Werte vorhanden, werden diese stattdessen verwendet — die aber
+zu den alten (geloeschten) Servern gehoeren. Nach dem Install schreibt der
+Writeback die neuen Werte zurueck.
+
 ### Schritt 1: In das dist-Verzeichnis wechseln
 
 ```bash

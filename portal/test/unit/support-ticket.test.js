@@ -44,7 +44,7 @@ describe('api-support-ticket', () => {
     return {
       id: 1,
       license_hash: VALID_HASH,
-      product_id: 'mitglieder-simple',
+      product_id: 'mitglieder-lokal',
       product_name: 'Mitglieder lokal',
       status: 'active',
       expires_at: new Date(Date.now() + 365 * 86400000).toISOString(),
@@ -94,7 +94,7 @@ describe('api-support-ticket', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           licenseHash: VALID_HASH,
-          productId: 'mitglieder-simple',
+          productId: 'mitglieder-lokal',
           userDescription: 'DB laesst sich nicht oeffnen',
         }),
       });
@@ -164,8 +164,8 @@ describe('api-support-ticket', () => {
         // SELECT tickets
         {
           rows: [
-            { ticket_ref: 'CF-2026-03-07-00001', product_id: 'mitglieder-simple', status: 'open' },
-            { ticket_ref: 'CF-2026-03-06-00001', product_id: 'mitglieder-simple', status: 'resolved' },
+            { ticket_ref: 'CF-2026-03-07-00001', product_id: 'mitglieder-lokal', status: 'open' },
+            { ticket_ref: 'CF-2026-03-06-00001', product_id: 'mitglieder-lokal', status: 'resolved' },
           ],
           rowCount: 2,
         },
@@ -213,7 +213,7 @@ describe('api-support-ticket', () => {
     it('returns ticket detail', async () => {
       const ticket = {
         ticket_ref: 'CF-2026-03-07-00001',
-        product_id: 'mitglieder-simple',
+        product_id: 'mitglieder-lokal',
         status: 'resolved',
         user_description: 'Problem',
         ki_response: 'Loesung gefunden',

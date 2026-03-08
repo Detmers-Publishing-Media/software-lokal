@@ -12,7 +12,7 @@ force_approve_allowed: true
 auto_merge_allowed: true
 
 # --- Inhalt ---
-produkt: mitglieder-simple
+produkt: mitglieder-lokal
 
 description: |
   Als Vereinsvorstand moechte ich fuer jedes Mitglied eine vollstaendige
@@ -44,10 +44,10 @@ acceptance_criteria:
   - "Alle bestehenden 74 Tests bleiben gruen"
 
 affected_files:
-  - "products/mitglieder-simple/src/routes/MemberDetail.svelte"
-  - "products/mitglieder-simple/src/lib/db.js"
-  - "products/mitglieder-simple/src/lib/pdf-dsgvo.js (NEU)"
-  - "products/mitglieder-simple/tests/test_dsgvo.js (NEU)"
+  - "products/mitglieder-lokal/src/routes/MemberDetail.svelte"
+  - "products/mitglieder-lokal/src/lib/db.js"
+  - "products/mitglieder-lokal/src/lib/pdf-dsgvo.js (NEU)"
+  - "products/mitglieder-lokal/tests/test_dsgvo.js (NEU)"
 
 depends_on: []
 

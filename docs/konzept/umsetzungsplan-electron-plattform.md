@@ -11,7 +11,7 @@
 ### Ausgangszustand
 
 ```
-products/mitglieder-simple/
+products/mitglieder-lokal/
   package.json              Tauri v2 + Svelte 5, Version 0.4.0
   src/lib/db.js             370 Zeilen: 20 Funktionen, 5 Migrationen, Event-Log
   src/lib/crypto.js         computeHmac (Web Crypto API)
@@ -21,7 +21,7 @@ products/mitglieder-simple/
   src/lib/csv.js            generateCsv, downloadCsv
   src/lib/license.js        checkMemberLimit, hasLicenseKey
   src/routes/               6 Svelte-Seiten
-  vereins-shared/           @codefabrik/vereins-shared (eingebettet, Tauri-spezifisch)
+  app-shared/           @codefabrik/app-shared (eingebettet, Tauri-spezifisch)
   shared/                   @codefabrik/shared (eingebettet)
   src-tauri/                Rust Main Process (5 SQL-Migrationen)
   tests/                    11 Dateien, 74 Tests, 7 Kategorien
@@ -34,9 +34,9 @@ pnpm-workspace.yaml
 packages/
   shared/                   @codefabrik/shared (db mit setBackend, audit-log, crypto, csv, license)
   electron-platform/        @codefabrik/electron-platform (Main, Preload, lib/*, ipc/*)
-  vereins-shared/           @codefabrik/vereins-shared (Svelte Components)
+  app-shared/           @codefabrik/app-shared (Svelte Components)
 products/
-  mitglieder-simple/        electron-main.js + app.config.js + Fachlogik
+  mitglieder-lokal/        electron-main.js + app.config.js + Fachlogik
 ```
 
 ### Phasen
@@ -100,10 +100,10 @@ packages:
 }
 ```
 
-4. `/packages/vereins-shared/package.json`
+4. `/packages/app-shared/package.json`
 ```json
 {
-  "name": "@codefabrik/vereins-shared",
+  "name": "@codefabrik/app-shared",
   "version": "0.1.0",
   "type": "module",
   "exports": {
@@ -117,7 +117,7 @@ packages:
 
 **Verifikation:**
 - `pnpm install` laeuft ohne Fehler
-- `pnpm ls -r` zeigt alle 4 Packages (shared, electron-platform, vereins-shared, mitglieder-simple)
+- `pnpm ls -r` zeigt alle 4 Packages (shared, electron-platform, app-shared, mitglieder-lokal)
 
 ---
 
@@ -160,29 +160,29 @@ export async function migrate(schemaVersion, appVersion, migrations) {
 
 ### AP-03: packages/shared — Audit-Log, Crypto, CSV, License
 
-**Ziel:** Bestehende Module aus mitglieder-simple extrahieren und in shared ablegen.
+**Ziel:** Bestehende Module aus mitglieder-lokal extrahieren und in shared ablegen.
 
 **Dateien (neu, Inhalte aus bestehendem Code kopieren):**
 
 1. `packages/shared/src/audit-log/index.js`
-   - Quelle: `appendEvent()` und `verifyChain()` aus `products/mitglieder-simple/src/lib/db.js` (Zeilen mit Event-Logik)
+   - Quelle: `appendEvent()` und `verifyChain()` aus `products/mitglieder-lokal/src/lib/db.js` (Zeilen mit Event-Logik)
    - Aenderung: Import von `query`/`execute` aus `../db/index.js` statt direkt
    - Exportiert: `appendEvent(type, data, actor)`, `verifyChain(limit)`
 
 2. `packages/shared/src/crypto/index.js`
-   - Quelle: `products/mitglieder-simple/src/lib/crypto.js` (1:1 Kopie)
+   - Quelle: `products/mitglieder-lokal/src/lib/crypto.js` (1:1 Kopie)
    - Exportiert: `computeHmac(message)`
 
 3. `packages/shared/src/csv/index.js`
-   - Quelle: `products/mitglieder-simple/src/lib/csv.js` (1:1 Kopie)
+   - Quelle: `products/mitglieder-lokal/src/lib/csv.js` (1:1 Kopie)
    - Exportiert: `generateCsv(rows, columns)`, `downloadCsv(csvString, filename)`
 
 4. `packages/shared/src/license/index.js`
-   - Quelle: `products/mitglieder-simple/shared/src/license/index.js` (1:1 Kopie)
+   - Quelle: `products/mitglieder-lokal/shared/src/license/index.js` (1:1 Kopie)
    - Exportiert: `validateLicenseFormat(key)`, `normalizeLicenseKey(key)`
 
 **Verifikation:**
-- Bestehende Tests aus mitglieder-simple fuer crypto, csv, license laufen gegen die neuen Pfade
+- Bestehende Tests aus mitglieder-lokal fuer crypto, csv, license laufen gegen die neuen Pfade
 - `appendEvent` + `verifyChain` Tests bestehen mit Mock-Backend
 
 ---
@@ -311,7 +311,7 @@ export async function migrate(schemaVersion, appVersion, migrations) {
 
 **Ziel:** Tauri-Dependencies entfernen, Electron + Workspace-Refs einsetzen.
 
-**Datei (aendern):** `products/mitglieder-simple/package.json`
+**Datei (aendern):** `products/mitglieder-lokal/package.json`
 
 Entfernen:
 - `@tauri-apps/api`
@@ -319,7 +319,7 @@ Entfernen:
 - `@tauri-apps/plugin-fs`
 - `@tauri-apps/plugin-sql`
 - `@tauri-apps/cli` (devDeps)
-- Lokale `file:` Referenz auf vereins-shared und shared
+- Lokale `file:` Referenz auf app-shared und shared
 
 Hinzufuegen:
 ```json
@@ -327,7 +327,7 @@ Hinzufuegen:
   "dependencies": {
     "@codefabrik/electron-platform": "workspace:*",
     "@codefabrik/shared": "workspace:*",
-    "@codefabrik/vereins-shared": "workspace:*",
+    "@codefabrik/app-shared": "workspace:*",
     "pdfmake": "^0.2.0"
   },
   "devDependencies": {
@@ -351,11 +351,11 @@ Hinzufuegen:
 
 **Ziel:** db.js nutzt `@codefabrik/shared/db` statt `@tauri-apps/plugin-sql`.
 
-**Datei (aendern):** `products/mitglieder-simple/src/lib/db.js`
+**Datei (aendern):** `products/mitglieder-lokal/src/lib/db.js`
 
 Aenderungen:
 1. Import-Zeilen aendern:
-   - Alt: `import { query, execute } from '@codefabrik/vereins-shared/db'`
+   - Alt: `import { query, execute } from '@codefabrik/app-shared/db'`
    - Neu: `import { query, execute } from '@codefabrik/shared/db'`
 2. `appendEvent` und `verifyChain` entfernen (jetzt in `@codefabrik/shared/audit-log`)
 3. Stattdessen importieren: `import { appendEvent, verifyChain } from '@codefabrik/shared/audit-log'`
@@ -388,11 +388,11 @@ Aenderungen:
 
 5. `src/routes/*.svelte` → Imports anpassen wo noetig:
    - DB-Aufrufe: bereits ueber db.js abstrahiert, kein direkter Tauri-Import
-   - Components: `from '@codefabrik/vereins-shared/components'`
+   - Components: `from '@codefabrik/app-shared/components'`
 
 **Verifikation:**
 - `grep -r '@tauri-apps' src/` liefert keine Treffer mehr
-- `grep -r 'vereins-shared/db' src/` liefert keine Treffer mehr (nur noch shared/db)
+- `grep -r 'app-shared/db' src/` liefert keine Treffer mehr (nur noch shared/db)
 
 ---
 
@@ -402,7 +402,7 @@ Aenderungen:
 
 **Dateien (neu):**
 
-1. `products/mitglieder-simple/app.config.js`
+1. `products/mitglieder-lokal/app.config.js`
 ```javascript
 export default {
   name: 'MitgliederSimple',
@@ -410,7 +410,7 @@ export default {
   windowTitle: 'MitgliederSimple — Mitgliederverwaltung',
   width: 1024,
   height: 768,
-  identifier: 'de.detmers-publish.mitglieder-simple',
+  identifier: 'de.detmers-publish.mitglieder-lokal',
   autoUpdate: false,
   updateUrl: null,
   backupRotation: {
@@ -421,7 +421,7 @@ export default {
 };
 ```
 
-2. `products/mitglieder-simple/electron-main.js`
+2. `products/mitglieder-lokal/electron-main.js`
 ```javascript
 import { createApp } from '@codefabrik/electron-platform';
 import config from './app.config.js';
@@ -438,7 +438,7 @@ createApp(config);
 
 **Ziel:** Electron-IPC-Backend beim App-Start injizieren.
 
-**Datei (aendern):** `products/mitglieder-simple/src/App.svelte`
+**Datei (aendern):** `products/mitglieder-lokal/src/App.svelte`
 
 Aenderungen am Anfang des Script-Blocks:
 ```javascript
@@ -494,13 +494,13 @@ export function createTestDb() {
 3. `tests/create-fixture.js` — Import-Pfade anpassen
 
 **Dateien (loeschen):**
-- `products/mitglieder-simple/src-tauri/` (gesamter Ordner)
-- `products/mitglieder-simple/shared/` (jetzt in packages/shared)
-- `products/mitglieder-simple/vereins-shared/` (jetzt in packages/vereins-shared)
+- `products/mitglieder-lokal/src-tauri/` (gesamter Ordner)
+- `products/mitglieder-lokal/shared/` (jetzt in packages/shared)
+- `products/mitglieder-lokal/app-shared/` (jetzt in packages/app-shared)
 
 **Verifikation:**
 ```bash
-cd products/mitglieder-simple && pnpm test
+cd products/mitglieder-lokal && pnpm test
 # Alle 74 Tests muessen bestehen
 # Kein Test darf @tauri-apps importieren
 ```
@@ -611,7 +611,7 @@ cd products/mitglieder-simple && pnpm test
 
 **Ziel:** Vite-Config fuer Electron statt Tauri.
 
-**Datei (aendern):** `products/mitglieder-simple/vite.config.js`
+**Datei (aendern):** `products/mitglieder-lokal/vite.config.js`
 
 Aenderungen:
 - `envPrefix` entfernen (kein TAURI_ mehr)
@@ -631,9 +631,9 @@ Aenderungen:
 
 **Dateien (neu):**
 
-1. `products/mitglieder-simple/electron-builder.yml`
+1. `products/mitglieder-lokal/electron-builder.yml`
 ```yaml
-appId: de.detmers-publish.mitglieder-simple
+appId: de.detmers-publish.mitglieder-lokal
 productName: MitgliederSimple
 directories:
   output: release
@@ -654,7 +654,7 @@ nsis:
   include: build/installer.nsh
 ```
 
-2. `products/mitglieder-simple/build/installer.nsh` — NSIS Reparaturmodus
+2. `products/mitglieder-lokal/build/installer.nsh` — NSIS Reparaturmodus
 3. Icons aus `src-tauri/icons/` nach `build/` kopieren (vor AP-14 Loeschung)
 
 **Verifikation:**
@@ -667,7 +667,7 @@ nsis:
 
 **Ziel:** Entwicklungs- und Build-Scripts.
 
-**Datei (aendern):** `products/mitglieder-simple/package.json` (scripts)
+**Datei (aendern):** `products/mitglieder-lokal/package.json` (scripts)
 
 ```json
 {
@@ -734,7 +734,7 @@ cd packages/electron-platform && pnpm test
 
 **Dateien (aendern):**
 
-1. `products/mitglieder-simple/electron-builder.yml` — win.sign Konfiguration
+1. `products/mitglieder-lokal/electron-builder.yml` — win.sign Konfiguration
 2. CI/CD Pipeline — Signierung als Schritt nach dem Build
 
 **Verifikation:**

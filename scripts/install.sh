@@ -1,727 +1,92 @@
 #!/bin/bash
-# install.sh — Portabler Installer: KeePass + YubiKey → Docker → Ansible
+# install.sh — Portabler Installer: KeePass + YubiKey -> Docker -> Ansible
 # USB-Stick Layout: install.sh + codefabrik.tar.gz + vault.kdbx
 set -euo pipefail
 
-# --- Konfiguration ---
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-KEEPASS_DB="${KEEPASS_DB:-}"
-TARBALL="${TARBALL:-$SCRIPT_DIR/codefabrik.tar.gz}"
-SHM_BASE="/dev/shm/codefabrik-secrets"
-SHM_SECRETS="$SHM_BASE/secrets"
-SHM_WORKSPACE="$SHM_BASE/workspace"
-SHM_OUTPUT="$SHM_BASE/output"
-DOCKER_IMAGE="codefabrik-ansible:local"
+# --- Module laden ---
+LIB_DIR="$(cd "$(dirname "$0")/lib" && pwd)"
+source "$LIB_DIR/common.sh"
+source "$LIB_DIR/secrets.sh"
+source "$LIB_DIR/docker.sh"
+source "$LIB_DIR/upcloud.sh"
+source "$LIB_DIR/release.sh"
 
-KEEPASS_GROUP="Studio Ops/00-Vault/Code-Fabrik"
-RUNTIME_GROUP="$KEEPASS_GROUP/Runtime"
-
-# KeePass-Eintrag → Ansible-Variable
-declare -A SECRET_MAP=(
-    [upcloud-api-token]=vault_upcloud_api_token
-    [cloudflare-api-token]=vault_cloudflare_api_token
-    [anthropic-api-key]=vault_anthropic_api_key
-    [ollama-api-key]=vault_ollama_api_key
-    [ollama-host]=vault_ollama_host
-    [ollama-model]=vault_ollama_model
-    [digistore-ipn-passphrase]=vault_digistore_ipn_passphrase
-    [cloudflare-origin-ca-cert]=vault_origin_ca_cert
-    [cloudflare-origin-ca-key]=vault_origin_ca_key
-    [circleci-api-token]=vault_circleci_api_token
-    [github-push-token]=vault_github_push_token
-)
-
-# Runtime-Eintraege → Dateinamen
-declare -A RUNTIME_MAP=(
-    [factory-passwords]=.factory-passwords.env
-    [server-env]=.server-env
-    [tokens-env]=.tokens-env
-    [portal-passwords]=.portal-passwords.env
-    [portal-env]=.portal-env
-)
-
-# --- Cleanup-Trap ---
-cleanup() {
-    echo ""
-    echo "Secrets aufraeumen..."
-    if [ -d "$SHM_BASE" ]; then
-        find "$SHM_BASE" -type f -exec shred -u {} \; 2>/dev/null
-        rm -rf "$SHM_BASE"
-    fi
-    echo "Fertig."
-}
 trap cleanup EXIT INT TERM
+log_header
 
-# --- Hilfsfunktionen ---
-die() { echo "FEHLER: $*" >&2; exit 1; }
-warn() { echo "WARNUNG: $*" >&2; }
-
-check_cmd() {
-    for cmd in "$@"; do
-        command -v "$cmd" &>/dev/null || die "$cmd nicht installiert"
-    done
-}
-
-# --- [1] Preflight ---
-preflight_base() {
-    echo "=== Preflight ==="
-    check_cmd keepassxc-cli python3 curl
-
-    # KeePass-DB: Pfad abfragen falls nicht gesetzt
-    if [ -z "$KEEPASS_DB" ] || [ ! -f "$KEEPASS_DB" ]; then
-        echo ""
-        read -rp "Pfad zur KeePass-Datenbank (vault.kdbx): " KEEPASS_DB
-        [ -f "$KEEPASS_DB" ] || die "KeePass-DB nicht gefunden: $KEEPASS_DB"
-    fi
-    echo "OK"
-}
-
-preflight_full() {
-    check_cmd docker
-    [ -f "$TARBALL" ] || die "Tarball nicht gefunden: $TARBALL"
-    docker info &>/dev/null || die "Docker laeuft nicht"
-
-    # Tarball-Alter pruefen (Warnung wenn aelter als 1 Stunde)
-    local checksum_file
-    checksum_file="$(dirname "$TARBALL")/CHECKSUM"
-    if [ -f "$checksum_file" ]; then
-        local build_time
-        build_time=$(awk '{print $3}' "$checksum_file")
-        local build_epoch now_epoch age_minutes
-        build_epoch=$(date -d "$build_time" +%s 2>/dev/null || echo "0")
-        now_epoch=$(date +%s)
-        age_minutes=$(( (now_epoch - build_epoch) / 60 ))
-        if [ "$age_minutes" -gt 60 ]; then
-            warn "Tarball ist $age_minutes Minuten alt (gebaut: $build_time). Neu bauen mit build-installer.sh?"
-        fi
-    fi
-}
-
-# --- [2] KeePass-Passwort abfragen ---
-ask_keepass_password() {
-    echo ""
-    echo "=== KeePass-Passwort ==="
-    echo "Passwort eingeben (YubiKey bereithalten):"
-    read -rs KEEPASS_PASS
-    echo
-    export KEEPASS_PASS
-}
-
-# --- [3] Secrets aus KeePass laden → /dev/shm ---
-load_secrets() {
-    echo "=== Secrets laden ==="
-    mkdir -p "$SHM_SECRETS" "$SHM_OUTPUT"
-    chmod 700 "$SHM_BASE" "$SHM_SECRETS" "$SHM_OUTPUT"
-
-    # KeePass als XML exportieren (1x YubiKey-Touch)
-    echo "KeePass-Export (YubiKey beruehren falls noetig)..."
-    local xml_file="$SHM_SECRETS/export.xml"
-    echo "$KEEPASS_PASS" | keepassxc-cli export "$KEEPASS_DB" -f xml > "$xml_file" 2>/dev/null \
-        || die "KeePass-Export fehlgeschlagen (falsches Passwort?)"
-
-    # Python3 parst XML → secrets.yml + SSH-Key
-    python3 - "$xml_file" "$SHM_SECRETS" "$KEEPASS_GROUP" "$RUNTIME_GROUP" "$SHM_OUTPUT" << 'PYEOF'
-import sys
-import xml.etree.ElementTree as ET
-import os
-
-xml_file = sys.argv[1]
-secrets_dir = sys.argv[2]
-group_path = sys.argv[3]
-runtime_path = sys.argv[4]
-output_dir = sys.argv[5]
-
-# Mapping: KeePass-Eintrag → Ansible-Variable
-SECRET_MAP = {
-    "upcloud-api-token": "vault_upcloud_api_token",
-    "cloudflare-api-token": "vault_cloudflare_api_token",
-    "anthropic-api-key": "vault_anthropic_api_key",
-    "ollama-api-key": "vault_ollama_api_key",
-    "ollama-host": "vault_ollama_host",
-    "ollama-model": "vault_ollama_model",
-    "digistore-ipn-passphrase": "vault_digistore_ipn_passphrase",
-    "cloudflare-origin-ca-cert": "vault_origin_ca_cert",
-    "cloudflare-origin-ca-key": "vault_origin_ca_key",
-    "circleci-api-token": "vault_circleci_api_token",
-    "github-push-token": "vault_github_push_token",
-}
-
-# Runtime-Mapping
-RUNTIME_MAP = {
-    "factory-passwords": ".factory-passwords.env",
-    "server-env": ".server-env",
-    "tokens-env": ".tokens-env",
-    "portal-passwords": ".portal-passwords.env",
-    "portal-env": ".portal-env",
-}
-
-tree = ET.parse(xml_file)
-root = tree.getroot()
-
-def find_group(parent, path_parts):
-    """Rekursiv Gruppe im XML finden."""
-    if not path_parts:
-        return parent
-    target = path_parts[0]
-    for group in parent.findall("Group"):
-        name_el = group.find("Name")
-        if name_el is not None and name_el.text == target:
-            return find_group(group, path_parts[1:])
-    return None
-
-def get_entry_password(group, entry_name):
-    """Password-Feld eines Eintrags auslesen."""
-    if group is None:
-        return None
-    for entry in group.findall("Entry"):
-        title = None
-        password = None
-        for string in entry.findall("String"):
-            key = string.find("Key")
-            value = string.find("Value")
-            if key is not None and value is not None:
-                if key.text == "Title":
-                    title = value.text
-                elif key.text == "Password":
-                    password = value.text
-        if title == entry_name:
-            return password
-    return None
-
-# Root-Element der DB finden
-db_root = root.find(".//Root/Group")
-if db_root is None:
-    print("FEHLER: Kein Root-Element in KeePass-DB", file=sys.stderr)
-    sys.exit(1)
-
-# Code-Fabrik Gruppe finden
-group_parts = group_path.split("/")
-cf_group = find_group(db_root, group_parts)
-if cf_group is None:
-    print(f"FEHLER: Gruppe '{group_path}' nicht gefunden", file=sys.stderr)
-    sys.exit(1)
-
-# secrets.yml bauen
-secrets = {}
-for kp_name, ansible_var in SECRET_MAP.items():
-    value = get_entry_password(cf_group, kp_name)
-    if value:
-        secrets[ansible_var] = value
-        print(f"  OK: {kp_name} -> {ansible_var}")
-    else:
-        print(f"  SKIP: {kp_name} (nicht gefunden)")
-
-secrets_file = os.path.join(secrets_dir, "secrets.yml")
-with open(secrets_file, "w") as f:
-    f.write("---\n")
-    for var, val in secrets.items():
-        # YAML-safe: Werte in Anfuehrungszeichen
-        escaped = val.replace("\\", "\\\\").replace('"', '\\"')
-        f.write(f'{var}: "{escaped}"\n')
-os.chmod(secrets_file, 0o600)
-print(f"  -> {secrets_file}")
-
-# SSH-Key extrahieren
-ssh_key = get_entry_password(cf_group, "ssh-deploy-key")
-if ssh_key:
-    key_file = os.path.join(secrets_dir, "deploy_key")
-    with open(key_file, "w") as f:
-        f.write(ssh_key)
-        if not ssh_key.endswith("\n"):
-            f.write("\n")
-    os.chmod(key_file, 0o600)
-    print(f"  OK: ssh-deploy-key -> {key_file}")
-
-ssh_pub = get_entry_password(cf_group, "ssh-deploy-key-pub")
-if ssh_pub:
-    pub_file = os.path.join(secrets_dir, "deploy_key.pub")
-    with open(pub_file, "w") as f:
-        f.write(ssh_pub)
-        if not ssh_pub.endswith("\n"):
-            f.write("\n")
-    os.chmod(pub_file, 0o644)
-    print(f"  OK: ssh-deploy-key-pub -> {pub_file}")
-
-# Runtime-Gruppe finden
-runtime_parts = runtime_path.split("/")
-rt_group = find_group(db_root, runtime_parts)
-
-# Runtime-Dateien laden (falls Reinstall)
-# Writeback speichert Dateien als Base64 (keepassxc-cli -p liest nur 1 Zeile)
-import base64
-
-if rt_group is not None:
-    for kp_name, filename in RUNTIME_MAP.items():
-        content = get_entry_password(rt_group, kp_name)
-        if content:
-            # Base64-Decode versuchen, Fallback auf Rohinhalt
-            try:
-                decoded = base64.b64decode(content).decode("utf-8")
-            except Exception:
-                decoded = content
-            out_file = os.path.join(output_dir, filename)
-            with open(out_file, "w") as f:
-                f.write(decoded)
-                if not decoded.endswith("\n"):
-                    f.write("\n")
-            os.chmod(out_file, 0o600)
-            print(f"  OK: Runtime/{kp_name} -> {out_file}")
-else:
-    print("  Runtime-Gruppe nicht gefunden (Erstinstallation)")
-PYEOF
-
-    # XML sofort shredden
-    shred -u "$xml_file"
-
-    # Pruefen ob secrets.yml existiert
-    [ -f "$SHM_SECRETS/secrets.yml" ] || die "secrets.yml wurde nicht erstellt"
-    [ -f "$SHM_SECRETS/deploy_key" ] || die "SSH-Key wurde nicht extrahiert"
-
-    echo "Secrets geladen."
-}
-
-# --- [4] Nuke: Alle codefabrik-Server finden und verifiziert loeschen ---
-nuke_all_servers() {
-    echo ""
-    echo "=== Nuke: Alle codefabrik-Server abreissen ==="
-
-    # Token aus secrets.yml extrahieren
-    local api_token
-    api_token=$(grep 'vault_upcloud_api_token' "$SHM_SECRETS/secrets.yml" | cut -d'"' -f2)
-    [ -n "$api_token" ] || die "UpCloud API-Token nicht in secrets.yml gefunden"
-
-    # Alle Server auflisten
-    local response
-    response=$(curl -sf \
-        -H "Authorization: Bearer $api_token" \
-        "https://api.upcloud.com/1.3/server") || die "UpCloud API nicht erreichbar"
-
-    # codefabrik-* Server filtern → Temp-Datei (damit while-loop im Hauptprozess laeuft)
-    local server_list="$SHM_SECRETS/nuke_servers.txt"
-    echo "$response" | python3 -c "
-import sys, json
-data = json.load(sys.stdin)
-servers = data.get('servers', {}).get('server', [])
-cf = [s for s in servers if s.get('title', '').startswith('codefabrik-')]
-for s in cf:
-    print(f\"{s['uuid']}\t{s['title']}\t{s['state']}\")
-" > "$server_list"
-
-    if [ ! -s "$server_list" ]; then
-        echo "Keine codefabrik-Server gefunden. Sauber."
-        rm -f "$server_list" 2>/dev/null || true
-        return 0
-    fi
-
-    echo "Gefundene Server:"
-    while IFS=$'\t' read -r uuid title state; do
-        echo "  $title ($uuid) — $state"
-    done < "$server_list"
-    echo ""
-    read -rp "Alle abreissen? (ja/nein): " confirm
-    [ "$confirm" = "ja" ] || { echo "Abgebrochen."; rm -f "$server_list"; return 1; }
-
-    # Jeden Server stoppen + loeschen + verifiziert loeschen
-    while IFS=$'\t' read -r uuid title state; do
-        echo ""
-        echo "--- $title ($uuid) ---"
-
-        # Stoppen
-        echo "  Stoppen..."
-        curl -sf -X POST \
-            -H "Authorization: Bearer $api_token" \
-            -H "Content-Type: application/json" \
-            -d '{"stop_server":{"stop_type":"soft","timeout":60}}' \
-            "https://api.upcloud.com/1.3/server/$uuid/stop" >/dev/null 2>&1 || true
-
-        # Warten auf stopped/gone
-        local i srv_state
-        for i in $(seq 1 20); do
-            srv_state=$(curl -sf \
-                -H "Authorization: Bearer $api_token" \
-                "https://api.upcloud.com/1.3/server/$uuid" 2>/dev/null \
-                | python3 -c "import sys,json; print(json.load(sys.stdin).get('server',{}).get('state','unknown'))" 2>/dev/null) || srv_state="gone"
-            [ "$srv_state" = "gone" ] && break
-            [ "$srv_state" = "stopped" ] && break
-            echo "  Warte auf Stop... ($srv_state, Versuch $i/20)"
-            sleep 5
-        done
-
-        if [ "$srv_state" = "gone" ]; then
-            echo "  Bereits geloescht."
-            continue
-        fi
-
-        # Loeschen
-        echo "  Loeschen..."
-        curl -sf -X DELETE \
-            -H "Authorization: Bearer $api_token" \
-            "https://api.upcloud.com/1.3/server/$uuid/?storages=1&backups=delete" >/dev/null 2>&1 || true
-
-        # Verifizieren: Polling bis HTTP 404
-        local http_code
-        for i in $(seq 1 20); do
-            http_code=$(curl -s -o /dev/null -w "%{http_code}" \
-                -H "Authorization: Bearer $api_token" \
-                "https://api.upcloud.com/1.3/server/$uuid") || true
-            if [ "$http_code" = "404" ]; then
-                echo "  Geloescht (verifiziert)."
-                break
-            fi
-            if [ "$i" -eq 20 ]; then
-                rm -f "$server_list" 2>/dev/null || true
-                die "$title ($uuid) konnte nicht geloescht werden (nach 100s). Abbruch."
-            fi
-            echo "  Warte auf Loeschung... (HTTP $http_code, Versuch $i/20)"
-            sleep 5
-        done
-    done < "$server_list"
-
-    # Env-Dateien aufraeumen
-    for f in .server-env .portal-env .tokens-env .factory-passwords.env .portal-passwords.env .portal-smoke-results.env; do
-        rm -f "$SHM_OUTPUT/$f" 2>/dev/null || true
-    done
-
-    rm -f "$server_list" 2>/dev/null || true
-
-    echo ""
-    echo "Alle codefabrik-Server geloescht. Sauberer Zustand."
-}
-
-# --- [5] Tarball entpacken ---
-unpack_workspace() {
-    echo ""
-    echo "=== Workspace entpacken ==="
-    mkdir -p "$SHM_WORKSPACE"
-    tar xzf "$TARBALL" -C "$SHM_WORKSPACE"
-    echo "OK: $SHM_WORKSPACE"
-}
-
-# --- [6] Docker-Image bauen ---
-build_docker() {
-    echo ""
-    echo "=== Docker-Image bauen ==="
-    local dockerfile_dir
-    # Dockerfile kann im Tarball oder im Workspace sein
-    if [ -f "$SHM_WORKSPACE/ansible/Dockerfile" ]; then
-        dockerfile_dir="$SHM_WORKSPACE/ansible"
-    elif [ -f "$SHM_WORKSPACE/Dockerfile" ]; then
-        dockerfile_dir="$SHM_WORKSPACE"
-    else
-        die "Dockerfile nicht im Tarball gefunden"
-    fi
-    docker build -t "$DOCKER_IMAGE" "$dockerfile_dir" --quiet
-    echo "OK: $DOCKER_IMAGE"
-}
-
-# --- [7] Menue ---
+# --- Menue ---
 show_menu() {
     echo "" >&2
     echo "=== Code-Fabrik Installer ===" >&2
-    echo "  1) install          — Alles installieren (Nuke + PROD + Portal + Seed)" >&2
-    echo "  2) upgrade-portal   — Portal aktualisieren" >&2
-    echo "  3) fabrik           — PROD Status abfragen" >&2
-    echo "  4) nacht-stopp      — Jobs-Verarbeitung stoppen" >&2
-    echo "  5) teardown         — Alles abreissen (PROD + Portal, Ansible)" >&2
-    echo "  6) sichern          — Aenderungen nach Forgejo + Tarball neu bauen" >&2
-    echo "  7) nuke             — Alle codefabrik-Server loeschen (UpCloud API)" >&2
-    echo "  9) status           — Lokalen Docker-Status pruefen" >&2
+    echo "" >&2
+    echo "  Betriebsmodi:" >&2
+    echo "    1) bootstrap      — Neuinstallation (Nuke + PROD + Portal + Seed)" >&2
+    echo "    2) upgrade        — PROD + Portal aktualisieren (Server bleibt)" >&2
+    echo "    3) reconcile      — Drift korrigieren (idempotent, kein Neustart)" >&2
+    echo "    5) teardown       — Alles abreissen (PROD + Portal)" >&2
+    echo "" >&2
+    echo "  Einzelaktionen:" >&2
+    echo "    6) sichern        — Aenderungen nach Forgejo + Tarball neu bauen" >&2
+    echo "    7) nuke           — Alle codefabrik-Server loeschen (UpCloud API)" >&2
+    echo "    8) fabrik         — PROD Status abfragen" >&2
+    echo "    9) status         — Lokalen Docker-Status pruefen" >&2
+    echo "   10) rotate-token   — Forgejo API-Token rotieren" >&2
+    echo "   11) recover        — Env-Dateien vom Server recovern" >&2
     echo "  q) Beenden" >&2
     echo "" >&2
     read -rp "Auswahl: " choice
     echo "$choice"
 }
 
-# --- [8] Ansible im Docker ausfuehren ---
-run_ansible() {
-    local playbook="$1"
+# --- Betriebsmodi ---
+run_bootstrap() {
     echo ""
-    echo "=== Ansible: $playbook ==="
-
-    local ansible_dir="$SHM_WORKSPACE/ansible"
-    [ -d "$ansible_dir" ] || ansible_dir="$SHM_WORKSPACE"
-
-    # Portal-Mount vorbereiten
-    local portal_mount=()
-    local portal_dir="$SHM_WORKSPACE/portal"
-    if [ -d "$portal_dir" ]; then
-        portal_mount=(-v "$portal_dir:/portal:ro")
-    fi
-
-    # Products-Mount vorbereiten (fuer seed-products)
-    local products_mount=()
-    local products_dir="$SHM_WORKSPACE/products"
-    if [ -d "$products_dir" ]; then
-        products_mount=(-v "$products_dir:/products:ro")
-    fi
-
-    # Docs-Mount vorbereiten (fuer Governance-Dateien)
-    local docs_mount=()
-    local docs_dir="$SHM_WORKSPACE/docs"
-    if [ -d "$docs_dir" ]; then
-        docs_mount=(-v "$docs_dir:/docs:ro")
-    fi
-
-    # Scripts-Mount vorbereiten (fuer validate-story-governance.mjs)
-    local scripts_mount=()
-    local scripts_dir="$SHM_WORKSPACE/scripts"
-    if [ -d "$scripts_dir" ]; then
-        scripts_mount=(-v "$scripts_dir:/scripts:ro")
-    fi
-
-    docker run --rm -it \
-        --network host \
-        -v "$ansible_dir:/ansible:ro" \
-        -v "$SHM_SECRETS/deploy_key:/root/.ssh/codefabrik_deploy:ro" \
-        -v "$SHM_SECRETS/deploy_key.pub:/root/.ssh/codefabrik_deploy.pub:ro" \
-        -v "$SHM_SECRETS/secrets.yml:/root/secrets.yml:ro" \
-        -v "$SHM_OUTPUT:/output:rw" \
-        "${portal_mount[@]}" \
-        "${products_mount[@]}" \
-        "${docs_mount[@]}" \
-        "${scripts_mount[@]}" \
-        "$DOCKER_IMAGE" \
-        "$playbook" -e @/root/secrets.yml
-
-    # Docker schreibt als root — Output-Dateien fuer User lesbar machen
-    chmod -R a+r "$SHM_OUTPUT" 2>/dev/null || true
-}
-
-# --- [9] Writeback: Runtime-Secrets → KeePass ---
-writeback_runtime() {
-    echo ""
-    echo "=== Runtime-Secrets in KeePass speichern ==="
-
-    for entry in "${!RUNTIME_MAP[@]}"; do
-        local filename="${RUNTIME_MAP[$entry]}"
-        local filepath="$SHM_OUTPUT/$filename"
-        if [ -f "$filepath" ] && [ -r "$filepath" ]; then
-            # Base64-Encoding: keepassxc-cli -p liest nur 1 Zeile als Passwort,
-            # aber Runtime-Dateien sind mehrzeilig. Base64 macht sie einzeilig.
-            local encoded
-            encoded=$(base64 -w0 < "$filepath") || { echo "  WARNUNG: $filename nicht lesbar"; continue; }
-            echo "  $filename → $RUNTIME_GROUP/$entry (YubiKey beruehren falls noetig)"
-            # Versuche add, bei Fehler edit (Eintrag existiert schon)
-            # printf sendet DB-Passwort + Base64-Inhalt ueber eine Pipe (kein stdin-Konflikt)
-            if ! printf '%s\n%s' "$KEEPASS_PASS" "$encoded" | keepassxc-cli add "$KEEPASS_DB" \
-                    "$RUNTIME_GROUP/$entry" -p 2>/dev/null; then
-                printf '%s\n%s' "$KEEPASS_PASS" "$encoded" | keepassxc-cli edit "$KEEPASS_DB" \
-                    "$RUNTIME_GROUP/$entry" -p 2>/dev/null || \
-                echo "  WARNUNG: Konnte $entry nicht schreiben"
-            fi
-        fi
-    done
-
-    echo "Writeback abgeschlossen."
-}
-
-# --- Komplett-Installation (PROD + Portal + Seed) ---
-run_full_install() {
+    echo "=== Modus: BOOTSTRAP ==="
     nuke_all_servers
-    run_ansible "playbooks/install.yml"
+    run_ansible "playbooks/install.yml" -e ops_mode=bootstrap
     writeback_runtime
-    run_ansible "playbooks/install-portal.yml"
+    run_ansible "playbooks/install-portal.yml" -e ops_mode=bootstrap
     writeback_runtime
     run_ansible "playbooks/seed-products.yml"
     writeback_runtime
     rebuild_tarball
 }
 
-# --- Komplett-Teardown (Portal + PROD) ---
-run_full_teardown() {
-    run_ansible "playbooks/teardown-portal.yml"
+run_upgrade() {
+    echo ""
+    echo "=== Modus: UPGRADE ==="
+    run_ansible "playbooks/upgrade.yml" -e ops_mode=upgrade
     writeback_runtime
-    run_ansible "playbooks/teardown.yml"
+    run_ansible "playbooks/upgrade-portal.yml" -e ops_mode=upgrade
+    writeback_runtime
+}
+
+run_reconcile() {
+    echo ""
+    echo "=== Modus: RECONCILE ==="
+    run_ansible "playbooks/reconcile.yml" -e ops_mode=reconcile
+    writeback_runtime
+    run_ansible "playbooks/reconcile-portal.yml" -e ops_mode=reconcile
+    writeback_runtime
+}
+
+run_teardown() {
+    echo ""
+    echo "=== Modus: TEARDOWN ==="
+    run_ansible "playbooks/teardown-portal.yml" -e ops_mode=teardown
+    writeback_runtime
+    run_ansible "playbooks/teardown.yml" -e ops_mode=teardown
     writeback_runtime
 }
 
 # --- Playbook-Mapping (Einzelaktionen) ---
 playbook_for() {
     case "$1" in
-        2|upgrade-portal)   echo "playbooks/upgrade-portal.yml" ;;
-        3|fabrik)           echo "playbooks/fabrik.yml" ;;
-        4|nacht-stopp)      echo "playbooks/nacht-stopp.yml" ;;
+        8|fabrik)           echo "playbooks/fabrik.yml" ;;
+        10|rotate-token)    echo "playbooks/rotate-token.yml" ;;
+        11|recover)         echo "playbooks/recover-env.yml" ;;
         *) return 1 ;;
     esac
-}
-
-# --- Version lesen ---
-get_version() {
-    local version_file="$SHM_WORKSPACE/VERSION"
-    if [ -f "$version_file" ]; then
-        cat "$version_file" | tr -d '[:space:]'
-    else
-        echo "0.0.0"
-    fi
-}
-
-# --- Patch-Version hochzaehlen ---
-bump_patch() {
-    local version="$1"
-    local major minor patch
-    major="$(echo "$version" | cut -d. -f1)"
-    minor="$(echo "$version" | cut -d. -f2)"
-    patch="$(echo "$version" | cut -d. -f3)"
-    patch=$((patch + 1))
-    echo "${major}.${minor}.${patch}"
-}
-
-# --- Tarball neu bauen ---
-rebuild_tarball() {
-    echo ""
-    echo "=== Tarball neu bauen ==="
-    local target_dir version tarball_name
-    target_dir="$(dirname "$TARBALL")"
-    version="$(get_version)"
-    tarball_name="codefabrik-v${version}.tar.gz"
-
-    tar czf "$target_dir/$tarball_name" \
-        -C "$SHM_WORKSPACE" \
-        --exclude='dist' \
-        --exclude='.git' \
-        --exclude='node_modules' \
-        --exclude='__pycache__' \
-        --exclude='target' \
-        --exclude='*.log' \
-        --exclude='*.pid' \
-        --exclude='*.zip' \
-        --exclude='.server-env' \
-        --exclude='.tokens-env' \
-        --exclude='.factory-passwords.env' \
-        --exclude='.portal-env' \
-        --exclude='.portal-passwords.env' \
-        --exclude='.portal-smoke-results.env' \
-        --exclude='vault.yml' \
-        --exclude='vault.kdbx' \
-        --exclude='*.sqlite-shm' \
-        --exclude='*.sqlite-wal' \
-        .
-
-    # Symlink codefabrik.tar.gz → aktuellen Release
-    ln -sf "$tarball_name" "$target_dir/codefabrik.tar.gz"
-
-    # install.sh auch aktualisieren
-    local src_install="$SHM_WORKSPACE/scripts/install.sh"
-    if [ -f "$src_install" ]; then
-        cp "$src_install" "$target_dir/install.sh"
-        chmod +x "$target_dir/install.sh"
-    fi
-
-    echo "Tarball: $target_dir/$tarball_name ($(du -h "$target_dir/$tarball_name" | cut -f1))"
-}
-
-# --- Sichern: Version bumpen, nach Forgejo committen, Tarball neu bauen ---
-run_sichern() {
-    echo ""
-    echo "=== Sichern ==="
-
-    # Server-IP und Forgejo-Token aus Output laden
-    local server_ip forgejo_token
-    if [ -f "$SHM_OUTPUT/.server-env" ]; then
-        server_ip=$(grep SERVER_IP "$SHM_OUTPUT/.server-env" | cut -d= -f2)
-    fi
-    if [ -f "$SHM_OUTPUT/.tokens-env" ]; then
-        forgejo_token=$(grep FORGEJO_API_TOKEN "$SHM_OUTPUT/.tokens-env" | cut -d= -f2)
-    fi
-
-    if [ -z "${server_ip:-}" ] || [ -z "${forgejo_token:-}" ]; then
-        echo "FEHLER: Server-IP oder Forgejo-Token nicht verfuegbar."
-        echo "  Zuerst 'install' oder 'status' ausfuehren."
-        return 1
-    fi
-
-    # Version bumpen
-    local old_version new_version
-    old_version="$(get_version)"
-    new_version="$(bump_patch "$old_version")"
-    echo "Version: v${old_version} → v${new_version}"
-    echo "$new_version" > "$SHM_WORKSPACE/VERSION"
-
-    # Commit-Nachricht abfragen
-    read -rp "Beschreibung (fuer Release-Eintrag): " release_desc
-    release_desc="${release_desc:-Sicherung}"
-    local commit_msg="v${new_version}: ${release_desc}"
-
-    # Release-Eintrag in RELEASES.md hinzufuegen
-    local releases_file="$SHM_WORKSPACE/docs/roadmap/RELEASES.md"
-    if [ -f "$releases_file" ]; then
-        local today
-        today="$(date +%Y-%m-%d)"
-        # Neue Zeile nach der Tabellen-Header-Zeile einfuegen (nach der letzten |...| Zeile)
-        # Suche die letzte Zeile die mit | anfaengt und fuege danach ein
-        local last_row
-        last_row=$(grep -n '^|' "$releases_file" | tail -1 | cut -d: -f1)
-        if [ -n "$last_row" ]; then
-            sed -i "${last_row}a\\| v${new_version} | Sicherung | ${release_desc} | Done |" "$releases_file"
-        fi
-        # Stand-Datum aktualisieren
-        sed -i "s/^Stand: .*/Stand: ${today}/" "$releases_file"
-    fi
-
-    # Push via SSH auf den Server (Forgejo laeuft auf localhost:3000)
-    echo "Aenderungen nach Forgejo pushen..."
-    ssh -i "$SHM_SECRETS/deploy_key" -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new \
-        "root@${server_ip}" bash -s -- "$forgejo_token" "$commit_msg" << 'SSHEOF'
-set -euo pipefail
-FORGEJO_TOKEN="$1"
-COMMIT_MSG="$2"
-REPO_DIR="/tmp/infra-sichern"
-git config --global --add safe.directory "$REPO_DIR" 2>/dev/null || true
-
-# Repo klonen falls noetig
-if [ ! -d "$REPO_DIR/.git" ]; then
-    git clone "http://factory-admin:${FORGEJO_TOKEN}@localhost:3000/factory/infra-local.git" "$REPO_DIR"
-else
-    cd "$REPO_DIR" && git pull origin main
-fi
-SSHEOF
-
-    # Lokale Dateien auf den Server kopieren und committen
-    echo "Dateien synchronisieren..."
-    rsync -az --delete \
-        --exclude='.git' \
-        --exclude='dist' \
-        --exclude='node_modules' \
-        --exclude='target' \
-        --exclude='__pycache__' \
-        --exclude='.server-env' \
-        --exclude='.tokens-env' \
-        --exclude='.factory-passwords.env' \
-        --exclude='.portal-env' \
-        --exclude='.portal-passwords.env' \
-        --exclude='.portal-smoke-results.env' \
-        --exclude='vault.yml' \
-        --exclude='vault.kdbx' \
-        --exclude='*.log' \
-        --exclude='*.pid' \
-        --exclude='*.zip' \
-        --exclude='*.sqlite-shm' \
-        --exclude='*.sqlite-wal' \
-        -e "ssh -i $SHM_SECRETS/deploy_key -o IdentitiesOnly=yes" \
-        "$SHM_WORKSPACE/" "root@${server_ip}:/tmp/infra-sichern/"
-
-    ssh -i "$SHM_SECRETS/deploy_key" -o IdentitiesOnly=yes \
-        "root@${server_ip}" bash -s -- "$commit_msg" << 'SSHEOF'
-set -euo pipefail
-COMMIT_MSG="$1"
-cd /tmp/infra-sichern
-git config --global --add safe.directory /tmp/infra-sichern
-git config user.email "installer@codefabrik.local"
-git config user.name "Code-Fabrik Installer"
-git add -A
-if git diff --cached --quiet; then
-    echo "Keine Aenderungen — nichts zu committen."
-else
-    git commit -m "$COMMIT_MSG"
-    git push origin main
-    echo "Gesichert: $(git log --oneline -1)"
-fi
-SSHEOF
-
-    echo ""
-
-    # Tarball neu bauen
-    rebuild_tarball
 }
 
 # --- Status-Check ---
@@ -760,14 +125,16 @@ unpack_workspace
 build_docker
 
 if [ -n "$ACTION" ]; then
-    # Direkt-Modus: ./install.sh install
+    # Direkt-Modus: ./install.sh <modus>
     case "$ACTION" in
-        1|install)   run_full_install ;;
-        5|teardown)  run_full_teardown ;;
-        6|sichern)   run_sichern ;;
-        status)      run_status ;;
+        1|bootstrap)    run_bootstrap ;;
+        2|upgrade)      run_upgrade ;;
+        3|reconcile)    run_reconcile ;;
+        5|teardown)     run_teardown ;;
+        6|sichern)      run_sichern ;;
+        status)         run_status ;;
         *)
-            playbook=$(playbook_for "$ACTION") || die "Unbekannte Aktion: $ACTION"
+            playbook=$(playbook_for "$ACTION") || die "Unbekannte Aktion: $ACTION. Erlaubt: bootstrap, upgrade, reconcile, teardown, sichern, nuke, status"
             run_ansible "$playbook"
             writeback_runtime
             ;;
@@ -778,16 +145,16 @@ else
         choice=$(show_menu)
         case "$choice" in
             q|Q) break ;;
-            1)  run_full_install ;;
-            5)  run_full_teardown ;;
-            6)  run_sichern ;;
-            7|nuke) nuke_all_servers ;;
-            9|status) run_status ;;
-            *)
-                playbook=$(playbook_for "$choice") || { echo "Ungueltige Auswahl"; continue; }
-                run_ansible "$playbook"
-                writeback_runtime
-                ;;
+            1|bootstrap)    run_bootstrap ;;
+            2|upgrade)      run_upgrade ;;
+            3|reconcile)    run_reconcile ;;
+            5|teardown)     run_teardown ;;
+            6|sichern)      run_sichern ;;
+            7|nuke)         nuke_all_servers ;;
+            8|fabrik)       run_ansible "playbooks/fabrik.yml"; writeback_runtime ;;
+            9|status)       run_status ;;
+            10|rotate-token) run_ansible "playbooks/rotate-token.yml"; writeback_runtime ;;
+            *)              echo "Ungueltige Auswahl" ;;
         esac
     done
 fi

@@ -1,0 +1,18 @@
+name: Test + Build (Rechnung Lokal)
+
+on:
+  push:
+    tags: ['v*']
+    branches: [main]
+    paths:
+      - 'products/rechnung-lokal/**'
+      - 'packages/finanz-shared/**'
+      - 'packages/**'
+
+jobs:
+  build:
+    uses: ./.github/workflows/electron-build.yml
+    with:
+      product_dir: products/rechnung-lokal
+      artifact_prefix: rechnung-lokal
+      test_packages: packages/finanz-shared

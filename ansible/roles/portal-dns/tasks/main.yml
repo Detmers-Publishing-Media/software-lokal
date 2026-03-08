@@ -10,10 +10,22 @@
     body_format: json
     body:
       type: A
-      name: "portal.codefabrik"
+      name: "portal-codefabrik"
       content: "{{ portal_ip }}"
       ttl: 1
       proxied: true
-    status_code: [200, 201, 409]
-  ignore_errors: true
+    status_code: [200, 201]
+  register: portal_dns_result
 
+- name: "Portal DNS-Validierung via Cloudflare API"
+  delegate_to: localhost
+  ansible.builtin.uri:
+    url: "https://api.cloudflare.com/client/v4/zones/{{ cloudflare_zone_id }}/dns_records?name=portal-codefabrik.{{ cloudflare_zone }}&type=A"
+    method: GET
+    headers:
+      Authorization: "Bearer {{ vault_cloudflare_api_token }}"
+    status_code: [200]
+  register: portal_dns_verify
+  failed_when: >
+    portal_dns_verify.json.result | length == 0 or
+    portal_dns_verify.json.result[0].content != portal_ip

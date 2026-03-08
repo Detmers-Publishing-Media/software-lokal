@@ -1,0 +1,16 @@
+name: Test + Build (FinanzRechner Lokal)
+
+on:
+  push:
+    tags: ['v*']
+    branches: [main]
+    paths:
+      - 'products/finanz-rechner/**'
+      - 'packages/**'
+
+jobs:
+  build:
+    uses: ./.github/workflows/electron-build.yml
+    with:
+      product_dir: products/finanz-rechner
+      artifact_prefix: finanzrechner-lokal

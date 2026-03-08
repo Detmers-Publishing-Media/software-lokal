@@ -32,7 +32,7 @@ fuer Referenzkunden-Auslieferung. Minimaler Port — keine Plattform-Professiona
 
 | Datei | Aenderung |
 |-------|-----------|
-| `vereins-shared/src/db/index.js` | `@tauri-apps/plugin-sql` → `window.electronAPI.db` (IPC) |
+| `app-shared/src/db/index.js` | `@tauri-apps/plugin-sql` → `window.electronAPI.db` (IPC) |
 | `src/routes/Settings.svelte` | Tauri-Dialog/FS-Imports → `window.electronAPI.dialog/fs` |
 | `package.json` | Tauri-Deps → Electron + electron-builder, v0.5.0, GPL-3.0 |
 | `vite.config.js` | Tauri-Referenzen entfernt, `base: './'` fuer Electron file:// |
@@ -42,7 +42,7 @@ fuer Referenzkunden-Auslieferung. Minimaler Port — keine Plattform-Professiona
 ### Nicht geaendert
 
 - Alle 6 Svelte-Seiten (ausser Settings.svelte Logo-Funktion)
-- `db.js` (370 Zeilen Fach-CRUD) — nutzt weiterhin `query()`, `execute()` aus vereins-shared
+- `db.js` (370 Zeilen Fach-CRUD) — nutzt weiterhin `query()`, `execute()` aus app-shared
 - `crypto.js`, `csv.js`, `pdf.js`, `pdf-lists.js`, `pdf-mahnbrief.js`
 - `license.js`, Stores, App.svelte
 - Alle Tests (11 Testdateien, 74 Tests)
@@ -130,7 +130,7 @@ Tests die Mock-basiert arbeiten oder kein better-sqlite3 nutzen:
 
 ### C) Architektur-Bewertung
 
-9. **DB-Layer Abstraktion:** Der DB-Layer (`vereins-shared/src/db/index.js`) nutzt jetzt
+9. **DB-Layer Abstraktion:** Der DB-Layer (`app-shared/src/db/index.js`) nutzt jetzt
    `window.electronAPI.db`. Ist das eine gute Zwischenloesung bis zur Plattform-Professionalisierung?
    Was sollte beim naechsten Schritt (electron-platform Package) anders werden?
 
@@ -162,7 +162,7 @@ Tests die Mock-basiert arbeiten oder kein better-sqlite3 nutzen:
 Bitte lesen:
 - `electron/main.js` — Electron Main Process
 - `electron/preload.cjs` — contextBridge
-- `vereins-shared/src/db/index.js` — DB-Abstraktion (vorher/nachher)
+- `app-shared/src/db/index.js` — DB-Abstraktion (vorher/nachher)
 - `src/routes/Settings.svelte` — Logo-Dialog (vorher/nachher)
 - `package.json` — Dependencies und Build-Config
 - `.github/workflows/build-windows.yml` — CI-Pipeline

@@ -1,5 +1,5 @@
 <script>
-  import { LicenseSection } from '@codefabrik/vereins-shared/components';
+  import { LicenseSection } from '@codefabrik/app-shared/components';
 </script>
 
 <div class="settings">

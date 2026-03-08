@@ -32,5 +32,5 @@ VALUES (
   'factory/finanz-rechner'
 ) ON CONFLICT (id) DO NOTHING;
 
--- Update mitglieder-simple price to 29 EUR/year (support abo)
-UPDATE products SET price_cents = 2900 WHERE id = 'mitglieder-simple';
+-- Update mitglieder-lokal price to 29 EUR/year (support abo)
+UPDATE products SET price_cents = 2900 WHERE id = 'mitglieder-lokal';

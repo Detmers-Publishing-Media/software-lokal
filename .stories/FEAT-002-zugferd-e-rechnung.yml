@@ -1,0 +1,49 @@
+id: "FEAT-002"
+title: "ZUGFeRD E-Rechnung (PDF/A-3 + EN 16931 XML)"
+epic: "RECHNUNG-V1"
+status: "inbox"
+
+story_type: "product-fast"
+lane: "fast"
+platform_impact: "none"
+founder_gate_required: false
+force_approve_allowed: true
+auto_merge_allowed: true
+
+platform_rationale: ""
+
+reused_by_products: ["rechnung-lokal"]
+
+non_goals:
+  - "Kein XRechnung-Format (nur ZUGFeRD)"
+  - "Kein Signieren der PDFs"
+
+description: |
+  ZUGFeRD E-Rechnung fuer Rechnung Lokal:
+  1. PDF/A-3 Erzeugung (pdfmake oder pdf-lib)
+  2. EN 16931 XML-Generierung (ZUGFeRD 2.x Profil BASIC/COMFORT)
+  3. XML in PDF/A-3 einbetten
+  4. Pflichtfelder nach §14 UStG automatisch aus Geschaeftsprofil
+  5. Kleinunternehmer-Hinweis nach §19 UStG
+  6. B2B-Pflicht ab 01.01.2028 beachten
+
+  Abhaengigkeit: PDF-Rechnungen (FEAT-003) muessen zuerst funktionieren.
+
+acceptance_criteria:
+  - "ZUGFeRD PDF/A-3 wird erzeugt mit eingebettetem XML"
+  - "XML validiert gegen EN 16931 Schema"
+  - "Kleinunternehmer-Hinweis automatisch eingefuegt"
+  - "Pflichtangaben §14 UStG vollstaendig"
+  - "spec.yml Feature zugferd auf status: done"
+
+affected_files:
+  - "packages/finanz-shared/src/zugferd/"
+  - "products/rechnung-lokal/src/lib/pdf.js"
+  - "products/rechnung-lokal/spec.yml"
+
+depends_on:
+  - "FEAT-003"
+
+manual_steps: []
+
+estimated_effort: "XL"

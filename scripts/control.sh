@@ -111,8 +111,8 @@ ssh_portal() {
 # ============================================================
 run_install() {
     [ -f "$INSTALL_SH" ] || die "install.sh nicht gefunden: $INSTALL_SH"
-    info "Starte install.sh..."
-    bash "$INSTALL_SH" "$@"
+    info "Starte install.sh install..."
+    bash "$INSTALL_SH" install
 }
 
 # ============================================================
@@ -139,7 +139,7 @@ run_monitoring() {
 
         # Poller-Status
         info "Poller:"
-        ssh_prod 'systemctl is-active codefabrik-poller.timer 2>/dev/null && echo "  Timer: aktiv" || echo "  Timer: inaktiv"' 2>/dev/null || warn "Nicht erreichbar"
+        ssh_prod 'systemctl is-active openclaw-poller.timer 2>/dev/null && echo "  Timer: aktiv" || echo "  Timer: inaktiv"' 2>/dev/null || warn "Nicht erreichbar"
 
         # Gateway Health
         info "Gateway:"
@@ -207,7 +207,7 @@ run_trial_key() {
 
     local product_id
     case "$product_choice" in
-        1) product_id="mitglieder-simple" ;;
+        1) product_id="mitglieder-lokal" ;;
         2) product_id="finanz-rechner" ;;
         *) die "Ungueltige Auswahl" ;;
     esac
@@ -265,6 +265,20 @@ run_sichern() {
     [ -f "$INSTALL_SH" ] || die "install.sh nicht gefunden: $INSTALL_SH"
     info "Starte install.sh sichern..."
     bash "$INSTALL_SH" sichern
+}
+
+# ============================================================
+# [6] Teardown — Alle codefabrik-Server loeschen via UpCloud API
+# ============================================================
+run_teardown() {
+    [ -f "$INSTALL_SH" ] || die "install.sh nicht gefunden: $INSTALL_SH"
+    echo ""
+    echo -e "${RED}${BOLD}=== NUKE ===${NC}"
+    echo -e "${RED}Findet und loescht alle codefabrik-Server in UpCloud.${NC}"
+    echo -e "${RED}Managed PostgreSQL bleibt erhalten.${NC}"
+    echo ""
+    info "Starte install.sh nuke..."
+    bash "$INSTALL_SH" nuke
 }
 
 # ============================================================
@@ -401,6 +415,7 @@ show_menu() {
     echo "  3) Test-Key erstellen   30-Tage Trial-Key fuer Pilotkunden" >&2
     echo "  4) Sichern              Nach Forgejo committen + Tarball bauen" >&2
     echo "  5) Backup               Commit + Git-Bundle + Tarball lokal sichern" >&2
+    echo "  6) Nuke                 Alle codefabrik-Server loeschen (UpCloud API)" >&2
     echo "" >&2
     echo "  c) Konfiguration        Aktuelle Einstellungen anzeigen" >&2
     echo "  q) Beenden" >&2
@@ -423,12 +438,13 @@ if [ -n "$ACTION" ]; then
         3|trial-key)    run_trial_key ;;
         4|sichern)      run_sichern ;;
         5|backup)       run_backup ;;
+        6|teardown)     run_teardown ;;
         config)         run_config ;;
-        *)              die "Unbekannte Aktion: $ACTION (install|monitoring|trial-key|sichern|backup|config)" ;;
+        *)              die "Unbekannte Aktion: $ACTION (install|monitoring|trial-key|sichern|backup|teardown|config)" ;;
     esac
 else
     echo ""
-    echo -e "${BOLD}Code-Fabrik im Koffer${NC} — v$(cat "$SCRIPT_DIR/../VERSION" 2>/dev/null || echo '?')"
+    echo -e "${BOLD}Code-Fabrik im Koffer${NC} — v$(cat "$SCRIPT_DIR/VERSION" 2>/dev/null || cat "$SCRIPT_DIR/../VERSION" 2>/dev/null || echo '?')"
 
     # Interaktiver Modus
     while true; do
@@ -440,6 +456,7 @@ else
             3)      run_trial_key ;;
             4)      run_sichern ;;
             5)      run_backup ;;
+            6)      run_teardown ;;
             c|C)    run_config ;;
             *)      echo "Ungueltige Auswahl" ;;
         esac

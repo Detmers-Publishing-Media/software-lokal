@@ -41,7 +41,7 @@ platform_rationale: ""
 # Warum Plattformcode und nicht Produktcode?
 
 reused_by_products: []
-# Welche Produkte profitieren? z.B. ["mitglieder-simple", "kassenbuch"]
+# Welche Produkte profitieren? z.B. ["mitglieder-lokal", "kassenbuch"]
 
 non_goals: []
 # Was bleibt bewusst produktspezifisch?

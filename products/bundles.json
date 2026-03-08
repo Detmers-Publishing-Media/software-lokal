@@ -8,14 +8,31 @@
       "target": "Foerdervereine, Kulturvereine, Sportvereine",
       "products": [
         {
-          "repo": "mitglieder-simple",
+          "repo": "mitglieder-lokal",
           "type": "app",
           "description": "Mitglieder lokal — Mitgliederverwaltung fuer Vereine"
         },
         {
-          "repo": "vereins-shared",
+          "repo": "app-shared",
           "type": "library",
           "description": "Geteilte Komponenten und Helfer"
+        }
+      ]
+    },
+    "B-07-rechnung": {
+      "name": "Rechnung Lokal",
+      "description": "Rechnungsstellung mit E-Rechnung (ZUGFeRD) fuer Nebenberufler und Kleinunternehmer",
+      "target": "Nebenberufler, Kleinunternehmer, Freelancer",
+      "products": [
+        {
+          "repo": "rechnung-lokal",
+          "type": "app",
+          "description": "Rechnung Lokal — Rechnungsstellung mit E-Rechnung"
+        },
+        {
+          "repo": "finanz-shared",
+          "type": "library",
+          "description": "Geteilte Finanz-Datenmodelle und EUeR-Logik"
         }
       ]
     },
@@ -33,17 +50,17 @@
     }
   },
   "products": {
-    "mitglieder-simple": {
+    "mitglieder-lokal": {
       "bundles": ["B-05-verein-ehrenamt"],
       "type": "app",
       "tech": "electron-svelte",
-      "forgejo_repo": "factory-admin/mitglieder-simple"
+      "forgejo_repo": "factory-admin/mitglieder-lokal"
     },
-    "vereins-shared": {
+    "app-shared": {
       "bundles": ["B-05-verein-ehrenamt"],
       "type": "library",
       "tech": "npm-package",
-      "forgejo_repo": "factory-admin/vereins-shared"
+      "forgejo_repo": "factory-admin/app-shared"
     },
     "shared": {
       "bundles": [],
@@ -56,6 +73,18 @@
       "type": "app",
       "tech": "electron-svelte",
       "forgejo_repo": "factory-admin/finanz-rechner"
+    },
+    "rechnung-lokal": {
+      "bundles": ["B-07-rechnung"],
+      "type": "app",
+      "tech": "electron-svelte",
+      "forgejo_repo": "factory-admin/rechnung-lokal"
+    },
+    "finanz-shared": {
+      "bundles": ["B-07-rechnung"],
+      "type": "library",
+      "tech": "npm-package",
+      "forgejo_repo": "factory-admin/finanz-shared"
     },
     "fruehwarnreport": {
       "bundles": [],

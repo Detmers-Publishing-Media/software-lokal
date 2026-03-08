@@ -1,12 +1,17 @@
 ---
-# Code-Fabrik v0.4.1 — Portal Installation
+# Code-Fabrik — Portal Installation (Bootstrap-Modus)
 # Voraussetzung: PROD muss installiert sein (.server-env + .tokens-env vorhanden)
 
-- name: "Phase 0: Bestehenden Portal-Server pruefen"
+- name: "Phase 0: Modus validieren + Portal-Server pruefen"
   hosts: localhost
   connection: local
   gather_facts: false
   tasks:
+    - name: "ops_mode validieren"
+      ansible.builtin.assert:
+        that: ops_mode is defined and ops_mode == 'bootstrap'
+        fail_msg: "install-portal.yml darf nur im Bootstrap-Modus laufen (ops_mode={{ ops_mode | default('NICHT_GESETZT') }})"
+
     - name: "UpCloud: Pruefe ob codefabrik-portal existiert"
       ansible.builtin.uri:
         url: "https://api.upcloud.com/1.3/server"
@@ -20,14 +25,10 @@
       ansible.builtin.set_fact:
         existing_portals: "{{ upcloud_servers.json.servers.server | selectattr('title', 'eq', 'codefabrik-portal') | list }}"
 
-    - name: "Portal-Server-Existenz pruefen"
-      ansible.builtin.set_fact:
-        portal_exists: "{{ existing_portals | length > 0 }}"
-
-    - name: "Neuinstallation: Portal-Server muss vorher bereinigt sein"
+    - name: "Bootstrap: Portal-Server darf nicht existieren"
       ansible.builtin.fail:
         msg: "Portal-Server existiert noch. Bitte zuerst 'install.sh nuke' ausfuehren."
-      when: portal_exists | bool
+      when: existing_portals | length > 0
 
 - name: "Phase 1: Portal-Server provisionieren"
   hosts: localhost
@@ -77,16 +78,17 @@
         PORTAL_DB_PASSWORD=${DB_PASS}
         ADMIN_TOKEN=${ADM_TOKEN}
         EOF
-          chmod 600 /output/.portal-passwords.env
+          chmod 644 /output/.portal-passwords.env
           echo "Portal-Secrets generiert"
         fi
       args:
         executable: /bin/bash
       register: secrets_result
+      no_log: true
 
     - name: "Ergebnis"
       ansible.builtin.debug:
-        msg: "{{ secrets_result.stdout }}"
+        msg: "Portal-Secrets bereit"
 
 - name: "Phase 4: Portal deployen"
   hosts: factory-portal

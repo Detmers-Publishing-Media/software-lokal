@@ -61,16 +61,16 @@ Stand: 2026-03-07
 - **Org:** `Detmers-Publishing-Media` (Team-Plan)
 - **Account:** `detmerspublish`
 - **Repos (privat bis v1.0):**
-  - `Detmers-Publishing-Media/mitglieder-simple` — v0.4.0 gepusht
+  - `Detmers-Publishing-Media/mitglieder-lokal` — v0.4.0 gepusht
   - `Detmers-Publishing-Media/finanz-rechner` — v0.1.0 gepusht
 - **CI/CD:** GitHub Actions Workflows (`build-windows.yml`) in beiden Repos
 - **Auth:** GitHub CLI (`gh`) + Classic PAT (`github-push-token`, Scopes: `repo`, `read:org`)
 
 ### Produkte
 - **fruehwarnreport** (Python) — Referenz-Implementierung, 24 pytest Tests
-- **mitglieder-simple** (Svelte 5 + Tauri) — v0.5.0, Support-UI + LicenseSection, auf GitHub
+- **mitglieder-lokal** (Svelte 5 + Tauri) — v0.5.0, Support-UI + LicenseSection, auf GitHub
 - **finanz-rechner** (Svelte 5 + Tauri) — v0.2.0, Support-UI + LicenseSection, auf GitHub
-- **vereins-shared** (Shared Library) — DataTable, SearchBar, ExportButton, LicenseSection, SupportView
+- **app-shared** (Shared Library) — DataTable, SearchBar, ExportButton, LicenseSection, SupportView
 
 ### Externe Dienste
 - **Digistore24:** Testprodukt konfiguriert, IPN-Anbindung `detmers-publish-dev`

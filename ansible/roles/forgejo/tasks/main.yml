@@ -15,8 +15,13 @@
       --username factory-admin \
       --password "{{ forgejo_admin_password }}" \
       --email admin@factory.local \
-      --must-change-password=false 2>&1 || true
+      --must-change-password=false 2>&1
   register: admin_result
+  failed_when:
+    - admin_result.rc != 0
+    - "'already exists' not in admin_result.stdout"
+    - "'already exists' not in admin_result.stderr"
+  no_log: true
 
 - name: "Admin-Passwort erzwingen (idempotent bei Reinstall)"
   ansible.builtin.shell: |
@@ -25,48 +30,89 @@
       --password "{{ forgejo_admin_password }}" \
       --must-change-password=false 2>&1
   changed_when: true
+  no_log: true
 
-- name: "Bestehenden API-Token löschen (idempotent)"
-  ansible.builtin.shell: |
-    TOKEN_ID=$(curl -sf \
-      -u "factory-admin:{{ forgejo_admin_password }}" \
-      "http://localhost:3000/api/v1/users/factory-admin/tokens" \
-      | jq -r '.[] | select(.name == "factory-automation") | .id' 2>/dev/null || echo "")
-    if [ -n "$TOKEN_ID" ] && [ "$TOKEN_ID" != "null" ]; then
-      curl -sf -X DELETE \
-        -u "factory-admin:{{ forgejo_admin_password }}" \
-        "http://localhost:3000/api/v1/users/factory-admin/tokens/$TOKEN_ID" || true
-      echo "Token gelöscht: $TOKEN_ID"
-    else
-      echo "Kein bestehender Token gefunden"
-    fi
-  register: token_delete_result
-  changed_when: "'gelöscht' in token_delete_result.stdout"
+# --- Token-Lifecycle: Validieren → nur bei Bedarf rotieren ---
 
-- name: "API-Token generieren"
-  ansible.builtin.shell: |
-    curl -sf -X POST \
-      -u "factory-admin:{{ forgejo_admin_password }}" \
-      -H "Content-Type: application/json" \
-      -d '{"name":"factory-automation","scopes":["all"]}' \
-      "http://localhost:3000/api/v1/users/factory-admin/tokens" \
-      | jq -r '.sha1'
-  register: api_token_result
-  retries: 5
-  delay: 5
-  until: api_token_result.stdout | length > 10
-
-- name: "API-Token speichern"
+- name: "Bestehenden Token aus .tokens-env laden"
   ansible.builtin.set_fact:
-    forgejo_api_token: "{{ api_token_result.stdout }}"
-
-- name: "Token lokal speichern"
-  ansible.builtin.copy:
-    content: |
-      FORGEJO_API_TOKEN={{ forgejo_api_token }}
-      FORGEJO_ADMIN_PASSWORD={{ forgejo_admin_password }}
-    dest: "/output/.tokens-env"
+    existing_token: "{{ lookup('ini', 'FORGEJO_API_TOKEN type=properties file=/output/.tokens-env') }}"
   delegate_to: localhost
+  ignore_errors: true
+  no_log: true
+
+- name: "Bestehenden Token validieren"
+  ansible.builtin.uri:
+    url: "http://localhost:3000/api/v1/user"
+    method: GET
+    headers:
+      Authorization: "token {{ existing_token }}"
+    status_code: [200]
+  register: token_check
+  ignore_errors: true
+  when: existing_token is defined and existing_token | length > 10
+  no_log: true
+
+- name: "Token-Status bestimmen"
+  ansible.builtin.set_fact:
+    token_valid: "{{ token_check is defined and token_check is not failed and token_check.status | default(0) == 200 }}"
+    force_rotate: "{{ ops_mode | default('') == 'bootstrap' or rotate_token | default(false) | bool }}"
+
+- name: "Token gueltig — beibehalten"
+  ansible.builtin.set_fact:
+    forgejo_api_token: "{{ existing_token }}"
+  when: token_valid | bool and not force_rotate | bool
+  no_log: true
+
+- name: "Token-Rotation (Bootstrap, ungueltig, oder explizit)"
+  when: not token_valid | bool or force_rotate | bool
+  no_log: true
+  block:
+    - name: "Bestehenden API-Token loeschen"
+      ansible.builtin.shell: |
+        TOKEN_ID=$(curl -sf \
+          -u "factory-admin:{{ forgejo_admin_password }}" \
+          "http://localhost:3000/api/v1/users/factory-admin/tokens" \
+          | jq -r '.[] | select(.name == "factory-automation") | .id' 2>/dev/null || echo "")
+        if [ -n "$TOKEN_ID" ] && [ "$TOKEN_ID" != "null" ]; then
+          curl -sf -X DELETE \
+            -u "factory-admin:{{ forgejo_admin_password }}" \
+            "http://localhost:3000/api/v1/users/factory-admin/tokens/$TOKEN_ID" || true
+          echo "Token geloescht: $TOKEN_ID"
+        else
+          echo "Kein bestehender Token gefunden"
+        fi
+      register: token_delete_result
+      changed_when: "'geloescht' in token_delete_result.stdout"
+
+    - name: "Neuen API-Token generieren"
+      ansible.builtin.shell: |
+        curl -sf -X POST \
+          -u "factory-admin:{{ forgejo_admin_password }}" \
+          -H "Content-Type: application/json" \
+          -d '{"name":"factory-automation","scopes":["all"]}' \
+          "http://localhost:3000/api/v1/users/factory-admin/tokens" \
+          | jq -r '.sha1'
+      register: api_token_result
+      retries: 5
+      delay: 5
+      until: api_token_result.stdout | length > 10
+
+    - name: "Neuen Token speichern"
+      ansible.builtin.set_fact:
+        forgejo_api_token: "{{ api_token_result.stdout }}"
+
+    - name: "Token in .tokens-env schreiben"
+      ansible.builtin.copy:
+        content: |
+          FORGEJO_API_TOKEN={{ forgejo_api_token }}
+          FORGEJO_ADMIN_PASSWORD={{ forgejo_admin_password }}
+        dest: "/output/.tokens-env"
+      delegate_to: localhost
+
+    - name: "Token-Rotation abgeschlossen"
+      ansible.builtin.debug:
+        msg: "Neuer API-Token generiert (Grund: {{ 'Bootstrap' if ops_mode | default('') == 'bootstrap' else ('explizite Rotation' if rotate_token | default(false) | bool else 'ungueltig') }})"
 
 - name: "Organisation erstellen"
   ansible.builtin.uri:
@@ -82,7 +128,7 @@
       visibility: "private"
     status_code: [201, 422]
 
-- name: "Actions aktivieren (falls nötig)"
+- name: "Actions aktivieren (falls noetig)"
   ansible.builtin.shell: |
     docker exec -u git factory-forgejo forgejo admin setting set \
       actions.ENABLED true 2>/dev/null || true

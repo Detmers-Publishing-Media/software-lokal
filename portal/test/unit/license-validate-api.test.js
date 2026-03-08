@@ -79,7 +79,7 @@ describe('api-license', () => {
           rows: [{
             id: 1,
             license_key: 'CFML-ABCD-EFGH-JKMN-PQRS',
-            product_id: 'mitglieder-simple',
+            product_id: 'mitglieder-lokal',
             product_name: 'MitgliederSimple',
             status: 'active',
             expires_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
@@ -95,13 +95,13 @@ describe('api-license', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           licenseKey: 'CFML-ABCD-EFGH-JKMN-PQRS',
-          productId: 'mitglieder-simple',
+          productId: 'mitglieder-lokal',
         }),
       });
       const data = await res.json();
       assert.equal(data.valid, true);
       assert.equal(data.status, 'active');
-      assert.equal(data.productId, 'mitglieder-simple');
+      assert.equal(data.productId, 'mitglieder-lokal');
       assert.ok(Array.isArray(data.features));
       assert.ok(data.features.includes('support'));
     });
@@ -111,7 +111,7 @@ describe('api-license', () => {
         rows: [{
           id: 1,
           license_key: 'CFML-ABCD-EFGH-JKMN-PQRS',
-          product_id: 'mitglieder-simple',
+          product_id: 'mitglieder-lokal',
           status: 'active',
           expires_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
         }],
@@ -136,7 +136,7 @@ describe('api-license', () => {
         rows: [{
           id: 1,
           license_key: 'CFML-ABCD-EFGH-JKMN-PQRS',
-          product_id: 'mitglieder-simple',
+          product_id: 'mitglieder-lokal',
           status: 'revoked',
         }],
         rowCount: 1,
@@ -157,7 +157,7 @@ describe('api-license', () => {
         rows: [{
           id: 1,
           license_key: 'CFML-ABCD-EFGH-JKMN-PQRS',
-          product_id: 'mitglieder-simple',
+          product_id: 'mitglieder-lokal',
           status: 'active',
           expires_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
         }],
@@ -180,7 +180,7 @@ describe('api-license', () => {
           rows: [{
             id: 42,
             license_key: 'CFML-ABCD-EFGH-JKMN-PQRS',
-            product_id: 'mitglieder-simple',
+            product_id: 'mitglieder-lokal',
             status: 'active',
             expires_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
           }],
@@ -207,7 +207,7 @@ describe('api-license', () => {
       const res = await fetch(`${baseUrl}/api/admin/trial-key`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ productId: 'mitglieder-simple' }),
+        body: JSON.stringify({ productId: 'mitglieder-lokal' }),
       });
       assert.equal(res.status, 401);
     });
@@ -219,7 +219,7 @@ describe('api-license', () => {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer wrong-token',
         },
-        body: JSON.stringify({ productId: 'mitglieder-simple' }),
+        body: JSON.stringify({ productId: 'mitglieder-lokal' }),
       });
       assert.equal(res.status, 401);
     });
@@ -238,12 +238,12 @@ describe('api-license', () => {
       assert.ok(data.validProducts);
     });
 
-    it('creates trial key for mitglieder-simple', async () => {
+    it('creates trial key for mitglieder-lokal', async () => {
       const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
       mockPool.mockResult({
         rows: [{
           license_key: 'CFTM-ABCD-EFGH-JKMN-PQ12',
-          product_id: 'mitglieder-simple',
+          product_id: 'mitglieder-lokal',
           expires_at: expiresAt,
           source: 'manual',
           note: 'Test',
@@ -257,11 +257,11 @@ describe('api-license', () => {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer test-admin-secret',
         },
-        body: JSON.stringify({ productId: 'mitglieder-simple', note: 'Test' }),
+        body: JSON.stringify({ productId: 'mitglieder-lokal', note: 'Test' }),
       });
       assert.equal(res.status, 201);
       const data = await res.json();
-      assert.equal(data.productId, 'mitglieder-simple');
+      assert.equal(data.productId, 'mitglieder-lokal');
       assert.equal(data.source, 'manual');
       assert.equal(data.note, 'Test');
       assert.ok(data.licenseKey);
@@ -314,7 +314,7 @@ describe('api-license', () => {
       mockPool.mockResult({
         rows: [{
           license_key: 'CFML-ABCD-EFGH-JKMN-PQRS',
-          product_id: 'mitglieder-simple',
+          product_id: 'mitglieder-lokal',
           status: 'active',
           expires_at: '2027-03-07T00:00:00Z',
         }],
@@ -324,7 +324,7 @@ describe('api-license', () => {
       const res = await fetch(`${baseUrl}/api/license/recover?orderId=ORD-123`);
       const data = await res.json();
       assert.equal(data.found, true);
-      assert.equal(data.productId, 'mitglieder-simple');
+      assert.equal(data.productId, 'mitglieder-lokal');
       assert.equal(data.status, 'active');
       // Key should be masked
       assert.ok(data.licenseKey.includes('****'), `Key should be masked: ${data.licenseKey}`);

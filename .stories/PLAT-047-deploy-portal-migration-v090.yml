@@ -1,0 +1,42 @@
+id: "PLAT-047"
+title: "Portal-Migration v0.9.0 deployen (Rechnung Lokal Produkt-Eintrag)"
+epic: "PLAT-CI"
+status: "ready"
+
+story_type: "infra-factory"
+lane: "fast"
+platform_impact: "low"
+founder_gate_required: false
+force_approve_allowed: true
+auto_merge_allowed: true
+
+platform_rationale: |
+  migrate-v090.sql fuegt rechnung-lokal als Produkt in die Portal-DB ein.
+  Muss beim naechsten Portal-Deploy automatisch ausgefuehrt werden.
+
+reused_by_products: ["rechnung-lokal"]
+
+non_goals:
+  - "Kein Digistore24-Mapping (kommt mit v0.5.0 Kassenschluss)"
+
+description: |
+  Die Migration portal/src/db/migrate-v090.sql ist fertig und muss
+  beim naechsten Portal-Deploy ausgefuehrt werden.
+  Enthaelt: INSERT INTO products ('rechnung-lokal', 3900 cents, active).
+  Ansible-Rolle portal-db erkennt neue Migrations automatisch.
+
+acceptance_criteria:
+  - "migrate-v090.sql ist auf Portal-DB ausgefuehrt"
+  - "GET /api/products liefert rechnung-lokal zurueck"
+  - "License-Key-Generierung mit CFRL-Prefix funktioniert"
+
+affected_files:
+  - "portal/src/db/migrate-v090.sql"
+
+depends_on: []
+
+manual_steps:
+  - step: "Portal-Deploy ausloesen (install-portal.yml)"
+    owner: "PO"
+
+estimated_effort: "XS"

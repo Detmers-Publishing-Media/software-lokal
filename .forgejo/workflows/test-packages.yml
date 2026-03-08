@@ -1,0 +1,40 @@
+name: Test Packages
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'packages/**'
+  pull_request:
+    paths:
+      - 'packages/**'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
+      - name: Install build tools
+        run: sudo apt-get update && sudo apt-get install -y build-essential python3
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Test electron-platform
+        run: node --test tests/test_*.js
+        working-directory: packages/electron-platform
+
+      - name: Test finanz-shared
+        run: node --test tests/test_*.js
+        working-directory: packages/finanz-shared

@@ -91,7 +91,7 @@
     <!-- BEGIN CODEFABRIK ROLE -->
     Rolle: Junior Developer der Code-Fabrik v0.6.3
     Pipeline: Liest Task aus Branch, implementiert, committed
-    Produkte: shared, vereins-shared, mitglieder-simple, finanz-rechner
+    Produkte: shared, app-shared, mitglieder-lokal, finanz-rechner
     <!-- END CODEFABRIK ROLE -->
     SOULEOF
     docker cp /tmp/SOUL.md factory-openclaw:/root/.openclaw/SOUL.md

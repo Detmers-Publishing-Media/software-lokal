@@ -22,6 +22,14 @@ ansible/inventory/group_vars/all/vault.yml
 vault.kdbx
 *.kdbx
 
-# Installer-Artefakte
+# Dependencies
+node_modules/
+
+# Build-Artefakte
 dist/
+release/
 *.tar.gz
+
+# OS
+.DS_Store
+Thumbs.db

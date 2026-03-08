@@ -72,16 +72,30 @@
   args:
     creates: /usr/bin/node
 
-- name: "UFW konfigurieren"
-  ansible.builtin.shell: |
-    ufw default deny incoming
-    ufw default allow outgoing
-    ufw allow 22/tcp
-    ufw allow 80/tcp
-    ufw allow 443/tcp
-    echo "y" | ufw enable
-  args:
-    creates: /etc/ufw/ufw.conf
+- name: "UFW: Default deny incoming"
+  community.general.ufw:
+    direction: incoming
+    default: deny
+
+- name: "UFW: Default allow outgoing"
+  community.general.ufw:
+    direction: outgoing
+    default: allow
+
+- name: "UFW: Ports oeffnen"
+  community.general.ufw:
+    rule: allow
+    port: "{{ item.port }}"
+    proto: "{{ item.proto }}"
+  loop:
+    - { port: "22", proto: tcp }
+    - { port: "80", proto: tcp }
+    - { port: "443", proto: tcp }
+    - { port: "3100", proto: tcp }
+
+- name: "UFW aktivieren"
+  community.general.ufw:
+    state: enabled
 
 - name: "Arbeitsverzeichnis erstellen"
   ansible.builtin.file:

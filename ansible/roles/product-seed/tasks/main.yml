@@ -22,6 +22,7 @@
   loop: "{{ seed_products }}"
 
 - name: "Produkt-Source in Forgejo pushen"
+  no_log: true
   ansible.builtin.shell: |
     set -euo pipefail
     WORKDIR=$(mktemp -d)
@@ -82,6 +83,7 @@
   loop: "{{ seed_products }}"
 
 - name: "Tarball an Release anhaengen"
+  no_log: true
   ansible.builtin.shell: |
     set -euo pipefail
     RELEASE_ID="{{ (release_info.results[idx] | default({})).json.id }}"

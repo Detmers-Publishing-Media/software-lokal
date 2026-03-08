@@ -1,11 +1,31 @@
 ---
+- name: "Certs-Verzeichnis erstellen"
+  ansible.builtin.file:
+    path: "{{ docker_compose_dir }}/certs"
+    state: directory
+    mode: '0700'
+
+- name: "Origin CA Cert deployen"
+  ansible.builtin.copy:
+    content: "{{ vault_origin_ca_cert }}"
+    dest: "{{ docker_compose_dir }}/certs/origin.pem"
+    mode: '0600'
+
+- name: "Origin CA Key deployen"
+  ansible.builtin.copy:
+    content: "{{ vault_origin_ca_key }}"
+    dest: "{{ docker_compose_dir }}/certs/origin-key.pem"
+    mode: '0600'
+
 - name: "Caddyfile erstellen"
   ansible.builtin.copy:
     content: |
       {{ forgejo_domain }} {
+          tls /etc/caddy/certs/origin.pem /etc/caddy/certs/origin-key.pem
           reverse_proxy forgejo:3000
       }
       gateway.codefabrik.{{ cloudflare_zone }} {
+          tls /etc/caddy/certs/origin.pem /etc/caddy/certs/origin-key.pem
           reverse_proxy gateway:3100
       }
     dest: "{{ docker_compose_dir }}/Caddyfile"

@@ -1,0 +1,43 @@
+name: Lint & Validate
+on:
+  push:
+    branches: [main]
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Lint unused exports
+        run: pnpm lint:unused
+
+      - name: Validate Ansible roles
+        run: pnpm lint:ansible
+
+      - name: Validate Portal migrations
+        run: pnpm lint:migrations
+
+      - name: Validate Import Boundaries
+        run: node scripts/validate-story-governance.mjs --check-imports
+
+      - name: Shellcheck scripts
+        run: |
+          sudo apt-get update && sudo apt-get install -y shellcheck
+          find scripts/ -name '*.sh' -exec shellcheck {} +

@@ -69,7 +69,7 @@ src/
     Payments.svelte          Beitragsuebersicht
     Settings.svelte          Vereinsprofil
     Import.svelte            CSV-Import
-vereins-shared/              Shared Svelte Components + DB-Helfer
+app-shared/              Shared Svelte Components + DB-Helfer
   src/db/index.js            DB-Abstraktionsschicht (openDb, query, execute)
 src-tauri/
   src/lib.rs                 Rust: Plugin-Registrierung (12 Zeilen)
@@ -79,12 +79,12 @@ tests/
   74 Tests in 7 Kategorien   (Unit, Integration, Migration, Ketten, Replay, Integritaet, Smoke)
 ```
 
-### DB-Abstraktionsschicht (vereins-shared)
+### DB-Abstraktionsschicht (app-shared)
 
 Die gesamte DB-Kommunikation laeuft ueber 4 Funktionen:
 
 ```javascript
-// vereins-shared/src/db/index.js
+// app-shared/src/db/index.js
 import Database from '@tauri-apps/plugin-sql';
 
 let db = null;
@@ -217,7 +217,7 @@ Electron bringt Chromium mit — kein WebView2-Problem, laeuft auf jedem Windows
 - Gesamte UI
 
 **Umzubauen:**
-- `vereins-shared/src/db/index.js` — von `@tauri-apps/plugin-sql` auf `better-sqlite3`
+- `app-shared/src/db/index.js` — von `@tauri-apps/plugin-sql` auf `better-sqlite3`
 - `src-tauri/` komplett entfernen → `main.js` (Electron Main Process)
 - `src/lib/db.js` — `openDb()` aendert sich, Rest bleibt
 - Dialog-Aufrufe (Datei oeffnen/speichern) — von Tauri-API auf Electron-API

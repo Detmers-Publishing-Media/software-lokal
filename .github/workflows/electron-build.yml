@@ -1,0 +1,170 @@
+name: Electron Build (Reusable)
+
+on:
+  workflow_call:
+    inputs:
+      product_dir:
+        description: 'Product directory (e.g. products/rechnung-lokal)'
+        required: true
+        type: string
+      artifact_prefix:
+        description: 'Artifact name prefix (e.g. rechnung-lokal)'
+        required: true
+        type: string
+      test_packages:
+        description: 'Space-separated package test dirs (e.g. packages/finanz-shared)'
+        required: false
+        type: string
+        default: ''
+
+permissions:
+  contents: write
+
+jobs:
+  test-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
+      - name: Install build tools
+        run: sudo apt-get update && sudo apt-get install -y build-essential python3
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Run package tests
+        if: inputs.test_packages != ''
+        run: |
+          for pkg in ${{ inputs.test_packages }}; do
+            echo "Testing $pkg..."
+            node --test "$pkg/tests/test_*.js"
+          done
+
+      - name: Run product tests
+        run: pnpm test
+        working-directory: ${{ inputs.product_dir }}
+
+  build-windows:
+    needs: test-linux
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build Electron App
+        run: pnpm electron:build
+        working-directory: ${{ inputs.product_dir }}
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.artifact_prefix }}-windows
+          path: ${{ inputs.product_dir }}/release/*.exe
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ inputs.product_dir }}/release/*.exe
+          generate_release_notes: true
+
+  build-linux:
+    needs: test-linux
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
+      - name: Install build tools
+        run: sudo apt-get update && sudo apt-get install -y build-essential python3
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build Electron App
+        run: pnpm electron:build
+        working-directory: ${{ inputs.product_dir }}
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.artifact_prefix }}-linux
+          path: ${{ inputs.product_dir }}/release/*.AppImage
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ inputs.product_dir }}/release/*.AppImage
+          generate_release_notes: true
+
+  build-macos:
+    needs: test-linux
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build Electron App
+        run: pnpm electron:build
+        working-directory: ${{ inputs.product_dir }}
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.artifact_prefix }}-macos
+          path: ${{ inputs.product_dir }}/release/*.dmg
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ inputs.product_dir }}/release/*.dmg
+          generate_release_notes: true

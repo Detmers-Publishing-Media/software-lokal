@@ -45,8 +45,8 @@ describe('license-keygen', () => {
   });
 
   describe('generateKey', () => {
-    it('generates a key with correct prefix for mitglieder-simple', () => {
-      const key = generateKey('mitglieder-simple');
+    it('generates a key with correct prefix for mitglieder-lokal', () => {
+      const key = generateKey('mitglieder-lokal');
       assert.ok(key.startsWith('CFML-'), `Key should start with CFML-: ${key}`);
     });
 
@@ -55,13 +55,18 @@ describe('license-keygen', () => {
       assert.ok(key.startsWith('CFFR-'), `Key should start with CFFR-: ${key}`);
     });
 
+    it('generates a key with correct prefix for rechnung-lokal', () => {
+      const key = generateKey('rechnung-lokal');
+      assert.ok(key.startsWith('CFRL-'), `Key should start with CFRL-: ${key}`);
+    });
+
     it('generates keys in correct format XXXX-XXXX-XXXX-XXXX-XXXX', () => {
-      const key = generateKey('mitglieder-simple');
+      const key = generateKey('mitglieder-lokal');
       assert.match(key, /^[A-Z]{4}-[A-Z2-9]{4}-[A-Z2-9]{4}-[A-Z2-9]{4}-[A-Z2-9]{4}$/);
     });
 
     it('generates key with valid CRC-8 checksum', () => {
-      const key = generateKey('mitglieder-simple');
+      const key = generateKey('mitglieder-lokal');
       const parts = key.split('-');
       const payload = parts[0] + parts[1] + parts[2] + parts[3] + parts[4].substring(0, 2);
       const expected = crc8(payload);
@@ -71,7 +76,7 @@ describe('license-keygen', () => {
 
     it('uses only safe alphabet characters (excluding prefix)', () => {
       for (let i = 0; i < 20; i++) {
-        const key = generateKey('mitglieder-simple');
+        const key = generateKey('mitglieder-lokal');
         // Prefix (CFML) may contain chars outside safe alphabet (L)
         // Check only the generated groups (after prefix)
         const parts = key.split('-');
@@ -85,7 +90,7 @@ describe('license-keygen', () => {
     it('generates unique keys', () => {
       const keys = new Set();
       for (let i = 0; i < 100; i++) {
-        keys.add(generateKey('mitglieder-simple'));
+        keys.add(generateKey('mitglieder-lokal'));
       }
       assert.equal(keys.size, 100, 'All 100 generated keys should be unique');
     });
@@ -122,12 +127,16 @@ describe('license-keygen', () => {
   });
 
   describe('getPrefix', () => {
-    it('returns CFML for mitglieder-simple', () => {
-      assert.equal(getPrefix('mitglieder-simple'), 'CFML');
+    it('returns CFML for mitglieder-lokal', () => {
+      assert.equal(getPrefix('mitglieder-lokal'), 'CFML');
     });
 
     it('returns CFFR for finanz-rechner', () => {
       assert.equal(getPrefix('finanz-rechner'), 'CFFR');
+    });
+
+    it('returns CFRL for rechnung-lokal', () => {
+      assert.equal(getPrefix('rechnung-lokal'), 'CFRL');
     });
 
     it('returns null for unknown product', () => {
@@ -136,8 +145,8 @@ describe('license-keygen', () => {
   });
 
   describe('generateTrialKey', () => {
-    it('generates a trial key with CFTM prefix for mitglieder-simple', () => {
-      const key = generateTrialKey('mitglieder-simple');
+    it('generates a trial key with CFTM prefix for mitglieder-lokal', () => {
+      const key = generateTrialKey('mitglieder-lokal');
       assert.ok(key.startsWith('CFTM-'), `Key should start with CFTM-: ${key}`);
     });
 
@@ -146,8 +155,13 @@ describe('license-keygen', () => {
       assert.ok(key.startsWith('CFTR-'), `Key should start with CFTR-: ${key}`);
     });
 
+    it('generates a trial key with CFTL prefix for rechnung-lokal', () => {
+      const key = generateTrialKey('rechnung-lokal');
+      assert.ok(key.startsWith('CFTL-'), `Key should start with CFTL-: ${key}`);
+    });
+
     it('generates trial key with valid CRC-8', () => {
-      const key = generateTrialKey('mitglieder-simple');
+      const key = generateTrialKey('mitglieder-lokal');
       const parts = key.split('-');
       const payload = parts[0] + parts[1] + parts[2] + parts[3] + parts[4].substring(0, 2);
       const expected = crc8(payload);
@@ -177,7 +191,7 @@ describe('license-keygen', () => {
     it('generates unique trial keys', () => {
       const keys = new Set();
       for (let i = 0; i < 50; i++) {
-        keys.add(generateTrialKey('mitglieder-simple'));
+        keys.add(generateTrialKey('mitglieder-lokal'));
       }
       assert.equal(keys.size, 50);
     });
@@ -192,9 +206,14 @@ describe('license-keygen', () => {
       assert.ok(isTrialKey('CFTR-WXYZ-ABCD-EFGH-JKMN'));
     });
 
+    it('returns true for CFTL keys', () => {
+      assert.ok(isTrialKey('CFTL-ABCD-EFGH-JKMN-PQRS'));
+    });
+
     it('returns false for production keys', () => {
       assert.ok(!isTrialKey('CFML-ABCD-EFGH-JKMN-PQRS'));
       assert.ok(!isTrialKey('CFFR-ABCD-EFGH-JKMN-PQRS'));
+      assert.ok(!isTrialKey('CFRL-ABCD-EFGH-JKMN-PQRS'));
     });
 
     it('returns false for null/empty', () => {
@@ -208,12 +227,16 @@ describe('license-keygen', () => {
   });
 
   describe('getTrialPrefix', () => {
-    it('returns CFTM for mitglieder-simple', () => {
-      assert.equal(getTrialPrefix('mitglieder-simple'), 'CFTM');
+    it('returns CFTM for mitglieder-lokal', () => {
+      assert.equal(getTrialPrefix('mitglieder-lokal'), 'CFTM');
     });
 
     it('returns CFTR for finanz-rechner', () => {
       assert.equal(getTrialPrefix('finanz-rechner'), 'CFTR');
+    });
+
+    it('returns CFTL for rechnung-lokal', () => {
+      assert.equal(getTrialPrefix('rechnung-lokal'), 'CFTL');
     });
 
     it('returns null for unknown product', () => {
@@ -225,7 +248,7 @@ describe('license-keygen', () => {
     it('generated key passes client-side format validation pattern', () => {
       const KEY_PATTERN = /^[A-Z]{2,4}-[A-Z2-9]{4}-[A-Z2-9]{4}-[A-Z2-9]{4}-[A-Z2-9]{4}$/;
       for (let i = 0; i < 50; i++) {
-        const key = generateKey('mitglieder-simple');
+        const key = generateKey('mitglieder-lokal');
         assert.ok(KEY_PATTERN.test(key), `Key should match client pattern: ${key}`);
       }
     });

@@ -34,6 +34,7 @@
     "files": [
       "dist/**/*",
       "electron/**/*",
+      "app.config.cjs",
       "assets/icons/**/*",
       "node_modules/@codefabrik/electron-platform/**/*",
       "node_modules/@codefabrik/shared/**/*"
@@ -41,6 +42,11 @@
     "win": {
       "target": ["nsis"],
       "icon": "assets/icons/icon.ico"
+    },
+    "mac": {
+      "target": ["dmg"],
+      "icon": "assets/icons/128x128.png",
+      "category": "public.app-category.finance"
     },
     "linux": {
       "target": ["AppImage"],

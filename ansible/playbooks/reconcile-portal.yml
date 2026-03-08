@@ -1,0 +1,67 @@
+---
+# Code-Fabrik — Portal Reconcile (Drift-Korrektur)
+# Idempotent: Portal-Rollen laufen, korrigieren nur Abweichungen
+
+- name: "Phase 0: Modus + Inventory"
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: "ops_mode validieren"
+      ansible.builtin.assert:
+        that: ops_mode is defined and ops_mode == 'reconcile'
+        fail_msg: "reconcile-portal.yml erfordert ops_mode=reconcile"
+
+    - name: ".portal-env muss existieren"
+      ansible.builtin.stat:
+        path: /output/.portal-env
+      register: portal_env_stat
+      failed_when: not portal_env_stat.stat.exists
+
+    - name: "Portal-IP laden"
+      ansible.builtin.shell: cat /output/.portal-env
+      register: portal_env_raw
+
+    - name: "portal_ip setzen"
+      ansible.builtin.set_fact:
+        portal_ip: "{{ (portal_env_raw.stdout | regex_search('PORTAL_IP=(.+)', '\\1'))[0] }}"
+
+    - name: "factory-portal registrieren"
+      ansible.builtin.add_host:
+        name: factory-portal
+        ansible_host: "{{ portal_ip }}"
+        ansible_user: root
+        ansible_ssh_private_key_file: "~/.ssh/codefabrik_deploy"
+        groups: [portal]
+
+    - name: "SSH-Verbindung pruefen"
+      ansible.builtin.wait_for:
+        host: "{{ portal_ip }}"
+        port: 22
+        timeout: 30
+
+    - name: "DNS verifizieren"
+      ansible.builtin.include_role:
+        name: portal-dns
+
+- name: "Phase 1: Portal abgleichen"
+  hosts: factory-portal
+  gather_facts: true
+  vars:
+    portal_db_password: "{{ lookup('ini', 'PORTAL_DB_PASSWORD type=properties file=/output/.portal-passwords.env') }}"
+    admin_token: "{{ lookup('ini', 'ADMIN_TOKEN type=properties file=/output/.portal-passwords.env') }}"
+    prod_server_uuid: "{{ lookup('ini', 'SERVER_UUID type=properties file=/output/.server-env') }}"
+    prod_server_ip: "{{ lookup('ini', 'SERVER_IP type=properties file=/output/.server-env') }}"
+    forgejo_api_token: "{{ lookup('ini', 'FORGEJO_API_TOKEN type=properties file=/output/.tokens-env') }}"
+    ops_mode: reconcile
+  roles:
+    - portal-setup
+    - portal-deploy
+    - portal-db
+    - portal-watchdog
+
+- name: "Phase 2: Validierung"
+  hosts: factory-portal
+  gather_facts: false
+  roles:
+    - portal-validate

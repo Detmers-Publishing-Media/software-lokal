@@ -10,7 +10,7 @@
 **Ziel:** Echte EXE-Dateien bauen und an Referenzkunde ausliefern.
 
 1. **GitHub Actions Windows-Build aufsetzen**
-   - Workflow `build-windows.yml` in beiden Repos (mitglieder-simple, finanz-rechner)
+   - Workflow `build-windows.yml` in beiden Repos (mitglieder-lokal, finanz-rechner)
    - Tauri → Windows EXE + Installer (MSI/NSIS)
    - Build-Artefakte als GitHub Release hochladen
 
@@ -48,7 +48,7 @@
 **Ziel:** Pipeline beweist Multi-Produkt-Faehigkeit.
 
 1. **Zweites B-05-Tool bauen** (wird nach Referenzkunden-Feedback definiert)
-2. **Shared Components extrahieren** (`@codefabrik/vereins-shared`)
+2. **Shared Components extrahieren** (`@codefabrik/app-shared`)
 3. **Pipeline-Beweis:** Zweites Produkt in < 1 Woche durch die Pipeline
 
 ---

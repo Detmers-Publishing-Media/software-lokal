@@ -1,0 +1,123 @@
+schema_version: 1
+product_id: "rechnung-lokal"
+name: "Rechnung Lokal"
+tagline: "Rechnungsstellung mit E-Rechnung (ZUGFeRD) fuer Nebenberufler — lokal, einfach, guenstig"
+version: "0.1.0"
+license: "GPL-3.0-only"
+type: "app"
+tech_stack: "electron-svelte"
+bundles: ["B-07-rechnung"]
+platforms: ["linux", "windows", "macos"]
+
+description:
+  short: "Desktop-App fuer Rechnungsstellung und Einnahmen-Ausgaben-Uebersicht"
+  long: |
+    Rechnung Lokal erstellt Rechnungen mit E-Rechnung (ZUGFeRD),
+    verwaltet Kunden und bietet eine einfache Einnahmen-Ausgaben-Uebersicht
+    fuer die Steuererklaerung — ohne Cloud, ohne Abo-Falle.
+  benefits:
+    - "Rechnungen mit allen Pflichtangaben nach §14 UStG"
+    - "E-Rechnung (ZUGFeRD PDF/A-3) fuer B2B-Pflicht ab 2028"
+    - "Einnahmen-Ausgaben-Uebersicht nach Anlage EUER"
+    - "Kleinunternehmer-Regelung (§19 UStG) eingebaut"
+    - "Alle Daten lokal — keine Cloud"
+    - "Laeuft auf Windows, Linux und macOS"
+  target_audience: "Nebenberufler, Kleinunternehmer, Freelancer"
+
+pricing:
+  model: "support-abo"
+  price_cents: 3900
+  interval: "jaehrlich"
+  includes:
+    - "Fertige Installer (Windows, Linux, macOS)"
+    - "Automatische Update-Benachrichtigung"
+    - "Support-Ticket-System (Antwort in 48h)"
+    - "Feature-Request mit Voting-Recht"
+    - "Zugang zum Download-Portal"
+
+features:
+  - id: "invoice-crud"
+    name: "Rechnungen erstellen"
+    description: "Positionen, Einzelpreis, Menge, Summe — alle Pflichtangaben automatisch"
+    status: "in-progress"
+    since: "0.1.0"
+  - id: "invoice-number"
+    name: "Fortlaufende Rechnungsnummern"
+    description: "Automatische Nummerierung mit konfigurierbarem Prefix"
+    status: "in-progress"
+    since: "0.1.0"
+  - id: "customer-crud"
+    name: "Kundenverwaltung"
+    description: "Kunden anlegen, bearbeiten, B2B/B2C kennzeichnen"
+    status: "in-progress"
+    since: "0.1.0"
+  - id: "euer"
+    name: "Einnahmen-Ausgaben-Uebersicht"
+    description: "Jahres- und Monatsuebersicht nach EUeR-Kategorien"
+    status: "in-progress"
+    since: "0.1.0"
+  - id: "business-profile"
+    name: "Geschaeftsprofil"
+    description: "Firmendaten, Steuernummer, Bankverbindung, Kleinunternehmer-Einstellung"
+    status: "in-progress"
+    since: "0.1.0"
+  - id: "invoice-cancel"
+    name: "Storno-Rechnung"
+    description: "Rechnungen stornieren statt loeschen (Audit-Trail)"
+    status: "in-progress"
+    since: "0.1.0"
+  - id: "invoice-template"
+    name: "Rechnung aus Vorlage"
+    description: "Wiederkehrende Rechnungen per Klick aus bestehender Rechnung erstellen"
+    status: "in-progress"
+    since: "0.1.0"
+  - id: "small-business"
+    name: "Kleinunternehmer §19 UStG"
+    description: "Automatischer Hinweis auf Rechnungen, keine MwSt-Berechnung"
+    status: "in-progress"
+    since: "0.1.0"
+  - id: "zugferd"
+    name: "ZUGFeRD E-Rechnung"
+    description: "PDF/A-3 mit eingebettetem XML nach EN 16931"
+    status: "planned"
+  - id: "pdf-invoice"
+    name: "PDF-Rechnungen"
+    description: "Professionelle PDF-Rechnungen mit Briefkopf"
+    status: "done"
+    since: "0.1.0"
+  - id: "euer-pdf"
+    name: "EUeR Jahresabschluss-PDF"
+    description: "Zusammenfassung fuer die Steuererklaerung"
+    status: "planned"
+  - id: "event-log"
+    name: "Audit-Log"
+    description: "Lueckenloses Aenderungsprotokoll mit HMAC-SHA256 Hash-Kette"
+    status: "done"
+    since: "0.1.0"
+  - id: "backup"
+    name: "Automatisches Backup"
+    description: "Lokales Backup (taeglich, woechentlich, monatlich)"
+    status: "planned"
+
+faq:
+  - question: "Ist das eine Buchhaltungssoftware?"
+    answer: "Nein. Rechnung Lokal ist ein Rechnungstool mit EUeR-Uebersicht — keine doppelte Buchfuehrung, kein DATEV."
+  - question: "Wo werden meine Daten gespeichert?"
+    answer: "Lokal auf Ihrem Computer in einer SQLite-Datenbank. Keine Cloud."
+  - question: "Muss ich ab 2028 E-Rechnungen versenden?"
+    answer: "Ja, fuer B2B-Rechnungen ist ZUGFeRD ab 01.01.2028 Pflicht. Rechnung Lokal erzeugt diese automatisch."
+
+installation:
+  prerequisites:
+    - "Windows 10+, Linux (Ubuntu 22.04+) oder macOS 12+"
+    - "100 MB freier Festplattenspeicher"
+  steps:
+    - "Laden Sie die aktuelle Version herunter"
+    - "Fuehren Sie die Installationsdatei aus"
+    - "Starten Sie die Anwendung — keine Konfiguration noetig"
+
+architecture:
+  frontend: "Svelte 5 SPA in Electron Renderer"
+  backend: "Electron Main Process (@codefabrik/electron-platform)"
+  database: "SQLite via better-sqlite3 (Electron IPC)"
+  shared_lib: "@codefabrik/finanz-shared"

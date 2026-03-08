@@ -26,6 +26,16 @@
     dest: /opt/codefabrik/validate-story-governance.mjs
     mode: '0755'
 
+- name: "Poller Secrets-Datei erstellen"
+  ansible.builtin.copy:
+    content: |
+      FORGEJO_API_TOKEN={{ forgejo_api_token }}
+    dest: /opt/codefabrik/.poller-secrets.env
+    mode: '0600'
+    owner: root
+    group: root
+  no_log: true
+
 - name: "Poller systemd Service"
   ansible.builtin.copy:
     content: |
@@ -35,7 +45,7 @@
       [Service]
       Type=oneshot
       ExecStart=/opt/codefabrik/openclaw-poller.sh
-      Environment=FORGEJO_API_TOKEN={{ forgejo_api_token }}
+      EnvironmentFile=/opt/codefabrik/.poller-secrets.env
     dest: /etc/systemd/system/openclaw-poller.service
 
 - name: "Poller systemd Timer"

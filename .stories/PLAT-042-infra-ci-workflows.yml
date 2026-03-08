@@ -1,0 +1,52 @@
+id: "PLAT-042"
+title: "Infra-CI Workflows — Forgejo Actions fuer Infrastruktur"
+epic: "PLAT-CI"
+status: "done"
+
+story_type: "infra-factory"
+lane: "slow"
+platform_impact: "high"
+founder_gate_required: true
+force_approve_allowed: false
+auto_merge_allowed: false
+
+platform_rationale: |
+  Erstellt CI-Workflows fuer das Infrastruktur-Repo (Ansible, Portal, Scripts).
+  Betrifft den gesamten Build- und Deployment-Prozess.
+
+reused_by_products: ["alle"]
+
+non_goals:
+  - "Keine Produkt-spezifischen Build-Workflows (siehe PLAT-046)"
+  - "Keine Secrets-Rotation (siehe PLAT-044)"
+
+description: |
+  Forgejo Actions Workflows fuer die Infrastruktur-Komponenten:
+  1. Lint-Workflow: ansible-lint, shellcheck, validate-governance
+  2. Portal-Test-Workflow: node --test portal/test/**/*.test.js
+  3. Package-Test-Workflow: Tests fuer shared, app-shared, finanz-shared, electron-platform
+  4. Installer-Build-Workflow: build-installer.sh + Checksum + Artefakt
+
+  Alle Workflows muessen plattform-agnostisch sein (Forgejo-kompatibel).
+
+acceptance_criteria:
+  - "Lint-Workflow (.forgejo/workflows/lint.yml) prueft Ansible, Shell, Governance"
+  - "Portal-Workflow (.forgejo/workflows/test-portal.yml) fuehrt 127 Portal-Tests aus"
+  - "Package-Workflow (.forgejo/workflows/test-packages.yml) fuehrt alle Package-Tests aus"
+  - "Build-Workflow (.forgejo/workflows/build-installer.yml) erzeugt Tarball mit Checksum"
+  - "Alle Workflows laufen auf ubuntu-latest mit Node 22"
+  - "CLAUDE.md aktualisiert"
+
+affected_files:
+  - ".forgejo/workflows/lint.yml"
+  - ".forgejo/workflows/test-portal.yml"
+  - ".forgejo/workflows/test-packages.yml"
+  - ".forgejo/workflows/build-installer.yml"
+  - "CLAUDE.md"
+
+depends_on:
+  - "PLAT-040"
+
+manual_steps: []
+
+estimated_effort: "M"
