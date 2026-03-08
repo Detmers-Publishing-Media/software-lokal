@@ -1,0 +1,9 @@
+{
+  "product": "mitglieder-lokal",
+  "type": "app",
+  "bundles": ["B-05-verein-ehrenamt"],
+  "description": "Einfache Mitgliederverwaltung fuer Foerder- und Kulturvereine",
+  "depends_on": ["@codefabrik/app-shared"],
+  "platforms": ["linux", "windows", "macos"],
+  "license": "MIT"
+}

@@ -1,0 +1,16 @@
+name: Test + Build (Mitglieder Lokal)
+
+on:
+  push:
+    tags: ['v*']
+    branches: [main]
+    paths:
+      - 'products/mitglieder-lokal/**'
+      - 'packages/**'
+
+jobs:
+  build:
+    uses: ./.github/workflows/electron-build.yml
+    with:
+      product_dir: products/mitglieder-lokal
+      artifact_prefix: mitglieder-lokal

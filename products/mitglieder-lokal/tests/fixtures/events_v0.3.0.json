@@ -1,0 +1,122 @@
+[
+  {
+    "id": 1,
+    "type": "AppGestartet",
+    "timestamp": "2026-03-04T19:56:47.316Z",
+    "actor": "app",
+    "version": 1,
+    "data": "{\"version\":\"0.3.0\",\"schema_version\":3}",
+    "hash": "dabaec801966335cc1d0271d024845bd08b2a292b5cc5729a8ea99c8b1f35d5e",
+    "prev_hash": "0"
+  },
+  {
+    "id": 2,
+    "type": "BeitragsklasseAngelegt",
+    "timestamp": "2026-03-04T19:56:47.317Z",
+    "actor": "app",
+    "version": 1,
+    "data": "{\"id\":5,\"name\":\"Jugend\",\"amount_cents\":1500,\"interval\":\"jaehrlich\"}",
+    "hash": "110a547fe5f2a6957b5f1d74aa2eefd9f376a11fc0fbd36104615e570712864d",
+    "prev_hash": "dabaec801966335cc1d0271d024845bd08b2a292b5cc5729a8ea99c8b1f35d5e"
+  },
+  {
+    "id": 3,
+    "type": "BeitragsklasseAngelegt",
+    "timestamp": "2026-03-04T19:56:47.317Z",
+    "actor": "app",
+    "version": 1,
+    "data": "{\"id\":1,\"name\":\"Vollmitglied\",\"amount_cents\":6000,\"interval\":\"jaehrlich\"}",
+    "hash": "a1d0d7e22bafedff19f6c8e981acd81adeb40fe767885ff220272b836059248d",
+    "prev_hash": "110a547fe5f2a6957b5f1d74aa2eefd9f376a11fc0fbd36104615e570712864d"
+  },
+  {
+    "id": 4,
+    "type": "BeitragsklasseAngelegt",
+    "timestamp": "2026-03-04T19:56:47.317Z",
+    "actor": "app",
+    "version": 1,
+    "data": "{\"id\":2,\"name\":\"Ermaessigt\",\"amount_cents\":3000,\"interval\":\"jaehrlich\"}",
+    "hash": "995523d896666f5c718aed7dbfcd536c23c740f0ea576f32b1451076c559a486",
+    "prev_hash": "a1d0d7e22bafedff19f6c8e981acd81adeb40fe767885ff220272b836059248d"
+  },
+  {
+    "id": 5,
+    "type": "BeitragsklasseAngelegt",
+    "timestamp": "2026-03-04T19:56:47.317Z",
+    "actor": "app",
+    "version": 1,
+    "data": "{\"id\":3,\"name\":\"Ehrenmitglied\",\"amount_cents\":0,\"interval\":\"jaehrlich\"}",
+    "hash": "2afce58fe08b879add50278cad7a24ef1a12b7f6a333e29dde965965b8c6ee7f",
+    "prev_hash": "995523d896666f5c718aed7dbfcd536c23c740f0ea576f32b1451076c559a486"
+  },
+  {
+    "id": 6,
+    "type": "BeitragsklasseAngelegt",
+    "timestamp": "2026-03-04T19:56:47.317Z",
+    "actor": "app",
+    "version": 1,
+    "data": "{\"id\":4,\"name\":\"Foerdermitglied\",\"amount_cents\":12000,\"interval\":\"jaehrlich\"}",
+    "hash": "d91fb15c2c96e58d4ce75eac6e16619570b12ab3412dd57ba002fdc9235fddf8",
+    "prev_hash": "2afce58fe08b879add50278cad7a24ef1a12b7f6a333e29dde965965b8c6ee7f"
+  },
+  {
+    "id": 7,
+    "type": "MitgliedAngelegt",
+    "timestamp": "2026-03-04T19:56:47.317Z",
+    "actor": "app",
+    "version": 1,
+    "data": "{\"id\":1,\"member_number\":\"1001\",\"first_name\":\"Hans\",\"last_name\":\"Mueller\",\"street\":\"Hauptstr. 1\",\"zip\":\"10115\",\"city\":\"Berlin\",\"phone\":\"030-1234567\",\"email\":\"hans.mueller@example.de\",\"birth_date\":\"1975-03-15\",\"entry_date\":\"2024-01-15\",\"exit_date\":null,\"exit_reason\":null,\"status\":\"aktiv\",\"fee_class_id\":1,\"notes\":null,\"consent_phone\":\"2024-01-15\",\"consent_email\":null,\"consent_photo_internal\":null,\"consent_photo_public\":null,\"consent_withdrawn_at\":null,\"created_at\":\"2024-01-15T10:00:00\",\"updated_at\":\"2024-01-15T10:00:00\"}",
+    "hash": "6d908bad9d0e2c590d44bc8c200abcc53ff825ce93d6407874e9b733b00f047a",
+    "prev_hash": "d91fb15c2c96e58d4ce75eac6e16619570b12ab3412dd57ba002fdc9235fddf8"
+  },
+  {
+    "id": 8,
+    "type": "MitgliedAngelegt",
+    "timestamp": "2026-03-04T19:56:47.317Z",
+    "actor": "app",
+    "version": 1,
+    "data": "{\"id\":2,\"member_number\":\"1002\",\"first_name\":\"Anna\",\"last_name\":\"Schmidt\",\"street\":null,\"zip\":null,\"city\":null,\"phone\":null,\"email\":null,\"birth_date\":null,\"entry_date\":\"2024-03-01\",\"exit_date\":null,\"exit_reason\":null,\"status\":\"passiv\",\"fee_class_id\":2,\"notes\":null,\"consent_phone\":null,\"consent_email\":null,\"consent_photo_internal\":null,\"consent_photo_public\":null,\"consent_withdrawn_at\":null,\"created_at\":\"2024-03-01T08:00:00\",\"updated_at\":\"2024-03-01T08:00:00\"}",
+    "hash": "3683df30f9aebefe5011044006c66c55ac4498ffc481d32291cc68471f2cb6e9",
+    "prev_hash": "6d908bad9d0e2c590d44bc8c200abcc53ff825ce93d6407874e9b733b00f047a"
+  },
+  {
+    "id": 9,
+    "type": "MitgliedAngelegt",
+    "timestamp": "2026-03-04T19:56:47.317Z",
+    "actor": "app",
+    "version": 1,
+    "data": "{\"id\":3,\"member_number\":\"1003\",\"first_name\":\"Karl\",\"last_name\":\"Weber\",\"street\":\"Gartenweg 5\",\"zip\":\"80331\",\"city\":\"Muenchen\",\"phone\":null,\"email\":\"karl.weber@example.de\",\"birth_date\":\"1960-11-20\",\"entry_date\":\"2022-06-01\",\"exit_date\":\"2025-12-31\",\"exit_reason\":\"Umzug\",\"status\":\"ausgetreten\",\"fee_class_id\":1,\"notes\":null,\"consent_phone\":null,\"consent_email\":null,\"consent_photo_internal\":null,\"consent_photo_public\":null,\"consent_withdrawn_at\":null,\"created_at\":\"2022-06-01T12:00:00\",\"updated_at\":\"2025-12-31T00:00:00\"}",
+    "hash": "c48d448da2778f560dd45871eea86b06471ce16e3e77119ad281945cbc6a0b09",
+    "prev_hash": "3683df30f9aebefe5011044006c66c55ac4498ffc481d32291cc68471f2cb6e9"
+  },
+  {
+    "id": 10,
+    "type": "MitgliedAngelegt",
+    "timestamp": "2026-03-04T19:56:47.317Z",
+    "actor": "app",
+    "version": 1,
+    "data": "{\"id\":4,\"member_number\":\"1004\",\"first_name\":\"Maria\",\"last_name\":\"Fischer\",\"street\":\"Am Ring 12\",\"zip\":\"50667\",\"city\":\"Koeln\",\"phone\":\"0221-9876543\",\"email\":\"maria.fischer@example.de\",\"birth_date\":\"1988-07-04\",\"entry_date\":\"2024-06-15\",\"exit_date\":null,\"exit_reason\":null,\"status\":\"aktiv\",\"fee_class_id\":1,\"notes\":null,\"consent_phone\":\"2024-06-15\",\"consent_email\":\"2024-06-15\",\"consent_photo_internal\":null,\"consent_photo_public\":null,\"consent_withdrawn_at\":null,\"created_at\":\"2024-06-15T14:00:00\",\"updated_at\":\"2024-06-15T14:00:00\"}",
+    "hash": "ee4aa7d62223101636f1c9a23f9675db42bc61a45ad8d71869642920f9031341",
+    "prev_hash": "c48d448da2778f560dd45871eea86b06471ce16e3e77119ad281945cbc6a0b09"
+  },
+  {
+    "id": 11,
+    "type": "MitgliedAngelegt",
+    "timestamp": "2026-03-04T19:56:47.317Z",
+    "actor": "app",
+    "version": 1,
+    "data": "{\"id\":5,\"member_number\":\"1005\",\"first_name\":\"Thomas\",\"last_name\":\"Bauer\",\"street\":\"Schlossallee 1\",\"zip\":\"20095\",\"city\":\"Hamburg\",\"phone\":\"040-5555555\",\"email\":\"thomas.bauer@example.de\",\"birth_date\":\"1950-01-01\",\"entry_date\":\"2020-01-01\",\"exit_date\":null,\"exit_reason\":null,\"status\":\"aktiv\",\"fee_class_id\":3,\"notes\":\"Gruendungsmitglied\",\"consent_phone\":null,\"consent_email\":null,\"consent_photo_internal\":null,\"consent_photo_public\":null,\"consent_withdrawn_at\":null,\"created_at\":\"2020-01-01T00:00:00\",\"updated_at\":\"2020-01-01T00:00:00\"}",
+    "hash": "5cda001987878425770f72885a21785c569c1d40d5d48b9533adddeac9bbb408",
+    "prev_hash": "ee4aa7d62223101636f1c9a23f9675db42bc61a45ad8d71869642920f9031341"
+  },
+  {
+    "id": 12,
+    "type": "VereinsprofilGespeichert",
+    "timestamp": "2026-03-04T19:56:47.317Z",
+    "actor": "app",
+    "version": 1,
+    "data": "{\"id\":1,\"name\":\"Testverein e.V.\",\"street\":\"Vereinsstr. 42\",\"zip\":\"12345\",\"city\":\"Musterstadt\",\"register_court\":\"\",\"register_number\":\"\",\"tax_id\":\"\",\"iban\":\"\",\"bic\":\"\",\"bank_name\":\"\",\"contact_email\":\"\",\"contact_phone\":\"\",\"chairman\":\"Hans Mueller\",\"logo_path\":\"\"}",
+    "hash": "5aeeb0e0fc6d751b3279ddbe8d3997866b8a56bfdd454efdf69ba8ef70c320fa",
+    "prev_hash": "5cda001987878425770f72885a21785c569c1d40d5d48b9533adddeac9bbb408"
+  }
+]

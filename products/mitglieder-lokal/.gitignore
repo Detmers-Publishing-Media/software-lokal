@@ -1,0 +1,8 @@
+test-results/
+node_modules/
+dist/
+release/
+demo/output/*.mp4
+demo/output/*.png
+demo/output/*.webm
+demo/sql-wasm.wasm
