@@ -232,3 +232,86 @@ describe('IPN Route Handler', () => {
     assert.equal(activateCall.data.order_id, 'ORD-123');
   });
 });
+
+describe('License Delivery Endpoint — POST /api/digistore-license', () => {
+  let server;
+  let baseUrl;
+
+  before(async () => {
+    const app = express();
+    app.use(express.json());
+    app.use(express.urlencoded({ extended: true }));
+    app.use(router);
+    await new Promise((resolve) => {
+      server = app.listen(0, '127.0.0.1', () => {
+        baseUrl = `http://127.0.0.1:${server.address().port}`;
+        resolve();
+      });
+    });
+  });
+
+  after(async () => {
+    await new Promise((resolve) => server.close(resolve));
+  });
+
+  beforeEach(() => {
+    mockPool.reset();
+    licenseCalls.length = 0;
+    verifyReturnValue = true;
+    process.env.DIGISTORE_IPN_PASSPHRASE = PASSPHRASE;
+  });
+
+  async function postDelivery(body) {
+    return fetch(`${baseUrl}/api/digistore-license`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+  }
+
+  it('12: ungueltige Signatur → 403', async () => {
+    verifyReturnValue = false;
+    const res = await postDelivery(makePayload());
+    assert.equal(res.status, 403);
+  });
+
+  it('13: fehlende Passphrase → 500', async () => {
+    delete process.env.DIGISTORE_IPN_PASSPHRASE;
+    const res = await postDelivery(makePayload());
+    assert.equal(res.status, 500);
+  });
+
+  it('14: fehlende order_id → 400', async () => {
+    const res = await postDelivery({ sha_sign: 'X' });
+    assert.equal(res.status, 400);
+  });
+
+  it('15: bestehende Lizenz → gibt Key zurueck', async () => {
+    mockPool.mockResult({ rows: [{ license_key: 'CFML-EXIST-1234-5678-AB12' }], rowCount: 1 });
+    const res = await postDelivery(makePayload());
+    assert.equal(res.status, 200);
+    const text = await res.text();
+    assert.equal(text, 'CFML-EXIST-1234-5678-AB12');
+  });
+
+  it('16: keine Lizenz vorhanden → erstellt neue und gibt Key zurueck', async () => {
+    // First query (lookup by order_id) returns empty
+    mockPool.mockResult({ rows: [], rowCount: 0 });
+    const res = await postDelivery(makePayload());
+    assert.equal(res.status, 200);
+    const text = await res.text();
+    assert.equal(text, 'CFML-TEST-KEY1-KEY2-KE34');
+    const activateCall = licenseCalls.find(c => c.fn === 'activateFromIPN');
+    assert.ok(activateCall, 'activateFromIPN should be called');
+    assert.equal(activateCall.data.order_id, 'ORD-123');
+  });
+
+  it('17: Service-Fehler → 500', async () => {
+    mockPool.mockResult({ rows: [], rowCount: 0 });
+    const origActivate = mockLicense.activateFromIPN;
+    mockLicense.activateFromIPN = async () => { throw new Error('DB down'); };
+    const res = await postDelivery(makePayload());
+    assert.equal(res.status, 500);
+    mockLicense.activateFromIPN = origActivate;
+  });
+});

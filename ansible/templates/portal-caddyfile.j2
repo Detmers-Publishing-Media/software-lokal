@@ -2,3 +2,7 @@
     tls /etc/caddy/certs/origin.pem /etc/caddy/certs/origin-key.pem
     reverse_proxy portal-app:3200
 }
+
+{{ digistore_domain | default('digistore.detmers-publish.de') }} {
+    reverse_proxy portal-app:3200
+}

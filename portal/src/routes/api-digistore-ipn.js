@@ -82,4 +82,57 @@ router.post('/api/digistore-ipn', async (req, res) => {
   }
 });
 
+/**
+ * Digistore24 "Liefern" (Delivery) Endpoint.
+ * Called by Digistore24 after payment to retrieve the license key
+ * for display on the thank-you page.
+ *
+ * Idempotent: if IPN already created the license, returns existing key.
+ * If IPN hasn't arrived yet, creates the license here.
+ */
+router.post('/api/digistore-license', async (req, res) => {
+  const passphrase = process.env.DIGISTORE_IPN_PASSPHRASE;
+  if (!passphrase) {
+    console.error('DIGISTORE_IPN_PASSPHRASE nicht konfiguriert');
+    return res.status(500).send('');
+  }
+
+  if (!verifySignature(req.body, passphrase)) {
+    await logIPN('license_delivery', req.body.order_id, null, req.body, 'invalid_signature', null);
+    return res.status(403).send('');
+  }
+
+  const orderId = req.body.order_id;
+  if (!orderId) {
+    return res.status(400).send('');
+  }
+
+  try {
+    // Check if IPN already created a license for this order
+    const { rows } = await pool.query(
+      'SELECT license_key FROM licenses WHERE order_id = $1', [orderId]);
+
+    if (rows.length > 0) {
+      await logIPN('license_delivery', orderId, rows[0].license_key, req.body, 'success', 'existing');
+      return res.send(rows[0].license_key);
+    }
+
+    // IPN hasn't arrived yet — create the license now
+    const rawProductId = req.body.product_id || 'unknown';
+    const productId = await license.resolveProductId(rawProductId) || rawProductId;
+
+    const result = await license.activateFromIPN({
+      order_id: orderId,
+      product_id: productId,
+      payment_id: req.body.payment_id,
+    });
+    await logIPN('license_delivery', orderId, result.licenseKey, req.body, 'success', 'created');
+    return res.send(result.licenseKey);
+  } catch (err) {
+    console.error('License-Delivery fehlgeschlagen:', err.message);
+    await logIPN('license_delivery', orderId, null, req.body, 'failed', err.message).catch(() => {});
+    return res.status(500).send('');
+  }
+});
+
 module.exports = router;
