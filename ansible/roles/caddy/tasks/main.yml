@@ -24,7 +24,7 @@
           tls /etc/caddy/certs/origin.pem /etc/caddy/certs/origin-key.pem
           reverse_proxy forgejo:3000
       }
-      gateway.codefabrik.{{ cloudflare_zone }} {
+      gateway.{{ cloudflare_zone }} {
           tls /etc/caddy/certs/origin.pem /etc/caddy/certs/origin-key.pem
           reverse_proxy gateway:3100
       }
