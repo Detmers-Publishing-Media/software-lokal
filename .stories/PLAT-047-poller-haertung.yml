@@ -1,0 +1,84 @@
+id: "PLAT-047"
+title: "Poller-Haertung: Patches in Ansible-Template + Tests + Logging"
+epic: "INFRA-STABILITY"
+status: "inbox"
+
+story_type: "platform-core"
+lane: "slow"
+platform_impact: "high"
+founder_gate_required: true
+force_approve_allowed: false
+auto_merge_allowed: false
+
+platform_rationale: "Poller ist Kernfunktion der Fabrik — jeder Bug stoppt die gesamte Pipeline"
+reused_by_products: []
+non_goals:
+  - "Rewrite des Pollers in einer anderen Sprache"
+  - "Aufteilung in Microservices"
+  - "Neue Features (nur Stabilitaet)"
+
+description: |
+  Der OpenClaw Poller (openclaw-poller.sh.j2, 730 Zeilen) hatte mehrere
+  kritische Stabilitaets- und Sicherheitsprobleme, die durch einen externen
+  Review identifiziert und manuell auf dem PROD-Server gefixt wurden.
+
+  Die Ansible-Template-Datei (Source of Truth) enthaelt noch ALLE alten Bugs.
+  Diese Story transferiert die 11 Patches in das Template und ergaenzt Tests
+  sowie verbessertes Logging.
+
+  Hintergrund: set -euo pipefail + Bash-Eigenheiten fuehrten zu stillen
+  Crashes (Exit 1 ohne Fehlermeldung). Zusaetzlich SQL-Injection-Risiken
+  durch direkte String-Interpolation in psql-Aufrufe.
+
+  Patches (bereits auf PROD validiert):
+  1. set -Eeuo pipefail + ERR-Trap (Crash-Location sichtbar)
+  2. log() ohne tee-Pipe (verhindert pipefail in Log-Funktion)
+  3. sql_escape() + run_psql() + get_scalar_sql() Helfer
+  4. read_story_field() mit return 0 (verhindert pipefail bei grep)
+  5. read_story_governance() mit := Defaults statt [ -z ] && (Root-Cause)
+  6. update_poller_state() mit sql_escape
+  7. get_poller_state() robust mit Fehlerbehandlung
+  8. log_poller_event() mit sql_escape
+  9. record_metric() mit Feld-Whitelist (SQL-Injection-Schutz)
+  10. Phase-1 grep ohne pipefail (produkt-Feld)
+  11. FORGEJO_API_TOKEN Pflichtpruefung beim Start
+
+  Zusaetzlich noetig (noch nicht auf PROD):
+  - Phase 2-4 grep/git/docker-Aufrufe haerten
+  - EXIT-Trap: Leader-Lock aus DB loeschen
+  - find-Aufrufe mit mkdir -p absichern
+  - for-Schleifen ohne 2>/dev/null (nullglob reicht)
+
+acceptance_criteria:
+  - "Alle 11 Patches aus PROD in openclaw-poller.sh.j2 uebertragen"
+  - "Phase 2-4 grep-Aufrufe mit (grep ... || true) abgesichert"
+  - "EXIT-Trap loescht Leader-Lock aus DB (DELETE FROM leader_lock)"
+  - "find work/04-in-progress mit mkdir -p davor"
+  - "ERR-Trap loggt Zeilennummer und Befehl bei Crash"
+  - "sql_escape() bei allen psql-Aufrufen mit User-Daten"
+  - "record_metric() hat Feld-Whitelist (kein dynamisches SQL)"
+  - "FORGEJO_API_TOKEN wird beim Start geprueft"
+  - "Shellcheck-clean (keine neuen Warnings)"
+  - "Ansible-Rolle deployt erfolgreich auf DEV/PROD"
+  - "Poller laeuft 10 Zyklen ohne Crash (manueller Smoke-Test)"
+  - "Review-Prompt validiert durch externen Reviewer"
+
+affected_files:
+  - "ansible/roles/poller/templates/openclaw-poller.sh.j2"
+  - "ansible/roles/poller/tasks/main.yml"
+
+depends_on: []
+
+manual_steps:
+  - step: "Patches uebertragen"
+    desc: "11 Patches von /opt/codefabrik/openclaw-poller.sh in Ansible-Template"
+  - step: "Shellcheck ausfuehren"
+    desc: "shellcheck --shell=bash openclaw-poller.sh.j2 (Jinja-Marker ignorieren)"
+  - step: "Deploy auf PROD"
+    desc: "ansible-playbook playbooks/deploy-poller.yml"
+  - step: "Smoke-Test"
+    desc: "10 Poller-Zyklen beobachten, journalctl -u openclaw-poller"
+  - step: "Externer Review"
+    desc: "review-prompt-poller-haertung.md an Reviewer geben"
+
+estimated_effort: "M"
