@@ -10,8 +10,8 @@ upcloud_os_template: 01000000-0000-4000-8000-000030240200  # Ubuntu 24.04
 cloudflare_zone: detmers-publish.de
 cloudflare_zone_id: b9525ee2fa8f0e14ce58b1f1b184c597
 dns_records:
-  - { name: "git", target: "{{ server_ip }}" }
-  - { name: "gateway", target: "{{ server_ip }}" }
+  - { name: "git", target: "{{ server_ip }}", proxied: true }
+  - { name: "gateway", target: "{{ server_ip }}", proxied: true }
 
 # Forgejo
 forgejo_domain: "git.detmers-publish.de"
