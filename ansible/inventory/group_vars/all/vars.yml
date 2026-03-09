@@ -10,12 +10,11 @@ upcloud_os_template: 01000000-0000-4000-8000-000030240200  # Ubuntu 24.04
 cloudflare_zone: detmers-publish.de
 cloudflare_zone_id: b9525ee2fa8f0e14ce58b1f1b184c597
 dns_records:
-  - { name: "git-codefabrik", target: "{{ server_ip }}" }
-  - { name: "gateway-codefabrik", target: "{{ server_ip }}" }
-  - { name: "ops-codefabrik", target: "{{ server_ip }}", proxied: false }
+  - { name: "git", target: "{{ server_ip }}" }
+  - { name: "gateway", target: "{{ server_ip }}" }
 
 # Forgejo
-forgejo_domain: "git-codefabrik.detmers-publish.de"
+forgejo_domain: "git.detmers-publish.de"
 forgejo_image: "codeberg.org/forgejo/forgejo:10"
 
 # Docker

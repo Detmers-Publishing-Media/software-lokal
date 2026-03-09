@@ -102,7 +102,7 @@
 
 - name: "Smoke-Test: Externer HTTPS-Zugriff Gateway"
   ansible.builtin.uri:
-    url: "https://gateway-codefabrik.{{ cloudflare_zone }}/health"
+    url: "https://gateway.{{ cloudflare_zone }}/health"
     status_code: 200
     validate_certs: false
   register: ext_gateway_check
