@@ -15,6 +15,40 @@ const DOWNLOADS_DIR = process.env.DOWNLOADS_DIR || '/data/downloads';
 const downloadTokens = new Map();
 const TOKEN_TTL_MS = 10 * 60 * 1000;
 
+/**
+ * Lookup license key by Digistore24 order_id.
+ * Used by download page when customer is redirected from Digistore24.
+ * Returns key + product info so the page can auto-populate.
+ */
+router.get('/api/order-license/:orderId', async (req, res) => {
+  const { orderId } = req.params;
+  if (!orderId || orderId.length < 4) {
+    return res.status(400).json({ error: 'Ungueltige Bestellnummer' });
+  }
+
+  const { rows } = await pool.query(`
+    SELECT l.license_key, l.product_id, l.status, p.name AS product_name
+    FROM licenses l
+    JOIN products p ON l.product_id = p.id
+    WHERE l.order_id = $1
+  `, [orderId]);
+
+  if (!rows.length) {
+    return res.status(404).json({ error: 'Keine Lizenz fuer diese Bestellung gefunden' });
+  }
+
+  const lic = rows[0];
+  if (lic.status !== 'active') {
+    return res.status(403).json({ error: 'Lizenz ist nicht aktiv', status: lic.status });
+  }
+
+  res.json({
+    license_key: lic.license_key,
+    product_id: lic.product_id,
+    product_name: lic.product_name,
+  });
+});
+
 // Cleanup expired tokens periodically
 setInterval(() => {
   const now = Date.now();

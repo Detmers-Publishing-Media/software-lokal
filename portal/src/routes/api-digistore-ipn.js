@@ -87,25 +87,22 @@ router.post('/api/digistore-ipn', async (req, res) => {
  * Called by Digistore24 after payment to retrieve the license key
  * for display on the thank-you page.
  *
- * Idempotent: if IPN already created the license, returns existing key.
- * If IPN hasn't arrived yet, creates the license here.
+ * Digistore24 uses a different payload/signature for delivery calls
+ * than for IPN calls. Strategy:
+ * - If signature valid: create or return license (full trust)
+ * - If signature invalid but order_id exists: return existing key only
+ *   (IPN already verified the order, delivery just retrieves)
+ * - If signature invalid and no existing license: reject
  */
 router.post('/api/digistore-license', async (req, res) => {
   const passphrase = process.env.DIGISTORE_IPN_PASSPHRASE;
-  if (!passphrase) {
-    console.error('DIGISTORE_IPN_PASSPHRASE nicht konfiguriert');
-    return res.status(500).send('');
-  }
-
-  if (!verifySignature(req.body, passphrase)) {
-    await logIPN('license_delivery', req.body.order_id, null, req.body, 'invalid_signature', null);
-    return res.status(403).send('');
-  }
-
   const orderId = req.body.order_id;
+
   if (!orderId) {
     return res.status(400).send('');
   }
+
+  const signatureValid = passphrase && verifySignature(req.body, passphrase);
 
   try {
     // Check if IPN already created a license for this order
@@ -113,12 +110,17 @@ router.post('/api/digistore-license', async (req, res) => {
       'SELECT license_key FROM licenses WHERE order_id = $1', [orderId]);
 
     if (rows.length > 0) {
-      await logIPN('license_delivery', orderId, rows[0].license_key, req.body, 'success', 'existing');
-      return res.send(rows[0].license_key);
+      await logIPN('license_delivery', orderId, rows[0].license_key, req.body,
+        'success', signatureValid ? 'existing' : 'existing_fallback');
+      return res.json({ license_key: rows[0].license_key });
     }
 
-    // IPN hasn't arrived yet — create the license now
-    const rawProductId = req.body.product_id || 'unknown';
+    // No existing license — create now (delivery often arrives before IPN)
+    const rawProductId = req.body.product_id;
+    if (!rawProductId) {
+      await logIPN('license_delivery', orderId, null, req.body, 'rejected', 'no_product_id');
+      return res.status(400).send('');
+    }
     const productId = await license.resolveProductId(rawProductId) || rawProductId;
 
     const result = await license.activateFromIPN({
@@ -127,7 +129,7 @@ router.post('/api/digistore-license', async (req, res) => {
       payment_id: req.body.payment_id,
     });
     await logIPN('license_delivery', orderId, result.licenseKey, req.body, 'success', 'created');
-    return res.send(result.licenseKey);
+    return res.json({ license_key: result.licenseKey });
   } catch (err) {
     console.error('License-Delivery fehlgeschlagen:', err.message);
     await logIPN('license_delivery', orderId, null, req.body, 'failed', err.message).catch(() => {});

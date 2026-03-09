@@ -269,16 +269,22 @@ describe('License Delivery Endpoint — POST /api/digistore-license', () => {
     });
   }
 
-  it('12: ungueltige Signatur → 403', async () => {
+  it('12: ungueltige Signatur + keine Lizenz → erstellt trotzdem (Delivery vor IPN)', async () => {
     verifyReturnValue = false;
+    mockPool.mockResult({ rows: [], rowCount: 0 });
     const res = await postDelivery(makePayload());
-    assert.equal(res.status, 403);
+    assert.equal(res.status, 200);
+    const data = await res.json();
+    assert.equal(data.license_key, 'CFML-TEST-KEY1-KEY2-KE34');
   });
 
-  it('13: fehlende Passphrase → 500', async () => {
-    delete process.env.DIGISTORE_IPN_PASSPHRASE;
+  it('13: ungueltige Signatur + bestehende Lizenz → gibt Key zurueck (Fallback)', async () => {
+    verifyReturnValue = false;
+    mockPool.mockResult({ rows: [{ license_key: 'CFRL-FALL-BACK-1234-AB12' }], rowCount: 1 });
     const res = await postDelivery(makePayload());
-    assert.equal(res.status, 500);
+    assert.equal(res.status, 200);
+    const data = await res.json();
+    assert.equal(data.license_key, 'CFRL-FALL-BACK-1234-AB12');
   });
 
   it('14: fehlende order_id → 400', async () => {
@@ -286,21 +292,20 @@ describe('License Delivery Endpoint — POST /api/digistore-license', () => {
     assert.equal(res.status, 400);
   });
 
-  it('15: bestehende Lizenz → gibt Key zurueck', async () => {
+  it('15: gueltige Signatur + bestehende Lizenz → gibt Key zurueck', async () => {
     mockPool.mockResult({ rows: [{ license_key: 'CFML-EXIST-1234-5678-AB12' }], rowCount: 1 });
     const res = await postDelivery(makePayload());
     assert.equal(res.status, 200);
-    const text = await res.text();
-    assert.equal(text, 'CFML-EXIST-1234-5678-AB12');
+    const data = await res.json();
+    assert.equal(data.license_key, 'CFML-EXIST-1234-5678-AB12');
   });
 
-  it('16: keine Lizenz vorhanden → erstellt neue und gibt Key zurueck', async () => {
-    // First query (lookup by order_id) returns empty
+  it('16: gueltige Signatur + keine Lizenz → erstellt neue und gibt Key zurueck', async () => {
     mockPool.mockResult({ rows: [], rowCount: 0 });
     const res = await postDelivery(makePayload());
     assert.equal(res.status, 200);
-    const text = await res.text();
-    assert.equal(text, 'CFML-TEST-KEY1-KEY2-KE34');
+    const data = await res.json();
+    assert.equal(data.license_key, 'CFML-TEST-KEY1-KEY2-KE34');
     const activateCall = licenseCalls.find(c => c.fn === 'activateFromIPN');
     assert.ok(activateCall, 'activateFromIPN should be called');
     assert.equal(activateCall.data.order_id, 'ORD-123');

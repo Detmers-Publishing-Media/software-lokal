@@ -28,13 +28,57 @@
       <h2>Ideenportal</h2>
       <div class="card">
         <h3>Neue Idee einreichen</h3>
+        <p style="font-size:0.9rem;color:#555;margin:0.5rem 0">Beschreiben Sie Ihren Wunsch moeglichst genau. Je besser wir verstehen was Sie brauchen, desto schneller koennen wir es umsetzen.</p>
         <form id="ideaForm" style="margin-top:0.5rem">
-          <label for="license_key">Lizenzkey</label>
-          <input type="text" id="license_key" required placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
-          <label for="title">Titel</label>
-          <input type="text" id="title" required>
-          <label for="description">Beschreibung</label>
-          <textarea id="description" required placeholder="Beschreiben Sie Ihre Produktidee..."></textarea>
+          <label for="license_key">Lizenzkey *</label>
+          <input type="text" id="license_key" required placeholder="CFRL-XXXX-XXXX-XXXX-XXXX">
+
+          <label for="title">Kurztitel * <span style="font-weight:normal;font-size:0.8rem;color:#888">(mind. 5 Zeichen)</span></label>
+          <input type="text" id="title" required minlength="5" maxlength="100" placeholder="z.B. Sammelrechnung fuer mehrere Kunden">
+
+          <label for="category">Kategorie *</label>
+          <select id="category" required>
+            <option value="">Bitte waehlen...</option>
+            <option value="neue-funktion">Neue Funktion</option>
+            <option value="erweiterung">Bestehende Funktion erweitern</option>
+            <option value="integration">Integration / Schnittstelle</option>
+            <option value="oberflaeche">Oberflaeche / Bedienung</option>
+            <option value="export">Export / Import</option>
+            <option value="sonstiges">Sonstiges</option>
+          </select>
+
+          <label for="what">Was soll die Funktion tun? * <span style="font-weight:normal;font-size:0.8rem;color:#888">(mind. 20 Zeichen)</span></label>
+          <textarea id="what" required minlength="20" rows="4" placeholder="Beschreiben Sie die gewuenschte Funktion so konkret wie moeglich. Was soll passieren? Was soll das Ergebnis sein?"></textarea>
+
+          <label for="why">Warum brauchen Sie das? * <span style="font-weight:normal;font-size:0.8rem;color:#888">(mind. 10 Zeichen)</span></label>
+          <textarea id="why" required minlength="10" rows="3" placeholder="Welches Problem loest diese Funktion fuer Sie? Was koennen Sie aktuell nicht tun?"></textarea>
+
+          <label for="howoften">Wie oft wuerden Sie das nutzen? <span style="font-weight:normal;font-size:0.8rem;color:#888">(optional)</span></label>
+          <input type="text" id="howoften" placeholder="z.B. taeglich, woechentlich, einmal im Monat">
+
+          <label for="workaround">Haben Sie aktuell einen Workaround? <span style="font-weight:normal;font-size:0.8rem;color:#888">(optional)</span></label>
+          <textarea id="workaround" rows="2" placeholder="Falls ja: Wie loesen Sie das Problem aktuell?"></textarea>
+
+          <label for="priority">Wie wichtig ist das fuer Sie?</label>
+          <select id="priority">
+            <option value="low">Waere schoen (irgendwann)</option>
+            <option value="normal" selected>Wuerde mir helfen (naechste Versionen)</option>
+            <option value="high">Brauche ich dringend (bald)</option>
+          </select>
+
+          <fieldset style="border:1px solid #ddd;border-radius:4px;padding:0.8rem;margin:0.8rem 0">
+            <legend style="font-weight:600;font-size:0.9rem;padding:0 0.4rem">Checkliste (alle Punkte bestaetigen)</legend>
+            <label style="display:flex;align-items:center;gap:0.5rem;padding:0.3rem 0;font-size:0.9rem;cursor:pointer">
+              <input type="checkbox" id="check1" required> Ich habe beschrieben, <strong>was</strong> die Funktion tun soll
+            </label>
+            <label style="display:flex;align-items:center;gap:0.5rem;padding:0.3rem 0;font-size:0.9rem;cursor:pointer">
+              <input type="checkbox" id="check2" required> Ich habe erklaert, <strong>warum</strong> ich das brauche
+            </label>
+            <label style="display:flex;align-items:center;gap:0.5rem;padding:0.3rem 0;font-size:0.9rem;cursor:pointer">
+              <input type="checkbox" id="check3" required> Ich habe geprueft, ob es die Funktion <strong>nicht schon gibt</strong>
+            </label>
+          </fieldset>
+
           <button type="submit" class="btn">Idee einreichen</button>
         </form>
         <div id="error" class="error" style="display:none"></div>
@@ -119,13 +163,26 @@
       const resEl = document.getElementById('result');
       errEl.style.display = 'none'; resEl.style.display = 'none';
       try {
+        // Build structured description (same as desktop app)
+        const cat = document.getElementById('category');
+        const catLabel = cat.options[cat.selectedIndex]?.text || '';
+        const what = document.getElementById('what').value.trim();
+        const why = document.getElementById('why').value.trim();
+        const howoften = document.getElementById('howoften').value.trim();
+        const wa = document.getElementById('workaround').value.trim();
+        let desc = `**Kategorie:** ${catLabel}\n\n**Was soll die Funktion tun?**\n${what}\n\n**Warum brauchen Sie das?**\n${why}`;
+        if (howoften) desc += `\n\n**Wie oft wuerden Sie das nutzen?**\n${howoften}`;
+        if (wa) desc += `\n\n**Aktueller Workaround:**\n${wa}`;
+
         const res = await fetch('/api/ideas', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             license_key: getKey(),
             title: document.getElementById('title').value,
-            description: document.getElementById('description').value
+            description: desc,
+            category: document.getElementById('category').value,
+            priority: document.getElementById('priority').value
           })
         });
         const data = await res.json();

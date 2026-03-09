@@ -26,9 +26,18 @@
         <p style="margin-bottom:1rem">Geben Sie Ihren Lizenzkey ein, um Ihr Produkt herunterzuladen.</p>
         <form id="keyForm">
           <label for="license_key">Lizenzkey</label>
-          <input type="text" id="license_key" required placeholder="CFML-XXXX-XXXX-XXXX-XXXX">
+          <input type="text" id="license_key" required placeholder="CFRL-XXXX-XXXX-XXXX-XXXX">
           <button type="submit" class="btn">Weiter</button>
         </form>
+      </div>
+      <div class="card" style="margin-top:1rem;background:#f8fafc">
+        <p style="font-size:0.9rem;color:#555;margin-bottom:0.5rem"><strong>Lizenzkey verloren?</strong> Stellen Sie ihn mit Ihrer Digistore24-Bestellnummer wieder her.</p>
+        <form id="recoverForm">
+          <label for="order_id">Bestellnummer</label>
+          <input type="text" id="order_id" required placeholder="z.B. ABC12345">
+          <button type="submit" class="btn btn-secondary">Lizenzkey wiederherstellen</button>
+        </form>
+        <div id="recover-error" class="error" style="display:none;margin-top:0.5rem"></div>
       </div>
     </div>
     <div id="product-view" style="display:none">
@@ -43,13 +52,20 @@
         <p><strong>Hinweis:</strong> Wir stellen die letzten 4 Versionen zum Download bereit. Aeltere Versionen werden automatisch entfernt. Falls Sie eine bestimmte Version benoetigen, wenden Sie sich bitte an unseren <a href="/support">Support</a>.</p>
       </div>
 
-      <div class="card" style="background:#f8fafc;margin-top:1rem">
-        <p style="font-size:0.9rem;color:#555">
-          Ihr Lizenzkey: <code id="displayKey"></code>
-        </p>
-        <p style="font-size:0.85rem;color:#888;margin-top:0.3rem">
-          Bitte bewahren Sie Ihren Lizenzkey sicher auf. Sie benoetigen ihn fuer Support und Updates.
-        </p>
+      <div class="card" style="background:#ecfdf5;border:2px solid #059669;margin-top:1rem">
+        <h3 style="margin-bottom:0.5rem;color:#059669">Ihr Lizenzschluessel</h3>
+        <p style="font-size:1.3rem;font-family:monospace;letter-spacing:0.05em;background:#fff;padding:0.6rem 1rem;border-radius:4px;display:inline-block;user-select:all;cursor:pointer" id="displayKey" title="Klicken zum Kopieren"></p>
+        <div style="margin-top:0.8rem;font-size:0.9rem;color:#065f46">
+          <p><strong>So geht es weiter:</strong></p>
+          <ol style="margin:0.4rem 0 0 1.2rem;line-height:1.6">
+            <li>Laden Sie die passende Version fuer Ihr Betriebssystem herunter</li>
+            <li>Installieren und starten Sie die Anwendung</li>
+            <li>Tragen Sie den Lizenzschluessel in der Anwendung ein (unter Einstellungen → Supportvertrag)</li>
+          </ol>
+        </div>
+        <div style="margin-top:0.8rem;padding:0.6rem;background:#fffbeb;border-radius:4px;font-size:0.85rem;color:#92400e">
+          <strong>Wichtig:</strong> Bewahren Sie Ihren Lizenzschluessel sicher auf. Er ist Ihr Zugang zu Support, Updates und erneutem Download. Geben Sie ihn nicht an Dritte weiter.
+        </div>
         <p style="margin-top:0.8rem;font-size:0.9rem">
           <a href="#" id="supportLink">Support</a> &middot;
           <a href="#" id="requestLink">Feature-Anforderung</a>
@@ -201,6 +217,59 @@
       const val = document.getElementById('license_key').value.trim();
       if (val) validateKey(val);
     });
+
+    document.getElementById('recoverForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const errEl = document.getElementById('recover-error');
+      errEl.style.display = 'none';
+      const orderId = document.getElementById('order_id').value.trim();
+      if (!orderId) return;
+
+      try {
+        const res = await fetch(`/api/order-license/${encodeURIComponent(orderId)}`);
+        if (res.ok) {
+          const data = await res.json();
+          validateKey(data.license_key);
+        } else {
+          const data = await res.json().catch(() => ({}));
+          errEl.textContent = data.error || 'Keine Lizenz fuer diese Bestellnummer gefunden.';
+          errEl.style.display = 'block';
+        }
+      } catch {
+        errEl.textContent = 'Verbindungsfehler. Bitte versuchen Sie es spaeter erneut.';
+        errEl.style.display = 'block';
+      }
+    });
+
+    // Auto-lookup: if redirected from Digistore24 with order_id
+    (async () => {
+      const params = new URLSearchParams(location.search);
+      const orderId = params.get('order_id');
+      if (!orderId) return;
+
+      document.getElementById('key-form').style.display = 'none';
+      document.getElementById('loading').style.display = 'block';
+
+      try {
+        const res = await fetch(`/api/order-license/${encodeURIComponent(orderId)}`);
+        if (res.ok) {
+          const data = await res.json();
+          document.getElementById('loading').style.display = 'none';
+          validateKey(data.license_key);
+        } else {
+          // License not yet created (IPN pending) — show key form with hint
+          document.getElementById('loading').style.display = 'none';
+          document.getElementById('key-form').style.display = 'block';
+          const hint = document.createElement('p');
+          hint.style.cssText = 'color:#92400e;background:#fffbeb;padding:0.8rem;border-radius:4px;margin-bottom:1rem';
+          hint.textContent = 'Ihre Lizenz wird gerade erstellt. Bitte geben Sie Ihren Lizenzkey ein, sobald Sie ihn per E-Mail erhalten haben. Sie koennen diese Seite auch spaeter erneut aufrufen.';
+          document.getElementById('key-form').querySelector('.card').prepend(hint);
+        }
+      } catch {
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('key-form').style.display = 'block';
+      }
+    })();
   </script>
 </body>
 </html>
