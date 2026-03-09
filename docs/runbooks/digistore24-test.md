@@ -52,7 +52,7 @@ Erwartet: Eintrag mit `event_type = 'on_payment'`, `result = 'success'`.
 ```bash
 ssh -i ~/.ssh/codefabrik_deploy root@PORTAL_IP \
   docker exec portal-db psql -U portal -d portal -c \
-  "SELECT license_key, product_id, customer_email, status, source, order_id, activated_at
+  "SELECT license_key, product_id, status, source, order_id, activated_at
    FROM licenses WHERE source = 'digistore' ORDER BY id DESC LIMIT 5;"
 ```
 
@@ -61,11 +61,17 @@ Erwartet: Lizenz mit `status = 'active'`, `source = 'digistore'`.
 ## 6. Lizenz-Download testen
 
 ```bash
-# LICENSE_KEY und PRODUCT_ID aus Schritt 5 einsetzen
-curl -s "http://PORTAL_IP:3200/api/download/PRODUCT_ID?key=LICENSE_KEY"
+# LICENSE_KEY aus Schritt 5 einsetzen
+# Schritt 1: Download-Token holen (Key wird per POST gesendet, nie in URL)
+TOKEN=$(curl -s -X POST "https://portal.detmers-publish.de/api/download-token" \
+  -H "Content-Type: application/json" \
+  -d '{"key":"LICENSE_KEY"}' | jq -r '.token')
+
+# Schritt 2: Download mit Token
+curl -sI "https://portal.detmers-publish.de/api/download/PRODUCT_ID/linux?token=$TOKEN"
 ```
 
-Erwartet: HTTP 302 Redirect zum Forgejo-Release (oder 404 falls kein Release existiert).
+Erwartet: HTTP 200 mit Datei-Download (oder 404 falls kein Release existiert).
 
 ## 7. Storno testen
 
@@ -91,8 +97,10 @@ Erwartet: `status = 'revoked'`, `revoked_at` ist gesetzt.
 ## 8. Zugang nach Storno pruefen
 
 ```bash
-# Gleicher Key wie in Schritt 6 — muss jetzt abgelehnt werden
-curl -s "http://PORTAL_IP:3200/api/download/PRODUCT_ID?key=LICENSE_KEY"
+# Gleicher Key wie in Schritt 6 — Token-Anfrage muss jetzt scheitern
+curl -s -X POST "https://portal.detmers-publish.de/api/download-token" \
+  -H "Content-Type: application/json" \
+  -d '{"key":"LICENSE_KEY"}'
 ```
 
 Erwartet: HTTP 403 `{"error":"Ungueltiger Lizenzkey"}`.

@@ -54,8 +54,6 @@
     body_format: json
     body:
       product_id: mitglieder-lokal
-      customer_email: "smoke-test@factory.local"
-      customer_name: "Smoke Test"
     status_code: 201
   register: buy_result
 

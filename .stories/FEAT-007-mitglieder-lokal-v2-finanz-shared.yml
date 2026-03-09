@@ -1,0 +1,81 @@
+id: "FEAT-007"
+title: "Mitglieder Lokal v2.0 — Neubau auf finanz-shared Kern"
+epic: "PRODUKT-ARCHITEKTUR"
+status: "inbox"
+
+story_type: "platform-core"
+lane: "slow"
+platform_impact: "high"
+founder_gate_required: true
+force_approve_allowed: false
+auto_merge_allowed: false
+
+platform_rationale: "Migration von eigenstaendigem DB-Schema auf geteilten finanz-shared Kern — Architektur-Vereinheitlichung"
+reused_by_products: ["mitglieder-lokal"]
+non_goals:
+  - "Neue Features (nur Migration auf neuen Kern)"
+  - "Mehrplatz / Sync (bewusst nicht geplant)"
+  - "Aenderung der UI oder des Funktionsumfangs"
+
+description: |
+  Mitglieder Lokal v0.5.0 hat ein eigenes DB-Schema und eigene Models
+  (db.js mit CRUD + Events + Migrations). Rechnung Lokal nutzt bereits
+  den geteilten @codefabrik/finanz-shared Kern.
+
+  Ziel: Mitglieder Lokal v2.0 als Neubau auf finanz-shared, damit beide
+  Produkte dasselbe Datenmodell, dieselben Models und dieselbe
+  Event-Log-Infrastruktur nutzen.
+
+  Vorteile:
+  - Ein Datenmodell fuer alle Finanz-Produkte
+  - Bug-Fixes und Verbesserungen wirken produktuebergreifend
+  - Weniger Code-Duplikation
+  - Einheitliche Migrations-Strategie
+  - Vorbereitung fuer kuenftige Produkte auf finanz-shared
+
+  Ansatz: Neubau (nicht Migration des alten Codes)
+  - Neues Produkt-Verzeichnis oder In-Place-Ersetzung
+  - finanz-shared Schema mit Feature-Flags (core, fees, donations, assembly)
+  - finanz-shared Models (person, invoice, transaction, category, eventLog, profile)
+  - Mitglieder-spezifische Features ueber Feature-Flags (fees, donations, assembly)
+  - Bestehende UI-Routen auf neue Models umstellen
+  - Datenmigration: v0.5.0 SQLite → v2.0 finanz-shared Schema
+
+  Abhaengigkeit: Rechnung Lokal v1.0 sollte stabil sein, damit
+  finanz-shared als Kern validiert ist.
+
+acceptance_criteria:
+  - "Mitglieder Lokal nutzt @codefabrik/finanz-shared fuer Schema und Models"
+  - "Feature-Flags: core + fees + donations + assembly aktiviert"
+  - "Alle bestehenden Features funktionieren (CRUD, Zahlungen, PDF, CSV, Import)"
+  - "Event-Log mit HMAC-Hash-Kette (finanz-shared eventLog)"
+  - "Datenmigration von v0.5.0 → v2.0 funktioniert (bestehende Daten erhalten)"
+  - "Migrationsfixture: tests/fixtures/db_v0.5.0.sqlite"
+  - "Alle 7 Testkategorien bestehen (Unit, Integration, Migration, Ketten, Replay, Integritaet, Smoke)"
+  - "Testzahl mindestens auf aktuellem Niveau (74 Tests)"
+  - "Eigene db.js und Models entfernt (kein Doppelcode)"
+  - "CLAUDE.md aktualisiert (Mitglieder Lokal + Root)"
+  - "spec.yml und package.json Version 2.0.0"
+
+affected_files:
+  - "products/mitglieder-lokal/src/lib/db.js"
+  - "products/mitglieder-lokal/src/App.svelte"
+  - "products/mitglieder-lokal/src/routes/*.svelte"
+  - "products/mitglieder-lokal/product.config.js"
+  - "products/mitglieder-lokal/tests/*"
+  - "products/mitglieder-lokal/CLAUDE.md"
+  - "packages/finanz-shared/src/models/*"
+  - "packages/finanz-shared/src/db/schema.js"
+
+depends_on:
+  - "Rechnung Lokal v1.0 stabil (finanz-shared validiert)"
+
+manual_steps:
+  - step: "Datenmigration testen"
+    desc: "Bestehende v0.5.0 Datenbank mit echten Daten auf v2.0 migrieren und pruefen"
+  - step: "Pilotkunden informieren"
+    desc: "Bestehende Nutzer ueber Update-Prozess informieren (Key bleibt gleich)"
+  - step: "Backup-Hinweis"
+    desc: "Vor Update automatisches Backup sicherstellen, Rollback-Pfad dokumentieren"
+
+estimated_effort: "XL"
