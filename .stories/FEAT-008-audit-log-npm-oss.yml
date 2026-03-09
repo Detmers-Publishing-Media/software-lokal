@@ -1,0 +1,84 @@
+id: "FEAT-008"
+title: "Tamper-Proof Audit Log — Open-Source npm-Paket"
+epic: "OPEN-SOURCE"
+status: "inbox"
+
+story_type: "product-fast"
+lane: "fast"
+platform_impact: "low"
+founder_gate_required: false
+force_approve_allowed: true
+auto_merge_allowed: true
+
+platform_rationale: "Eigenstaendiges npm-Paket auf GitHub (public) — kein Einfluss auf bestehende Produkte"
+reused_by_products: []
+non_goals:
+  - "Aenderung an finanz-shared oder bestehenden Produkten"
+  - "Monetarisierung in Phase 1 (erst Adoption, dann Pro-Features)"
+  - "Hosted Service oder SaaS"
+  - "Framework-spezifische Adapter (SQLite, Postgres) im Core"
+
+description: |
+  Extraktion der HMAC-SHA256 Hash-Ketten-Logik aus finanz-shared/models/events.js
+  als eigenstaendiges, framework-agnostisches npm-Paket.
+
+  Ziel: Internationales Open-Source-Paket fuer Entwickler die SOC2, NIS2 (EU-Deadline
+  Juni 2026), ISO 27001 oder GDPR Compliance brauchen. Kein brauchbarer Wettbewerber
+  auf npm (alle tot oder framework-gebunden).
+
+  Strategie: Open Core
+  - Free (MIT): Hash-Kette, Verifizierung, Event-Replay, Storage-Adapter-Interface
+  - Pro ($29 one-time, spaeter): Compliance-Reports, Multi-Chain, Encrypted Payloads
+
+  Sprache: Englisch (Code, Docs, README, API)
+  Repo: Eigenes GitHub-Repo (public), NICHT im code-fabrik Monorepo
+  Paketname: z.B. @detmers/audit-log oder tamperproof-log (npm-Verfuegbarkeit pruefen)
+
+  Was schon existiert (70% wiederverwendbar):
+  - HMAC-SHA256 Hash-Kette (packages/finanz-shared/src/models/events.js)
+  - Integritaetspruefung (Kette verifizieren, Manipulation erkennen)
+  - Event-Replay (Zustand aus Events rekonstruieren)
+  - Tests (Ketten, Replay, Integritaet)
+
+  Was neu gebaut werden muss:
+  - Framework-agnostischer Core (kein SQLite/better-sqlite3 Dependency)
+  - Storage-Adapter-Interface (InMemory, SQLite, Postgres, Custom)
+  - TypeScript Declarations (.d.ts)
+  - Englische API-Oberflaeche
+  - README mit Badges, Beispielen, API-Docs
+  - 3 Beispiele (Node.js, Express Middleware, CLI)
+  - GitHub Actions CI (Test + npm publish)
+  - npm publish Setup
+
+acceptance_criteria:
+  - "Eigenes GitHub-Repo (public) mit MIT-Lizenz"
+  - "npm-Paket veroeffentlicht und installierbar"
+  - "Zero Dependencies im Core"
+  - "Storage-Adapter-Interface (InMemory-Adapter mitgeliefert)"
+  - "TypeScript Declarations"
+  - "README: Badges, Install, Quick Start, API, 3 Beispiele"
+  - "HMAC-SHA256 Hash-Kette mit Verifizierung"
+  - "Event-Replay aus Hash-Kette"
+  - "Tamper-Detection (manipulierte Events erkennen)"
+  - "100% Test-Coverage fuer Core"
+  - "GitHub Actions: Test + npm publish on tag"
+  - "Kein Code aus finanz-shared direkt kopiert (Clean-Room-Extraktion)"
+  - "Englisch: Code, Docs, README, API, Commit Messages"
+
+affected_files: []
+
+depends_on: []
+
+manual_steps:
+  - step: "npm-Paketnamen pruefen"
+    desc: "npm search fuer Wunschname, ggf. @detmers Scope registrieren"
+  - step: "GitHub-Repo erstellen"
+    desc: "Public Repo, MIT-Lizenz, README Template"
+  - step: "npm Token konfigurieren"
+    desc: "npm publish Token in GitHub Secrets"
+  - step: "Ersten Release taggen"
+    desc: "v0.1.0 auf npm veroeffentlichen"
+  - step: "Marketing"
+    desc: "Blog-Post, Reddit r/node, Hacker News, dev.to, Twitter/X"
+
+estimated_effort: "L"
