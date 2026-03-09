@@ -110,6 +110,21 @@
   delay: 10
   delegate_to: localhost
 
+- name: "Smoke-Test: DNS Records korrekt (IP + Proxied)"
+  delegate_to: localhost
+  ansible.builtin.uri:
+    url: "https://api.cloudflare.com/client/v4/zones/{{ cloudflare_zone_id }}/dns_records?name={{ item.name }}.{{ cloudflare_zone }}&type=A"
+    method: GET
+    headers:
+      Authorization: "Bearer {{ vault_cloudflare_api_token }}"
+    status_code: [200]
+  register: dns_smoke
+  loop: "{{ dns_records }}"
+  failed_when: >
+    dns_smoke.json.result | length == 0 or
+    dns_smoke.json.result[0].content != server_ip or
+    dns_smoke.json.result[0].proxied != (item.proxied | default(true))
+
 - name: "Smoke-Test Ergebnis"
   ansible.builtin.debug:
     msg: |
@@ -125,4 +140,5 @@
         /ready:        ✅
         HTTPS Forgejo: ✅ (extern)
         HTTPS Gateway: ✅ (extern)
+        DNS Records:   ✅ (IP + Proxied)
         Pipeline:      {{ smoke_result.stdout_lines[-1] | default('uebersprungen') }} ({{ 'nicht-blockierend' if smoke_result is defined else 'nur bei Bootstrap' }})
