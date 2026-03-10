@@ -122,7 +122,7 @@
   loop: "{{ dns_records }}"
   failed_when: >
     dns_smoke.json.result | length == 0 or
-    dns_smoke.json.result[0].content != server_ip or
+    dns_smoke.json.result[0].content != ansible_host or
     dns_smoke.json.result[0].proxied != (item.proxied | default(true))
 
 - name: "Smoke-Test Ergebnis"
