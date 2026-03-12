@@ -27,7 +27,8 @@
     }
   });
 
-  async function handleSubmit() {
+  async function handleSubmit(e) {
+    e.preventDefault();
     if (!form.template_id || !form.title.trim() || !form.inspector.trim()) return;
     saving = true;
     const id = await saveInspection({
@@ -48,7 +49,7 @@
 <div class="page">
   <h1>Neue Pruefung</h1>
 
-  <form onsubmit|preventDefault={handleSubmit}>
+  <form onsubmit={handleSubmit}>
     <div class="field">
       <label for="template">Vorlage *</label>
       <select id="template" bind:value={form.template_id} required>

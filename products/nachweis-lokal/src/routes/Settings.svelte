@@ -22,7 +22,8 @@
     }
   });
 
-  async function handleSave() {
+  async function handleSave(e) {
+    e.preventDefault();
     saving = true;
     await saveOrgProfile(form);
     saving = false;
@@ -38,7 +39,7 @@
     <h2>Organisationsprofil</h2>
     <p class="hint">Wird als Briefkopf auf Pruefprotokollen und Listen angezeigt.</p>
 
-    <form onsubmit|preventDefault={handleSave}>
+    <form onsubmit={handleSave}>
       <div class="field">
         <label for="name">Organisation</label>
         <input id="name" bind:value={form.name} placeholder="Name der Organisation" />

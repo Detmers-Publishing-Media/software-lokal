@@ -31,7 +31,8 @@
     items = items.filter((_, i) => i !== index);
   }
 
-  async function handleSubmit() {
+  async function handleSubmit(e) {
+    e.preventDefault();
     if (!form.name.trim()) return;
     saving = true;
     const id = await saveTemplate({
@@ -53,7 +54,7 @@
 <div class="page">
   <h1>{templateId ? 'Vorlage bearbeiten' : 'Neue Vorlage'}</h1>
 
-  <form onsubmit|preventDefault={handleSubmit}>
+  <form onsubmit={handleSubmit}>
     <div class="field">
       <label for="name">Name *</label>
       <input id="name" bind:value={form.name} required />
