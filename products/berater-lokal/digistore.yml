@@ -1,0 +1,14 @@
+# Digistore24-Konfiguration fuer Berater Lokal
+product_id: 675874
+name: "Berater Lokal"
+tagline: "Ganzheitliche Beratungssoftware fuer Finanz- und Versicherungsberater"
+description_short: "Desktop-Software fuer die ganzheitliche Beratung von Finanz- und Versicherungskunden."
+description_long: |
+    Berater Lokal ist eine Desktop-Software fuer Finanz- und
+    Versicherungsberater. Verwalten Sie Kunden, erstellen Sie
+    ganzheitliche Beratungsdokumentationen und behalten Sie den
+    Ueberblick ueber Ihr Beratungsgeschaeft. Lokal, sicher und
+    ohne Cloud-Abhaengigkeit.
+price: "39.00"
+currency: "EUR"
+thankyou_url: "https://portal.detmers-publish.de/download"

@@ -21,6 +21,7 @@ router.get('/product/:id/install', (req, res) => res.sendFile(path.join(publicDi
 router.get('/product/:id/releases', (req, res) => res.sendFile(path.join(publicDir, 'product.html')));
 router.get('/transparency', (req, res) => res.sendFile(path.join(publicDir, 'transparency.html')));
 router.get('/transparency/:product_id', (req, res) => res.sendFile(path.join(publicDir, 'transparency.html')));
+router.get('/danke', (req, res) => res.sendFile(path.join(publicDir, 'danke.html')));
 router.get('/impressum', (req, res) => res.sendFile(path.join(publicDir, 'impressum.html')));
 router.get('/datenschutz', (req, res) => res.sendFile(path.join(publicDir, 'datenschutz.html')));
 

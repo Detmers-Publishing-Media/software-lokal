@@ -48,6 +48,18 @@
         }
       ]
     },
+    "B-09-berater": {
+      "name": "Berater Lokal",
+      "description": "Ganzheitliche Beratungssoftware fuer Finanz- und Versicherungsberater",
+      "target": "Finanz- und Versicherungsberater, Mehrsparten-Makler",
+      "products": [
+        {
+          "repo": "berater-lokal",
+          "type": "app",
+          "description": "Berater Lokal — Ganzheitliche Beratungssoftware"
+        }
+      ]
+    },
     "B-08-nachweis": {
       "name": "Nachweis Lokal",
       "description": "Pruefprotokolle, Checklisten und Nachweise — lokal und revisionssicher",
@@ -103,6 +115,12 @@
       "type": "app",
       "tech": "electron-svelte",
       "forgejo_repo": "factory-admin/nachweis-lokal"
+    },
+    "berater-lokal": {
+      "bundles": ["B-09-berater"],
+      "type": "app",
+      "tech": "electron-svelte",
+      "forgejo_repo": "factory-admin/berater-lokal"
     },
     "fruehwarnreport": {
       "bundles": [],

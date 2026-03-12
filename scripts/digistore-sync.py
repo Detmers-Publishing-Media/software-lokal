@@ -3,14 +3,17 @@
 digistore-sync.py — Digistore24 Produktverwaltung via API
 
 Aufruf:
-  python scripts/digistore-sync.py list                     # Alle Produkte auflisten
-  python scripts/digistore-sync.py get <product_id>         # Einzelnes Produkt anzeigen
-  python scripts/digistore-sync.py create <spec.yml>        # Neues Produkt aus spec.yml anlegen
-  python scripts/digistore-sync.py update <pid> <spec.yml>  # Bestehendes Produkt aktualisieren
-  python scripts/digistore-sync.py ipn <product_id>         # IPN-Webhook konfigurieren
-  python scripts/digistore-sync.py settings                 # Globale Einstellungen (product_type_ids)
-  python scripts/digistore-sync.py debug <function>         # Beliebige API-Funktion aufrufen
+  python scripts/digistore-sync.py list                          # Alle Produkte auflisten
+  python scripts/digistore-sync.py get <product_id>              # Einzelnes Produkt anzeigen
+  python scripts/digistore-sync.py setup <digistore.yml>         # Komplett-Setup (create/update + IPN + Zahlungsplan)
+  python scripts/digistore-sync.py create <digistore.yml>        # Neues Produkt anlegen
+  python scripts/digistore-sync.py update <digistore.yml>        # Produkt aktualisieren (Name, Beschreibung)
+  python scripts/digistore-sync.py ipn <digistore.yml>           # IPN-Webhook konfigurieren
+  python scripts/digistore-sync.py payment-plan <digistore.yml>  # Zahlungsplan erstellen
+  python scripts/digistore-sync.py settings                      # Globale Einstellungen (product_type_ids)
+  python scripts/digistore-sync.py debug <function>              # Beliebige API-Funktion aufrufen
 
+Konfiguration pro Produkt: products/<name>/digistore.yml
 Liest API-Key aus KeePass: Studio Ops/00-Vault/Code-Fabrik/digistore-api-key
 """
 
@@ -91,25 +94,20 @@ def api_call(api_key, function, params=None, raw_params=False):
         return None
 
 
-# --- YAML Parser (minimal) ---
-def parse_spec_yml(path):
-    """Liest spec.yml und extrahiert relevante Felder fuer Digistore24."""
+# --- Digistore YAML Parser ---
+def parse_digistore_yml(path):
+    """Liest digistore.yml mit allen Produktkonfigurations-Feldern."""
     import re
     with open(path, 'r') as f:
         text = f.read()
 
     def get_value(key):
         m = re.search(rf'^{key}:\s*["\']?(.+?)["\']?\s*$', text, re.MULTILINE)
-        return m.group(1) if m else None
-
-    def get_nested(parent, key):
-        pattern = rf'^{parent}:\s*\n(?:.*\n)*?\s+{key}:\s*["\']?(.+?)["\']?\s*$'
-        m = re.search(pattern, text, re.MULTILINE)
-        return m.group(1) if m else None
+        return m.group(1).strip() if m else None
 
     def get_block(key):
         """Holt einen mehrzeiligen Block (eingerueckter Text nach key: |)."""
-        pattern = rf'^  {key}:\s*\|?\s*\n((?:\s{{4,}}.*\n)*)'
+        pattern = rf'^{key}:\s*\|?\s*\n((?:\s{{2,}}.*\n)*)'
         m = re.search(pattern, text, re.MULTILINE)
         if m:
             lines = m.group(1).strip().split('\n')
@@ -120,9 +118,11 @@ def parse_spec_yml(path):
         'product_id': get_value('product_id'),
         'name': get_value('name'),
         'tagline': get_value('tagline') or '',
-        'description_short': get_nested('description', 'short') or '',
-        'description_long': get_block('long') or '',
-        'price_cents': get_nested('pricing', 'price_cents'),
+        'description_short': get_value('description_short') or '',
+        'description_long': get_block('description_long') or '',
+        'price': get_value('price') or '39.00',
+        'currency': get_value('currency') or 'EUR',
+        'thankyou_url': get_value('thankyou_url') or 'https://portal.detmers-publish.de/danke',
     }
 
 
@@ -140,7 +140,6 @@ def cmd_list(api_key):
     elif isinstance(data, list):
         products = data
     else:
-        # Debug: zeige rohe Antwort
         print(f"Antwort-Typ: {type(data)}")
         print(json.dumps(data, indent=2, ensure_ascii=False)[:3000])
         return
@@ -162,7 +161,6 @@ def cmd_list(api_key):
 
 def cmd_get(api_key, product_id):
     """Einzelnes Produkt anzeigen."""
-    # product_id als Top-Level-Parameter (nicht data[product_id])
     data = api_call(api_key, "getProduct", {"product_id": str(product_id)}, raw_params=True)
     if data:
         print(json.dumps(data, indent=2, ensure_ascii=False))
@@ -172,7 +170,6 @@ def cmd_settings(api_key):
     """Globale Einstellungen (product_type_ids etc.)."""
     data = api_call(api_key, "getGlobalSettings")
     if data:
-        # Nur relevante Felder anzeigen
         if "product_types" in data:
             print("=== Produkt-Typen ===")
             for pt in data["product_types"]:
@@ -183,15 +180,12 @@ def cmd_settings(api_key):
             print(json.dumps(data, indent=2, ensure_ascii=False)[:5000])
 
 
-def cmd_create(api_key, spec_path):
-    """Neues Produkt aus spec.yml anlegen."""
-    spec = parse_spec_yml(spec_path)
-
+def cmd_create(api_key, spec):
+    """Neues Produkt anlegen."""
     if not spec['name']:
-        print(f"FEHLER: Kein 'name' in {spec_path}")
-        return
+        print("FEHLER: Kein 'name' in digistore.yml")
+        return None
 
-    # Erst product_type_id ermitteln
     print("Ermittle Produkt-Typen...")
     settings = api_call(api_key, "getGlobalSettings")
     software_type_id = None
@@ -206,19 +200,18 @@ def cmd_create(api_key, spec_path):
         print("WARNUNG: Kein Software-Produkttyp gefunden. Verwende Typ 1.")
         software_type_id = "1"
 
+    description = spec.get('description_long') or spec.get('description_short') or spec.get('tagline', '')
     params = {
         "product_type_id": str(software_type_id),
         "name_de": spec['name'],
-        "name_intern": spec.get('product_id') or spec['name'].lower().replace(' ', '-'),
-        "description_de": spec.get('description_long') or spec.get('description_short') or spec.get('tagline', ''),
+        "name_intern": spec['name'].lower().replace(' ', '-'),
+        "description_de": description,
         "approval_status": "new",
     }
 
     print(f"\nErstelle Produkt: {spec['name']}")
     print(f"  Typ-ID: {software_type_id}")
-    print(f"  Name intern: {params['name_intern']}")
-    print(f"  Beschreibung: {params['description_de'][:80]}...")
-    print()
+    print(f"  Beschreibung: {description[:80]}...")
 
     data = api_call(api_key, "createProduct", params, raw_params=True)
     if data:
@@ -229,25 +222,30 @@ def cmd_create(api_key, spec_path):
     return None
 
 
-def cmd_update(api_key, product_id, spec_path):
-    """Bestehendes Produkt aus spec.yml aktualisieren."""
-    spec = parse_spec_yml(spec_path)
+def cmd_update(api_key, spec):
+    """Produkt aktualisieren (Name, Beschreibung)."""
+    product_id = spec.get('product_id')
+    if not product_id:
+        print("FEHLER: Kein 'product_id' in digistore.yml")
+        return
 
-    # product_id als Top-Level-Parameter, Rest als data[key]
-    data_params = {}
+    description = spec.get('description_long') or spec.get('description_short') or ''
+    thankyou_url = spec.get('thankyou_url', '')
+    post_data = {"product_id": str(product_id)}
     if spec.get('name'):
-        data_params["name_de"] = spec['name']
-    if spec.get('description_long') or spec.get('description_short'):
-        data_params["description_de"] = spec.get('description_long') or spec.get('description_short', '')
+        post_data["data[name_de]"] = spec['name']
+    if description:
+        post_data["data[description_de]"] = description
+    if thankyou_url:
+        post_data["data[thankyou_url]"] = thankyou_url
 
     print(f"Aktualisiere Produkt {product_id}:")
-    for k, v in data_params.items():
-        print(f"  {k}: {str(v)[:80]}")
-
-    # Manuell POST body bauen: product_id direkt + Rest als data[key]
-    post_data = {"product_id": str(product_id)}
-    for k, v in data_params.items():
-        post_data[f"data[{k}]"] = v
+    if spec.get('name'):
+        print(f"  name_de: {spec['name']}")
+    if description:
+        print(f"  description_de: {description[:80]}...")
+    if thankyou_url:
+        print(f"  thankyou_url: {thankyou_url}")
 
     data = api_call(api_key, "updateProduct", post_data, raw_params=True)
     if data:
@@ -255,11 +253,14 @@ def cmd_update(api_key, product_id, spec_path):
         print(json.dumps(data, indent=2, ensure_ascii=False))
 
 
-def cmd_ipn(api_key, product_id):
-    """IPN-Webhook fuer ein Produkt konfigurieren."""
-    # IPN-URL und Passphrase aus KeePass lesen
-    ipn_url = "https://portal.detmers-publish.de/api/digistore-ipn"
+def cmd_ipn(api_key, spec):
+    """IPN-Webhook konfigurieren."""
+    product_id = spec.get('product_id')
+    if not product_id:
+        print("FEHLER: Kein 'product_id' in digistore.yml")
+        return
 
+    ipn_url = "https://portal.detmers-publish.de/api/digistore-ipn"
     params = {
         "ipn_url": ipn_url,
         "name": "code-fabrik-portal",
@@ -276,6 +277,58 @@ def cmd_ipn(api_key, product_id):
     if data:
         print("\nIPN konfiguriert!")
         print(json.dumps(data, indent=2, ensure_ascii=False))
+
+
+def cmd_payment_plan(api_key, spec):
+    """Zahlungsplan erstellen (Einmalzahlung)."""
+    product_id = spec.get('product_id')
+    if not product_id:
+        print("FEHLER: Kein 'product_id' in digistore.yml")
+        return
+
+    price = spec.get('price', '39.00')
+    currency = spec.get('currency', 'EUR')
+    thankyou_url = spec.get('thankyou_url', 'https://portal.detmers-publish.de/danke')
+
+    post_data = {
+        "product_id": str(product_id),
+        "data[first_amount]": str(price),
+        "data[number_of_installments]": "1",
+        "data[currency]": currency,
+    }
+
+    print(f"Erstelle Zahlungsplan fuer Produkt {product_id}:")
+    print(f"  Einmalzahlung: {price} {currency}")
+
+    data = api_call(api_key, "createPaymentPlan", post_data, raw_params=True)
+    if data:
+        print("\nZahlungsplan erstellt!")
+        print(json.dumps(data, indent=2, ensure_ascii=False))
+
+
+def cmd_setup(api_key, spec):
+    """Komplett-Setup: Produkt anlegen/aktualisieren + IPN + Zahlungsplan."""
+    product_id = spec.get('product_id')
+
+    if product_id:
+        print(f"=== Produkt {product_id} aktualisieren ===\n")
+        cmd_update(api_key, spec)
+    else:
+        print("=== Neues Produkt anlegen ===\n")
+        product_id = cmd_create(api_key, spec)
+        if not product_id:
+            print("\nABBRUCH: Produkt konnte nicht erstellt werden.")
+            return
+        spec['product_id'] = str(product_id)
+        print(f"\n  HINWEIS: product_id: {product_id} in digistore.yml eintragen!\n")
+
+    print(f"\n=== IPN konfigurieren ===\n")
+    cmd_ipn(api_key, spec)
+
+    print(f"\n=== Zahlungsplan erstellen ===\n")
+    cmd_payment_plan(api_key, spec)
+
+    print(f"\n=== Setup abgeschlossen fuer Produkt {product_id} ===")
 
 
 def cmd_debug(api_key, function):
@@ -300,16 +353,31 @@ if __name__ == "__main__":
     api_key = load_api_key()
     print()
 
-    if cmd == "list":
+    # Befehle die eine digistore.yml brauchen
+    yml_commands = {"setup", "create", "update", "ipn", "payment-plan"}
+
+    if cmd in yml_commands:
+        if len(sys.argv) < 3:
+            print(f"FEHLER: {cmd} braucht eine digistore.yml als Argument")
+            print(f"  Beispiel: python scripts/digistore-sync.py {cmd} products/nachweis-lokal/digistore.yml")
+            sys.exit(1)
+        spec = parse_digistore_yml(sys.argv[2])
+
+        if cmd == "setup":
+            cmd_setup(api_key, spec)
+        elif cmd == "create":
+            cmd_create(api_key, spec)
+        elif cmd == "update":
+            cmd_update(api_key, spec)
+        elif cmd == "ipn":
+            cmd_ipn(api_key, spec)
+        elif cmd == "payment-plan":
+            cmd_payment_plan(api_key, spec)
+
+    elif cmd == "list":
         cmd_list(api_key)
     elif cmd == "get" and len(sys.argv) >= 3:
         cmd_get(api_key, sys.argv[2])
-    elif cmd == "create" and len(sys.argv) >= 3:
-        cmd_create(api_key, sys.argv[2])
-    elif cmd == "update" and len(sys.argv) >= 4:
-        cmd_update(api_key, sys.argv[2], sys.argv[3])
-    elif cmd == "ipn" and len(sys.argv) >= 3:
-        cmd_ipn(api_key, sys.argv[2])
     elif cmd == "settings":
         cmd_settings(api_key)
     elif cmd == "debug" and len(sys.argv) >= 3:

@@ -51,7 +51,7 @@
     { id: 'templates', label: 'Vorlagen' },
     { id: 'objects', label: 'Objekte' },
     { id: 'defects', label: 'Maengel' },
-    { id: 'templates:library', label: 'Bibliothek' },
+    { id: 'templates:library', label: 'Pruefungsvorlagen' },
     { id: 'import', label: 'Import' },
     { id: 'integrity', label: 'Integritaet' },
     { id: 'settings', label: 'Einstellungen' },
