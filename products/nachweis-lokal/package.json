@@ -52,11 +52,12 @@
     },
     "mac": {
       "target": ["dmg"],
-      "icon": "assets/icons/128x128.png",
+      "icon": "assets/icons/icon.png",
       "category": "public.app-category.productivity"
     },
     "linux": {
       "target": ["AppImage"],
+      "icon": "assets/icons/icon.png",
       "category": "Office"
     },
     "nsis": {
