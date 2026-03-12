@@ -161,6 +161,16 @@ Basiert auf `@codefabrik/finanz-shared` Kern mit Feature-Flags.
 **Stores:** navigation.js (String-basiert: 'invoices', 'customers', 'euer', 'profile', 'support', 'invoice:ID', 'invoice:edit:ID', 'customer:new', etc.)
 **Tests:** (in Aufbau)
 
+### Nachweis Lokal (v0.2.0)
+
+Pruefprotokolle, Checklisten und Nachweise. Bundle: `B-08-nachweis`. Hat eigene `CLAUDE.md`.
+
+**Routes:** Dashboard, TemplateList/Form/Detail, TemplateLibrary, ObjectList/Form/Detail, InspectionList/Form/Execute/Detail, DefectList, DefectDetail, ImportTemplates, Integrity, Settings
+**Libs:** db.js (CRUD + Events + Hash-Kette + Attachments + Defects + Recurring), license.js (Probe-Limit 10 Vorlagen), pdf.js (Protokoll/Maengelbericht/Liste)
+**Components:** PhotoAttachment.svelte (Foto-Picker + Thumbnails)
+**Stores:** navigation.js, inspections.js (String-basiert: 'dashboard', 'templates', 'objects', 'defects', 'inspections', 'templates:library', 'template:ID', 'object:ID', 'inspection:ID', 'defect:ID', 'inspection:execute:ID')
+**Tests:** 98+ Tests in 12 Kategorien (Unit, Schema, Events, Integritaet, Replay, CSV, Smoke, Library, Recurring, Attachments, Defects, Migration)
+
 ### FinanzRechner lokal (v0.2.0)
 
 Versicherungsrechner. Bundle: `B-24-finanz-rechner`. **Kein DB, kein Event-Log.**
@@ -278,9 +288,10 @@ Kein Release ohne bestandene Tests. Node.js native `test` module.
 6. **Integritaet** — Hash-Kette erkennt Manipulation
 7. **Smoke** — App startet, CRUD, PDFs
 
-### Aktuelle Testzahlen (366 gesamt)
+### Aktuelle Testzahlen (440 gesamt)
 - electron-platform: 94 Tests
 - mitglieder-lokal: 74 Tests
+- nachweis-lokal: 98+ Tests
 - finanz-shared: 48 Tests
 - finanz-rechner: 23 Tests
 - portal: 127 Tests
@@ -295,6 +306,7 @@ node --test packages/electron-platform/tests/test_*.js
 node --test products/mitglieder-lokal/tests/test_*.js
 node --test packages/finanz-shared/tests/test_*.js
 node --test products/finanz-rechner/tests/test_*.js
+node --test products/nachweis-lokal/tests/test_*.js
 node --test portal/test/unit/*.test.js
 ```
 
@@ -324,14 +336,18 @@ Jedes Feature das eine Produkt-Funktion aendert oder hinzufuegt MUSS folgende Da
 5. **Portal-DB-Migration** — Falls sich Produktname/Beschreibung/Preis aendert
 6. **`VERSION`** — Monorepo-Version bei Release-wuerdigem Aenderungsumfang
 
-## Entwicklungsworkflow: Claude Code <-> OpenClaw
+## Entwicklungsworkflow: Claude Code <-> Aider + DeepSeek
 
-Grundprinzip: **Planung und Review bei Claude Code, Ausfuehrung bei OpenClaw.**
+Grundprinzip: **Planung und Review bei Claude Code, Ausfuehrung bei Aider + DeepSeek.**
 
 1. **Claude Code plant**: Detaillierter Plan (Dateiliste, SQL, Signaturen, Imports, Tests)
-2. **OpenClaw fuehrt aus**: Code schreiben, Dateien erstellen, Migrationen
+2. **Aider + DeepSeek fuehrt aus**: Code schreiben, Dateien erstellen, Migrationen
 3. **Claude Code reviewt**: Ergebnis gegen Plan pruefen
 4. **Schleife**: Feedback → Korrektur → Review
+
+Pipeline: Poller (systemd Timer, 30s) → Forgejo → Aider (deepseek-v3.1:671b via Ollama.com) → Review → PR → Auto-Merge (Fast Lane) oder Founder Gate (Slow Lane)
+
+Git-User: "Factory Junior" (junior@factory.local)
 
 ### Prinzipien
 - **Mehr Schleifen, weniger Eigenarbeit**: Planen und reviewen > selbst schreiben
@@ -376,10 +392,11 @@ Aenderungen erfordern explizite PO-Freigabe:
 
 ## Infrastruktur (Kurzuebersicht)
 
+- **SSH-Workaround**: `ksshaskpass` ist kaputt (Plasma 6.5). Vor allen Ansible- und SSH-Befehlen `SSH_ASKPASS=""` voranstellen, sonst haengt die Verbindung.
 - **26 Ansible-Rollen**, **11 Playbooks** in `ansible/`
 - `install.yml` (5 Phasen: Server → DNS → Config → Smoke → push-infra)
 - `install-portal.yml` (7 Phasen: Server → DNS → Setup → Secrets → Deploy → DB → Watchdog → Validate)
-- Secrets: Ansible Vault (3 Dateien, AES256), KeePass DB fuer Langzeitspeicher
+- **Secrets-Quelle**: KeePass-DB (`~/seafile/ipe-security/Code-Fabrik-V1-0.kdbx`). Alle Scripts die Secrets brauchen (API-Tokens, Passwoerter) MUESSEN aus KeePass lesen (via `pykeepass`), nicht aus Env-Variablen oder Vault-Dateien. Masterpasswort wird interaktiv abgefragt.
 - Server: UpCloud DEV-1xCPU-4GB (PROD), DEV-1xCPU-1GB (Portal)
 
 ### CI/CD Workflows

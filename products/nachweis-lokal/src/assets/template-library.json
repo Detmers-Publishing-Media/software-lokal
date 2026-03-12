@@ -1,0 +1,86 @@
+[
+  {
+    "id": "brandschutz",
+    "name": "Brandschutz-Begehung",
+    "description": "Jaehrliche Brandschutz-Begehung nach ASR A2.2",
+    "category": "Sicherheit",
+    "interval_days": 365,
+    "items": [
+      { "label": "Flucht- und Rettungswege frei und gekennzeichnet?", "hint": "Breite mind. 1,20 m, keine Versperrungen", "required": true },
+      { "label": "Feuerloescher vorhanden und geprueft?", "hint": "Pruefdatum < 2 Jahre, Plombierung intakt", "required": true },
+      { "label": "Brandmeldeanlage funktionsfaehig?", "hint": "Letzte Wartung pruefen", "required": true },
+      { "label": "Brandschutztueren schliessen selbsttaetig?", "hint": "Keine Verkeimung, Dichtungen intakt", "required": true },
+      { "label": "Elektrische Anlagen augenscheinlich in Ordnung?", "hint": "Keine sichtbaren Schaeden, lose Kabel", "required": true },
+      { "label": "Flucht- und Rettungsplan aktuell und ausgehaengt?", "hint": "An jedem Stockwerk, aktuelles Datum", "required": true },
+      { "label": "Rauchmelder vorhanden und funktionsfaehig?", "hint": "Testknopf druecken, Batterie pruefen", "required": true },
+      { "label": "Sammelplatz gekennzeichnet und bekannt?", "required": false }
+    ]
+  },
+  {
+    "id": "dguv-v3-elektro",
+    "name": "DGUV Vorschrift 3 Elektropruefung",
+    "description": "Pruefung ortsveraenderlicher elektrischer Betriebsmittel nach DGUV V3",
+    "category": "Elektro",
+    "interval_days": 180,
+    "items": [
+      { "label": "Sichtpruefung Anschlussleitung (Beschaedigung, Knickstellen)?", "required": true },
+      { "label": "Sichtpruefung Stecker (Risse, verbogene Kontakte)?", "required": true },
+      { "label": "Sichtpruefung Gehaeuse (Bruchstellen, fehlende Teile)?", "required": true },
+      { "label": "Schutzleiter-Widerstand <= 0,3 Ohm?", "hint": "Messgeraet verwenden, Grenzwert 0,3 Ohm", "required": true },
+      { "label": "Isolationswiderstand >= 1 MOhm?", "hint": "Messgeraet verwenden, Grenzwert 1 MOhm", "required": true },
+      { "label": "Ableitstrom im Toleranzbereich?", "hint": "Grenzwert je nach Geraeteklasse", "required": true },
+      { "label": "Funktionspruefung erfolgreich?", "hint": "Geraet einschalten, Grundfunktion testen", "required": true },
+      { "label": "Pruefplakette angebracht?", "hint": "Naechster Prueftermin vermerken", "required": false }
+    ]
+  },
+  {
+    "id": "spielgeraete",
+    "name": "Spielgeraetepruefung",
+    "description": "Visuell-taktile Inspektion von Spielgeraeten nach DIN EN 1176",
+    "category": "Spielplatz",
+    "interval_days": 90,
+    "items": [
+      { "label": "Fundamente und Verankerungen stabil?", "hint": "Keine Auswaschungen, fester Sitz", "required": true },
+      { "label": "Verbindungselemente (Schrauben, Bolzen) fest?", "hint": "Handfest pruefen, keine fehlenden Teile", "required": true },
+      { "label": "Holzteile ohne Risse, Splitter oder Faeulnis?", "required": true },
+      { "label": "Metallteile ohne Rost oder scharfe Kanten?", "required": true },
+      { "label": "Ketten und Seile intakt (Verschleiss < 20%)?", "required": true },
+      { "label": "Fallschutz ausreichend und intakt?", "hint": "Fallhoehe pruefen, Untergrund weich genug", "required": true },
+      { "label": "Fangstellen und Einklemmgefahren ausgeschlossen?", "hint": "Oeffnungen 89-230 mm = Kopffangstelle", "required": true },
+      { "label": "Sauberkeit (kein Glas, Muell, Tierkot)?", "required": true },
+      { "label": "Beschilderung vorhanden und lesbar?", "required": false }
+    ]
+  },
+  {
+    "id": "arbeitsmittel-leitern",
+    "name": "Pruefung Leitern und Tritte",
+    "description": "Wiederkehrende Pruefung von Leitern und Tritten nach BetrSichV",
+    "category": "Arbeitsmittel",
+    "interval_days": 365,
+    "items": [
+      { "label": "Typenschild vorhanden und lesbar?", "required": true },
+      { "label": "Holme/Wangen ohne Verformung oder Risse?", "required": true },
+      { "label": "Sprossen/Stufen fest und unbeschaedigt?", "required": true },
+      { "label": "Gelenkverbindungen leichtgaengig und arretierbar?", "hint": "Nur bei Gelenkleitern", "required": false },
+      { "label": "Rutschhemmende Fuesse vorhanden und intakt?", "required": true },
+      { "label": "Sicherungshaken / Spreizsperre funktionsfaehig?", "required": true },
+      { "label": "Maximale Belastung nicht ueberschritten?", "hint": "Typenschild pruefen", "required": true }
+    ]
+  },
+  {
+    "id": "erste-hilfe",
+    "name": "Erste-Hilfe-Ausstattung",
+    "description": "Pruefung der Erste-Hilfe-Materialien nach ASR A4.3",
+    "category": "Sicherheit",
+    "interval_days": 90,
+    "items": [
+      { "label": "Verbandkasten vorhanden und zugaenglich?", "hint": "Standort gekennzeichnet (weisses Kreuz auf gruenem Grund)", "required": true },
+      { "label": "Inhalt vollstaendig (nach DIN 13157 / DIN 13169)?", "hint": "Verbrauchte Materialien ersetzen", "required": true },
+      { "label": "Verfallsdaten aller Materialien gueltig?", "required": true },
+      { "label": "Rettungsdecke vorhanden?", "required": true },
+      { "label": "Erste-Hilfe-Anleitung beigelegt?", "required": true },
+      { "label": "Aushang Ersthelfer und Notrufnummern aktuell?", "hint": "Name, Telefon, Standort der Ersthelfer", "required": true },
+      { "label": "Defibrillator (AED) vorhanden und einsatzbereit?", "hint": "Nur wenn vorhanden, Batterie und Pads pruefen", "required": false }
+    ]
+  }
+]
