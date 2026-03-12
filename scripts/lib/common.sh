@@ -5,7 +5,7 @@
 # --- Konfiguration ---
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[1]}")" && pwd)"
 KEEPASS_DB="${KEEPASS_DB:-}"
-TARBALL="${TARBALL:-$SCRIPT_DIR/codefabrik.tar.gz}"
+TARBALL="${TARBALL:-$(cd "$SCRIPT_DIR/.." && pwd)/dist/codefabrik.tar.gz}"
 SHM_BASE="/dev/shm/codefabrik-secrets"
 SHM_SECRETS="$SHM_BASE/secrets"
 SHM_WORKSPACE="$SHM_BASE/workspace"
@@ -50,7 +50,6 @@ declare -A SECRET_MAP=(
     [digistore-ipn-passphrase]=vault_digistore_ipn_passphrase
     [cloudflare-origin-ca-cert]=vault_origin_ca_cert
     [cloudflare-origin-ca-key]=vault_origin_ca_key
-    [circleci-api-token]=vault_circleci_api_token
     [github-push-token]=vault_github_push_token
 )
 
@@ -71,6 +70,46 @@ check_cmd() {
     for cmd in "$@"; do
         command -v "$cmd" &>/dev/null || die "$cmd nicht installiert"
     done
+}
+
+# GitHub-Repo fuer Portal-Secrets (SCP-Upload)
+GITHUB_REPO="${GITHUB_REPO:-Detmers-Publishing-Media/software-lokal}"
+
+# --- Env-Dateien lokal persistieren ---
+# Kopiert Env-Dateien aus /dev/shm nach ~/code-fabrik/,
+# damit sie nach dem Cleanup-Trap noch verfuegbar sind.
+persist_env_files() {
+    local target_dir
+    target_dir="$(cd "$SCRIPT_DIR/.." && pwd)"
+    local found=0
+    for f in .server-env .portal-env .tokens-env .factory-passwords.env .portal-passwords.env; do
+        if [ -f "$SHM_OUTPUT/$f" ]; then
+            cp "$SHM_OUTPUT/$f" "$target_dir/$f"
+            chmod 600 "$target_dir/$f"
+            found=1
+        fi
+    done
+    [ "$found" -eq 1 ] && echo "  Env-Dateien lokal persistiert."
+}
+
+# --- GitHub Secrets aktualisieren ---
+# Liest Portal-IP aus .portal-env und aktualisiert PORTAL_HOST
+# in GitHub Actions Secrets, damit CI-Deploys funktionieren.
+sync_github_secrets() {
+    local portal_ip=""
+    if [ -f "$SHM_OUTPUT/.portal-env" ]; then
+        portal_ip=$(grep -m1 'PORTAL_IP=' "$SHM_OUTPUT/.portal-env" | cut -d= -f2 | tr -d '[:space:]')
+    fi
+    [ -n "$portal_ip" ] || return 0
+
+    if ! command -v gh &>/dev/null; then
+        echo "  HINWEIS: gh nicht installiert. GitHub Secret manuell setzen: PORTAL_HOST=$portal_ip"
+        return 0
+    fi
+
+    echo "  GitHub Secret PORTAL_HOST=$portal_ip -> $GITHUB_REPO"
+    echo "$portal_ip" | gh secret set PORTAL_HOST --repo "$GITHUB_REPO" 2>/dev/null || \
+        echo "  WARNUNG: Konnte PORTAL_HOST nicht setzen. Manuell: gh secret set PORTAL_HOST -b '$portal_ip' --repo $GITHUB_REPO"
 }
 
 # --- Cleanup-Trap ---

@@ -3,8 +3,8 @@
 # Server bleibt stehen, Portal-Code wird aktualisiert
 # Voraussetzung: ops_mode=upgrade, Portal muss existieren
 #
-# Aufruf lokal:
-#   ansible-playbook playbooks/upgrade-portal.yml -e ops_mode=upgrade -e portal_ip=5.22.213.252
+# Aufruf lokal (IP aus .portal-env oder als Parameter):
+#   ansible-playbook playbooks/upgrade-portal.yml -e ops_mode=upgrade -e portal_ip=$(grep PORTAL_IP .portal-env | cut -d= -f2)
 # Aufruf im Install-Container (legacy):
 #   ansible-playbook playbooks/upgrade-portal.yml -e ops_mode=upgrade
 

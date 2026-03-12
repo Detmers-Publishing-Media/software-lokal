@@ -61,7 +61,6 @@ SECRET_MAP = {
     "digistore-ipn-passphrase": "vault_digistore_ipn_passphrase",
     "cloudflare-origin-ca-cert": "vault_origin_ca_cert",
     "cloudflare-origin-ca-key": "vault_origin_ca_key",
-    "circleci-api-token": "vault_circleci_api_token",
     "github-push-token": "vault_github_push_token",
 }
 
@@ -252,4 +251,8 @@ writeback_runtime() {
     done
 
     echo "Writeback abgeschlossen."
+
+    # Env-Dateien lokal persistieren + GitHub Secrets aktualisieren
+    persist_env_files
+    sync_github_secrets
 }

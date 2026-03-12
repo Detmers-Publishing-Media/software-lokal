@@ -122,7 +122,7 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.PORTAL_DEPLOY_KEY }}" > ~/.ssh/portal_deploy
           chmod 600 ~/.ssh/portal_deploy
-          ssh-keyscan -H "${{ secrets.PORTAL_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null
+          ssh-keyscan -H "${{ secrets.PORTAL_HOST }}" >> ~/.ssh/known_hosts
 
       - name: Artefakte per SCP zum Portal hochladen
         env:
