@@ -3,3 +3,4 @@ packages:
   - "products/mitglieder-lokal"
   - "products/finanz-rechner"
   - "products/rechnung-lokal"
+  - "products/nachweis-lokal"

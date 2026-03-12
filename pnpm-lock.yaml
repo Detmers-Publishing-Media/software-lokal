@@ -21,6 +21,8 @@ importers:
         specifier: ^5.0.0
         version: 5.53.7
 
+  packages/audit-chain: {}
+
   packages/electron-platform:
     dependencies:
       better-sqlite3:
@@ -124,6 +126,55 @@ importers:
       playwright:
         specifier: ^1.58.2
         version: 1.58.2
+      sql.js:
+        specifier: ^1.14.1
+        version: 1.14.1
+      svelte:
+        specifier: ^5.0.0
+        version: 5.53.7
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.1(@types/node@25.3.5)(jiti@2.6.1)(yaml@2.8.2)
+      wait-on:
+        specifier: ^8.0.0
+        version: 8.0.5
+
+  products/nachweis-lokal:
+    dependencies:
+      '@codefabrik/app-shared':
+        specifier: workspace:*
+        version: link:../../packages/app-shared
+      '@codefabrik/electron-platform':
+        specifier: workspace:*
+        version: link:../../packages/electron-platform
+      '@codefabrik/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
+      '@codefabrik/ui-shared':
+        specifier: workspace:*
+        version: link:../../packages/ui-shared
+      better-sqlite3:
+        specifier: ^11.0.0
+        version: 11.10.0
+      pdfmake:
+        specifier: ^0.2.0
+        version: 0.2.23
+    devDependencies:
+      '@sveltejs/vite-plugin-svelte':
+        specifier: ^4.0.0
+        version: 4.0.4(svelte@5.53.7)(vite@6.4.1(@types/node@25.3.5)(jiti@2.6.1)(yaml@2.8.2))
+      concurrently:
+        specifier: ^9.0.0
+        version: 9.2.1
+      cross-env:
+        specifier: ^7.0.0
+        version: 7.0.3
+      electron:
+        specifier: ^33.0.0
+        version: 33.4.11
+      electron-builder:
+        specifier: ^25.0.0
+        version: 25.1.8(electron-builder-squirrel-windows@25.1.8)
       sql.js:
         specifier: ^1.14.1
         version: 1.14.1
