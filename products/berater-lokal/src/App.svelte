@@ -1,17 +1,39 @@
 <script>
   import { onMount } from 'svelte';
   import { currentView } from './lib/stores/navigation.js';
+  import { initDb } from './lib/db.js';
+  import { checkKundenLimit } from './lib/license.js';
   import Dashboard from './routes/Dashboard.svelte';
   import KundenListe from './routes/KundenListe.svelte';
   import KundeForm from './routes/KundeForm.svelte';
   import KundeDetail from './routes/KundeDetail.svelte';
   import KonditionenView from './routes/KonditionenView.svelte';
   import ExcelImport from './routes/ExcelImport.svelte';
+  import Integrity from './routes/Integrity.svelte';
+  import Settings from './routes/Settings.svelte';
+  import { SupportView, FeatureRequestView, ChangelogView } from '@codefabrik/app-shared/components';
 
   let dbReady = $state(false);
+  let dbError = $state(null);
+  let limitReached = $state(false);
 
-  onMount(() => {
-    dbReady = true;
+  onMount(async () => {
+    try {
+      await initDb();
+      dbReady = true;
+      const limit = await checkKundenLimit();
+      limitReached = !limit.allowed;
+      window.electronAPI?.app?.rendererReady?.();
+    } catch (err) {
+      dbError = err.message;
+      window.electronAPI?.app?.rendererReady?.();
+    }
+  });
+
+  $effect(() => {
+    if ($currentView === 'kunden' && dbReady) {
+      checkKundenLimit().then(l => limitReached = !l.allowed);
+    }
   });
 
   const navItems = [
@@ -19,14 +41,27 @@
     { id: 'kunden', label: 'Kunden', icon: '👥' },
     { id: 'konditionen', label: 'Konditionen', icon: '📋' },
     { id: 'import', label: 'Import / Export', icon: '📁' },
+    { id: 'integrity', label: 'Integritaet', icon: '🔒' },
+    { id: 'settings', label: 'Einstellungen', icon: '⚙' },
+    { id: 'feature-request', label: 'Wuensche', icon: '💡' },
+    { id: 'changelog', label: 'Was ist neu?', icon: '📢' },
+    { id: 'support', label: 'Support', icon: '🛟' },
   ];
+
+  let route = $derived.by(() => {
+    const v = $currentView;
+    if (v.startsWith('kunde-edit:')) return { page: 'kunde-edit', id: parseInt(v.split(':')[1]) };
+    if (v === 'kunde-neu') return { page: 'kunde-neu' };
+    if (v.startsWith('kunde:')) return { page: 'kunde-detail', id: parseInt(v.split(':')[1]) };
+    return { page: v };
+  });
 </script>
 
 <div class="app-layout">
   <nav class="sidebar">
     <div class="logo">
       <h2>Berater Lokal</h2>
-      <span class="version">v0.1.0</span>
+      <span class="version">v0.2.0</span>
     </div>
     <ul>
       {#each navItems as item}
@@ -47,22 +82,34 @@
   </nav>
 
   <main class="content">
-    {#if !dbReady}
+    {#if dbError}
+      <div class="error">Datenbankfehler: {dbError}</div>
+    {:else if !dbReady}
       <div class="loading">Datenbank wird geladen...</div>
-    {:else if $currentView === 'dashboard'}
+    {:else if route.page === 'dashboard'}
       <Dashboard />
-    {:else if $currentView === 'kunden'}
+    {:else if route.page === 'kunden'}
       <KundenListe />
-    {:else if $currentView === 'kunde-neu'}
+    {:else if route.page === 'kunde-neu'}
       <KundeForm />
-    {:else if $currentView.startsWith('kunde-edit:')}
-      <KundeForm kundeId={parseInt($currentView.split(':')[1])} />
-    {:else if $currentView.startsWith('kunde:')}
-      <KundeDetail kundeId={parseInt($currentView.split(':')[1])} />
-    {:else if $currentView === 'konditionen'}
+    {:else if route.page === 'kunde-edit'}
+      <KundeForm kundeId={route.id} />
+    {:else if route.page === 'kunde-detail'}
+      <KundeDetail kundeId={route.id} />
+    {:else if route.page === 'konditionen'}
       <KonditionenView />
-    {:else if $currentView === 'import'}
+    {:else if route.page === 'import'}
       <ExcelImport />
+    {:else if route.page === 'integrity'}
+      <Integrity />
+    {:else if route.page === 'settings'}
+      <Settings />
+    {:else if route.page === 'feature-request'}
+      <FeatureRequestView />
+    {:else if route.page === 'changelog'}
+      <ChangelogView />
+    {:else if route.page === 'support'}
+      <SupportView />
     {:else}
       <Dashboard />
     {/if}
@@ -119,5 +166,6 @@
   }
 
   .content { flex: 1; padding: 1.5rem 2rem; overflow-y: auto; background: var(--color-bg); }
+  .error { color: var(--color-danger); padding: 2rem; text-align: center; }
   .loading { color: var(--color-text-muted); padding: 2rem; text-align: center; }
 </style>

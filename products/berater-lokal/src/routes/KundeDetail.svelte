@@ -4,9 +4,12 @@
   import {
     getKunde, deleteKunde, getKinder, getEinnahmen, getAusgaben,
     getPolicen, getVermoegen, getVerbindlichkeiten, getAltersvorsorge,
+    getOrgProfile,
   } from '../lib/db.js';
   import { berechneLebensphase, berechneAlter, getLebensphaseColor } from '../lib/lebensphase.js';
   import { analysiere, countByStatus } from '../lib/analyse.js';
+  import { generateBeratungsprotokoll } from '../lib/pdf.js';
+  import { hasLicenseKey } from '../lib/license.js';
   import { EINNAHMEN_TYPEN, AUSGABEN_KATEGORIEN, VERMOEGEN_TYPEN, VERBINDLICHKEITEN_TYPEN, ALTERSVORSORGE_TYPEN } from '../lib/types.js';
 
   let { kundeId } = $props();
@@ -51,6 +54,17 @@
     ampel = countByStatus(analyseErgebnisse);
   });
 
+  async function handlePdf() {
+    const orgProfile = await getOrgProfile();
+    const isProbe = !hasLicenseKey();
+    generateBeratungsprotokoll(kunde, {
+      einnahmen, ausgaben, policen,
+      vermoegen: vermoegenList, verbindlichkeiten,
+      altersvorsorge: altersvorsorgeList, kinder,
+      analyseErgebnisse,
+    }, orgProfile, isProbe);
+  }
+
   async function handleDelete() {
     if (!confirm(`"${kunde.vorname} ${kunde.nachname}" wirklich loeschen? Alle zugehoerigen Daten werden entfernt.`)) return;
     await deleteKunde(kundeId);
@@ -73,6 +87,7 @@
       </div>
     </div>
     <div class="actions">
+      <button class="btn btn-accent" onclick={handlePdf}>PDF erstellen</button>
       <button class="btn btn-primary" onclick={() => currentView.set(`kunde-edit:${kundeId}`)}>Bearbeiten</button>
       <button class="btn btn-danger" onclick={handleDelete}>Loeschen</button>
       <button class="btn btn-secondary" onclick={() => currentView.set('kunden')}>Zurueck</button>

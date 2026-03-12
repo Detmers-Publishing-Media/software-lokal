@@ -9,8 +9,54 @@ contextBridge.exposeInMainWorld('electronAPI', {
     openFile: (options) => ipcRenderer.invoke('dialog:openFile', options),
     saveFile: (options) => ipcRenderer.invoke('dialog:saveFile', options),
   },
+  fs: {
+    copyFile: (src, destDir, fileName) => ipcRenderer.invoke('fs:copyFile', src, destDir, fileName),
+  },
   excel: {
     parse: (filePath) => ipcRenderer.invoke('excel:parse', filePath),
     export: (data) => ipcRenderer.invoke('excel:export', data),
+  },
+  update: {
+    check: () => ipcRenderer.invoke('update:check'),
+    download: () => ipcRenderer.invoke('update:download'),
+    install: () => ipcRenderer.invoke('update:install'),
+    getState: () => ipcRenderer.invoke('update:getState'),
+  },
+  backup: {
+    create: () => ipcRenderer.invoke('backup:create'),
+    list: () => ipcRenderer.invoke('backup:list'),
+    validate: (backupPath) => ipcRenderer.invoke('backup:validate', backupPath),
+    restore: (backupPath) => ipcRenderer.invoke('backup:restore', backupPath),
+    rotate: () => ipcRenderer.invoke('backup:rotate'),
+  },
+  support: {
+    collectBundle: () => ipcRenderer.invoke('support:collectBundle'),
+    compactInfo: () => ipcRenderer.invoke('support:compactInfo'),
+    submitTicket: (description) => ipcRenderer.invoke('support:submitTicket', description),
+    getTickets: () => ipcRenderer.invoke('support:getTickets'),
+  },
+  recovery: {
+    checkDb: () => ipcRenderer.invoke('recovery:checkDb'),
+    repairDb: () => ipcRenderer.invoke('recovery:repairDb'),
+    getStatus: () => ipcRenderer.invoke('recovery:getStatus'),
+  },
+  license: {
+    enterKey: (key) => ipcRenderer.invoke('license:enterKey', key),
+    getStatus: () => ipcRenderer.invoke('license:getStatus'),
+    removeKey: () => ipcRenderer.invoke('license:removeKey'),
+    getHash: () => ipcRenderer.invoke('license:getHash'),
+    revalidate: () => ipcRenderer.invoke('license:revalidate'),
+  },
+  featureRequest: {
+    submit: (data) => ipcRenderer.invoke('featureRequest:submit', data),
+    list: () => ipcRenderer.invoke('featureRequest:list'),
+    get: (requestNumber) => ipcRenderer.invoke('featureRequest:get', requestNumber),
+  },
+  app: {
+    rendererReady: () => ipcRenderer.invoke('app:rendererReady'),
+    isSafeMode: () => ipcRenderer.invoke('app:isSafeMode'),
+  },
+  firstRun: {
+    complete: () => ipcRenderer.invoke('firstRun:complete'),
   },
 });

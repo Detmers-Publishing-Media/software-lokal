@@ -7,82 +7,24 @@ on:
     branches: [main]
     paths:
       - 'products/berater-lokal/**'
+      - 'packages/**'
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
-    continue-on-error: true
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      - run: sudo apt-get update && sudo apt-get install -y build-essential python3
-      - run: npm ci
-        working-directory: products/berater-lokal
-      - run: node --test tests/test_*.js
-        working-directory: products/berater-lokal
-
-  build-linux:
-    needs: test
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      - run: sudo apt-get update && sudo apt-get install -y build-essential python3
-      - run: npm ci
-        working-directory: products/berater-lokal
-      - run: npm run electron:build
-        working-directory: products/berater-lokal
-      - uses: actions/upload-artifact@v4
-        with:
-          name: berater-lokal-linux
-          path: products/berater-lokal/release/*.AppImage
-
-  build-macos:
-    needs: test
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      - run: npm ci
-        working-directory: products/berater-lokal
-      - run: npm run electron:build
-        working-directory: products/berater-lokal
-      - uses: actions/upload-artifact@v4
-        with:
-          name: berater-lokal-macos
-          path: |
-            products/berater-lokal/release/*.dmg
-            products/berater-lokal/release/*.zip
-            !products/berater-lokal/release/*.blockmap
-
-  build-windows:
-    needs: test
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      - run: npm ci
-        working-directory: products/berater-lokal
-      - run: npm run electron:build
-        working-directory: products/berater-lokal
-      - uses: actions/upload-artifact@v4
-        with:
-          name: berater-lokal-windows
-          path: products/berater-lokal/release/*.exe
+  build:
+    uses: ./.github/workflows/electron-build.yml
+    with:
+      product_dir: products/berater-lokal
+      artifact_prefix: berater-lokal
+    secrets:
+      PORTAL_DEPLOY_KEY: ${{ secrets.PORTAL_DEPLOY_KEY }}
+      PORTAL_HOST: ${{ secrets.PORTAL_HOST }}
 
   publish-to-portal:
-    needs: [build-linux, build-macos, build-windows]
+    needs: [build]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout (fuer Version)
+        uses: actions/checkout@v4
 
       - name: Version ermitteln
         id: version
@@ -114,7 +56,7 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.PORTAL_DEPLOY_KEY }}" > ~/.ssh/portal_deploy
           chmod 600 ~/.ssh/portal_deploy
-          ssh-keyscan -H "${{ secrets.PORTAL_HOST }}" >> ~/.ssh/known_hosts
+          ssh-keyscan -H "${{ secrets.PORTAL_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null
 
       - name: Artefakte per SCP zum Portal hochladen
         env:
@@ -135,19 +77,22 @@ jobs:
             echo "  OK: $filename"
           }
 
+          # Linux
           for f in artifacts/linux/*.AppImage; do
             [ -f "$f" ] && upload_file "linux" "$f"
           done
 
+          # macOS
           for f in artifacts/macos/*.zip artifacts/macos/*.dmg; do
             [ -f "$f" ] && upload_file "macos" "$f"
           done
 
+          # Windows
           for f in artifacts/windows/*.exe; do
             [ -f "$f" ] && upload_file "windows" "$f"
           done
 
-          echo "Alle Artefakte zum Portal hochgeladen."
+          echo "Alle Artefakte per SCP zum Portal hochgeladen."
 
       - name: SSH-Key aufraeumen
         if: always()

@@ -4,3 +4,4 @@ packages:
   - "products/finanz-rechner"
   - "products/rechnung-lokal"
   - "products/nachweis-lokal"
+  - "products/berater-lokal"

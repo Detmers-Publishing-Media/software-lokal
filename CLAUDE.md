@@ -43,6 +43,7 @@ Definiert in `pnpm-workspace.yaml`:
 - `products/mitglieder-lokal`
 - `products/rechnung-lokal`
 - `products/finanz-rechner`
+- `products/berater-lokal`
 
 ## Tech-Stack
 
@@ -171,6 +172,15 @@ Pruefprotokolle, Checklisten und Nachweise. Bundle: `B-08-nachweis`. Hat eigene 
 **Stores:** navigation.js, inspections.js (String-basiert: 'dashboard', 'templates', 'objects', 'defects', 'inspections', 'templates:library', 'template:ID', 'object:ID', 'inspection:ID', 'defect:ID', 'inspection:execute:ID')
 **Tests:** 98+ Tests in 12 Kategorien (Unit, Schema, Events, Integritaet, Replay, CSV, Smoke, Library, Recurring, Attachments, Defects, Migration)
 
+### Berater Lokal (v0.2.0)
+
+Ganzheitliche Beratungssoftware. Bundle: `B-09-berater`. Hat eigene `CLAUDE.md`.
+
+**Routes:** Dashboard, KundenListe, KundeForm, KundeDetail, KonditionenView, ExcelImport, Integrity, Settings, Support
+**Libs:** db.js (CRUD + Events + Hash-Kette + OrgProfile), analyse.js (Lueckenanalyse, 7 Risikobereiche), license.js (Probe-Limit 10 Kunden), pdf.js (Beratungsprotokoll), lebensphase.js, types.js
+**Stores:** navigation.js, kunden.js (String-basiert: 'dashboard', 'kunden', 'konditionen', 'import', 'integrity', 'settings', 'kunde:ID', 'kunde-neu', 'kunde-edit:ID')
+**Tests:** 45+ Tests in 5 Kategorien (Unit, Events, Integritaet, Analyse, Smoke)
+
 ### FinanzRechner lokal (v0.2.0)
 
 Versicherungsrechner. Bundle: `B-24-finanz-rechner`. **Kein DB, kein Event-Log.**
@@ -288,10 +298,11 @@ Kein Release ohne bestandene Tests. Node.js native `test` module.
 6. **Integritaet** — Hash-Kette erkennt Manipulation
 7. **Smoke** — App startet, CRUD, PDFs
 
-### Aktuelle Testzahlen (440 gesamt)
+### Aktuelle Testzahlen (485+ gesamt)
 - electron-platform: 94 Tests
 - mitglieder-lokal: 74 Tests
 - nachweis-lokal: 98+ Tests
+- berater-lokal: 45+ Tests
 - finanz-shared: 48 Tests
 - finanz-rechner: 23 Tests
 - portal: 127 Tests
@@ -307,6 +318,7 @@ node --test products/mitglieder-lokal/tests/test_*.js
 node --test packages/finanz-shared/tests/test_*.js
 node --test products/finanz-rechner/tests/test_*.js
 node --test products/nachweis-lokal/tests/test_*.js
+node --test products/berater-lokal/tests/test_*.js
 node --test portal/test/unit/*.test.js
 ```
 
