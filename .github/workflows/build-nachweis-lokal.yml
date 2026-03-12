@@ -22,8 +22,7 @@ jobs:
           version: latest
       - run: sudo apt-get update && sudo apt-get install -y build-essential python3
       - run: pnpm install
-      - run: pnpm test
-        working-directory: products/nachweis-lokal
+      - run: node --test products/nachweis-lokal/tests/test_*.js
 
   build-linux:
     needs: test
