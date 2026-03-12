@@ -1,0 +1,20 @@
+name: Test + Build (Nachweis Lokal)
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+    branches: [main]
+    paths:
+      - 'products/nachweis-lokal/**'
+      - 'packages/**'
+
+jobs:
+  build:
+    uses: ./.github/workflows/electron-build.yml
+    with:
+      product_dir: products/nachweis-lokal
+      artifact_prefix: nachweis-lokal
+    secrets:
+      PORTAL_DEPLOY_KEY: ${{ secrets.PORTAL_DEPLOY_KEY }}
+      PORTAL_HOST: ${{ secrets.PORTAL_HOST }}

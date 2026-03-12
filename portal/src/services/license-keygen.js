@@ -9,6 +9,7 @@ const PRODUCT_PREFIXES = {
   'mitglieder-lokal': 'CFML',
   'finanz-rechner': 'CFFR',
   'rechnung-lokal': 'CFRL',
+  'nachweis-lokal': 'CFNW',
 };
 
 // Trial key prefixes — must never collide with production prefixes
@@ -16,6 +17,7 @@ const TRIAL_PREFIXES = {
   'mitglieder-lokal': 'CFTM',
   'finanz-rechner': 'CFTR',
   'rechnung-lokal': 'CFTL',
+  'nachweis-lokal': 'CFTN',
 };
 
 /**

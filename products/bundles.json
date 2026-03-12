@@ -47,6 +47,18 @@
           "description": "5 Finanzrechner fuer den Makleralltag"
         }
       ]
+    },
+    "B-08-nachweis": {
+      "name": "Nachweis Lokal",
+      "description": "Pruefprotokolle, Checklisten und Nachweise — lokal und revisionssicher",
+      "target": "Kleine Organisationen, Vereine, Dienstleister mit Dokumentationspflichten",
+      "products": [
+        {
+          "repo": "nachweis-lokal",
+          "type": "app",
+          "description": "Nachweis Lokal — Pruefprotokolle und Checklisten"
+        }
+      ]
     }
   },
   "products": {
@@ -85,6 +97,12 @@
       "type": "library",
       "tech": "npm-package",
       "forgejo_repo": "factory-admin/finanz-shared"
+    },
+    "nachweis-lokal": {
+      "bundles": ["B-08-nachweis"],
+      "type": "app",
+      "tech": "electron-svelte",
+      "forgejo_repo": "factory-admin/nachweis-lokal"
     },
     "fruehwarnreport": {
       "bundles": [],

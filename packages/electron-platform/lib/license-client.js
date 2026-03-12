@@ -22,9 +22,11 @@ const PREFIX_TO_PRODUCT = {
   'CFML': 'mitglieder-lokal',
   'CFFR': 'finanz-rechner',
   'CFRL': 'rechnung-lokal',
+  'CFNW': 'nachweis-lokal',
   'CFTM': 'mitglieder-lokal',
   'CFTR': 'finanz-rechner',
   'CFTL': 'rechnung-lokal',
+  'CFTN': 'nachweis-lokal',
 };
 
 /**

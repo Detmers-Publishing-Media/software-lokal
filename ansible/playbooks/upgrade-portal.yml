@@ -2,6 +2,11 @@
 # Code-Fabrik — Portal Upgrade
 # Server bleibt stehen, Portal-Code wird aktualisiert
 # Voraussetzung: ops_mode=upgrade, Portal muss existieren
+#
+# Aufruf lokal:
+#   ansible-playbook playbooks/upgrade-portal.yml -e ops_mode=upgrade -e portal_ip=5.22.213.252
+# Aufruf im Install-Container (legacy):
+#   ansible-playbook playbooks/upgrade-portal.yml -e ops_mode=upgrade
 
 - name: "Phase 0: Modus + Inventory"
   hosts: localhost
@@ -13,14 +18,29 @@
         that: ops_mode is defined and ops_mode == 'upgrade'
         fail_msg: "upgrade-portal.yml darf nur im Upgrade-Modus laufen (ops_mode={{ ops_mode | default('NICHT_GESETZT') }})"
 
-    - name: "Portal-IP aus .portal-env laden"
+    - name: "Portal-IP aus .portal-env laden (Container-Modus)"
       ansible.builtin.shell: cat /output/.portal-env
       register: portal_env_raw
+      when: portal_ip is not defined
+      failed_when: false
+
+    - name: "Portal-IP setzen"
+      ansible.builtin.set_fact:
+        _portal_env_match: "{{ (portal_env_raw.stdout | default('')) | regex_search('PORTAL_IP=(.+)', '\\1') | default([]) }}"
+
+    - name: "Portal-IP auswerten"
+      ansible.builtin.set_fact:
+        resolved_portal_ip: "{{ portal_ip | default(_portal_env_match[0] | default('')) }}"
+
+    - name: "Portal-IP validieren"
+      ansible.builtin.assert:
+        that: resolved_portal_ip | length > 0
+        fail_msg: "Portal-IP nicht ermittelbar. Entweder -e portal_ip=X.X.X.X angeben oder /output/.portal-env bereitstellen."
 
     - name: "factory-portal registrieren"
       ansible.builtin.add_host:
         name: factory-portal
-        ansible_host: "{{ (portal_env_raw.stdout | regex_search('PORTAL_IP=(.+)', '\\1'))[0] }}"
+        ansible_host: "{{ resolved_portal_ip }}"
         ansible_user: root
         ansible_ssh_private_key_file: "~/.ssh/codefabrik_deploy"
         groups: [portal]
@@ -29,9 +49,14 @@
   hosts: factory-portal
   gather_facts: false
   tasks:
+    - name: "Portal-Quellverzeichnis ermitteln"
+      ansible.builtin.set_fact:
+        portal_src_dir: "{{ portal_local_src | default('/portal') }}"
+      delegate_to: localhost
+
     - name: "Portal-Code synchronisieren"
       ansible.builtin.copy:
-        src: /portal/
+        src: "{{ portal_src_dir }}/"
         dest: "{{ portal_docker_compose_dir }}/"
         owner: root
         group: root
@@ -54,14 +79,27 @@
       until: pg_ready.rc == 0
       changed_when: false
 
-    - name: "Migrationen ausfuehren"
+    - name: "Migrations-Dateien finden"
+      ansible.builtin.find:
+        paths: "{{ portal_docker_compose_dir }}/src/db"
+        patterns: "migrate-v*.sql"
+      register: migration_files
+
+    - name: "Migrationen sortiert ausfuehren"
       ansible.builtin.shell: |
-        docker cp {{ portal_docker_compose_dir }}/src/db/{{ item }} portal-db:/tmp/{{ item }}
-        docker exec portal-db psql -U portal -d portal -f /tmp/{{ item }}
-      loop:
-        - migrate-v055.sql
-        - migrate-v056.sql
-        - migrate-v091.sql
+        docker cp {{ item.path }} portal-db:/tmp/{{ item.path | basename }}
+        docker exec portal-db psql -U portal -d portal -f /tmp/{{ item.path | basename }} 2>&1
+      loop: "{{ migration_files.files | sort(attribute='path') }}"
+      loop_control:
+        label: "{{ item.path | basename }}"
+      register: migration_results
+
+    - name: "Migrations-Ergebnisse"
+      ansible.builtin.debug:
+        msg: "{{ item.item.path | basename }}: {{ item.stdout_lines[-3:] | default(['OK']) }}"
+      loop: "{{ migration_results.results }}"
+      loop_control:
+        label: "{{ item.item.path | basename }}"
 
     - name: "Portal Health-Check"
       ansible.builtin.uri:

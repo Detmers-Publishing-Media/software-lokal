@@ -13,6 +13,9 @@ async function logIPN(eventType, orderId, licenseKey, payload, result, errorMsg)
   `, [eventType, orderId, licenseKey, payload ? JSON.stringify(payload) : null, result, errorMsg]);
 }
 
+// GET-Handler fuer Digistore24 URL-Validierung
+router.get('/api/digistore-ipn', (req, res) => res.send('OK'));
+
 router.post('/api/digistore-ipn', async (req, res) => {
   const passphrase = process.env.DIGISTORE_IPN_PASSPHRASE;
   if (!passphrase) {
