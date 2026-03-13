@@ -13,7 +13,7 @@ module.exports = {
   preloadPath: path.join(__dirname, 'node_modules', '@codefabrik', 'electron-platform', 'preload.cjs'),
   distPath: path.join(__dirname, 'dist', 'index.html'),
   licensePrefix: 'CFRL',
-  portalUrl: null,
+  portalUrl: 'https://portal.detmers-publish.de',
   autoUpdate: false,
   updateUrl: null,
 };
