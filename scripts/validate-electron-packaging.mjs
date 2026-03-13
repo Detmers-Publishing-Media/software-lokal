@@ -102,7 +102,7 @@ function listAsarEntries(asarPath) {
       timeout: 30_000,
       stdio: ['pipe', 'pipe', 'pipe'],
     });
-    return output.trim().split('\n').map(l => l.trim());
+    return output.trim().split('\n').map(l => l.trim().replace(/\\/g, '/'));
   } catch (err) {
     console.error(`WARNING: npx asar list failed: ${err.message}`);
     return null;
