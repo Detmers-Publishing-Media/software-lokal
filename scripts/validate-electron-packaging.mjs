@@ -8,8 +8,8 @@
  * - Workspace packages (@codefabrik/*)
  * - Native addons (better-sqlite3)
  *
- * Supports both asar archives and unpacked directories.
- * Native addons are checked in app.asar.unpacked (where electron-builder puts them).
+ * Uses `npx asar list` to inspect asar archives (no direct dependency needed).
+ * Native addons are checked in app.asar.unpacked.
  *
  * Usage:
  *   node scripts/validate-electron-packaging.mjs <product-dir>
@@ -19,6 +19,7 @@
 
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
+import { execSync } from 'node:child_process';
 
 const productDir = process.argv[2];
 if (!productDir) {
@@ -86,20 +87,32 @@ function getRequiredPaths() {
   // Native addons (in app.asar.unpacked)
   const native = [];
   const nativePackages = ['better-sqlite3', 'better-sqlite3-multiple-ciphers'];
-  for (const pkg of nativePackages) {
-    if (deps[pkg]) native.push(`node_modules/${pkg}/package.json`);
+  for (const np of nativePackages) {
+    if (deps[np]) native.push(`node_modules/${np}/package.json`);
   }
 
   return { regular, native };
 }
 
-// Check files in asar archive
-async function checkAsar(asarPath, paths) {
-  const { listPackage } = await import('@electron/asar');
-  const entries = listPackage(asarPath);
+// List asar contents via npx
+function listAsarEntries(asarPath) {
+  try {
+    const output = execSync(`npx --yes @electron/asar list "${asarPath}"`, {
+      encoding: 'utf-8',
+      timeout: 30_000,
+      stdio: ['pipe', 'pipe', 'pipe'],
+    });
+    return output.trim().split('\n').map(l => l.trim());
+  } catch (err) {
+    console.error(`WARNING: npx asar list failed: ${err.message}`);
+    return null;
+  }
+}
+
+// Check paths against asar entry list
+function checkAsar(entries, paths) {
   const found = [];
   const missing = [];
-
   for (const p of paths) {
     const normalized = '/' + p.replace(/\\/g, '/');
     if (entries.some(e => e === normalized || e.startsWith(normalized + '/'))) {
@@ -159,20 +172,19 @@ const allMissing = [];
 
 // Check regular files in asar or app/ directory
 if (hasAsar) {
-  try {
-    const result = await checkAsar(asarPath, regular);
+  const entries = listAsarEntries(asarPath);
+  if (entries) {
+    const result = checkAsar(entries, regular);
     allFound.push(...result.found);
     allMissing.push(...result.missing);
-  } catch (err) {
-    console.error(`WARNING: Could not read asar: ${err.message}`);
+  } else if (hasAppDir) {
     // Fallback to app/ directory
-    if (hasAppDir) {
-      const result = checkDir(appPath, regular);
-      allFound.push(...result.found);
-      allMissing.push(...result.missing);
-    } else {
-      allMissing.push(...regular);
-    }
+    const result = checkDir(appPath, regular);
+    allFound.push(...result.found);
+    allMissing.push(...result.missing);
+  } else {
+    console.error('ERROR: Could not read asar and no app/ directory found.');
+    allMissing.push(...regular);
   }
 } else if (hasAppDir) {
   const result = checkDir(appPath, regular);
@@ -189,15 +201,6 @@ if (native.length > 0) {
     const result = checkDir(unpackedPath, native);
     allFound.push(...result.found);
     allMissing.push(...result.missing);
-  } else if (hasAsar) {
-    // Some builds include native addons in asar too
-    try {
-      const result = await checkAsar(asarPath, native);
-      allFound.push(...result.found);
-      allMissing.push(...result.missing);
-    } catch (_) {
-      allMissing.push(...native);
-    }
   } else if (hasAppDir) {
     const result = checkDir(appPath, native);
     allFound.push(...result.found);
