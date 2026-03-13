@@ -151,16 +151,19 @@ describe('license-client', () => {
     it('maps production prefixes correctly', () => {
       assert.equal(PREFIX_TO_PRODUCT['CFML'], 'mitglieder-lokal');
       assert.equal(PREFIX_TO_PRODUCT['CFFR'], 'finanz-rechner');
+      assert.equal(PREFIX_TO_PRODUCT['CFBL'], 'berater-lokal');
     });
 
     it('maps trial prefixes to same products', () => {
       assert.equal(PREFIX_TO_PRODUCT['CFTM'], 'mitglieder-lokal');
       assert.equal(PREFIX_TO_PRODUCT['CFTR'], 'finanz-rechner');
+      assert.equal(PREFIX_TO_PRODUCT['CFTB'], 'berater-lokal');
     });
 
     it('trial and production map to same product', () => {
       assert.equal(PREFIX_TO_PRODUCT['CFML'], PREFIX_TO_PRODUCT['CFTM']);
       assert.equal(PREFIX_TO_PRODUCT['CFFR'], PREFIX_TO_PRODUCT['CFTR']);
+      assert.equal(PREFIX_TO_PRODUCT['CFBL'], PREFIX_TO_PRODUCT['CFTB']);
     });
   });
 
