@@ -15,7 +15,7 @@ module.exports = {
   preloadPath: path.join(__dirname, 'electron', 'preload.cjs'),
   distPath: path.join(__dirname, 'dist', 'index.html'),
   licensePrefix: 'CFBL',
-  portalUrl: null,
+  portalUrl: 'https://portal.detmers-publish.de',
   autoUpdate: false,
   updateUrl: null,
 
