@@ -37,7 +37,12 @@
     "files": [
       "dist/**/*",
       "electron/**/*",
-      "app.config.cjs"
+      "app.config.cjs",
+      "node_modules/@codefabrik/electron-platform/**/*",
+      "node_modules/@codefabrik/shared/**/*",
+      "node_modules/@codefabrik/app-shared/**/*",
+      "node_modules/better-sqlite3/**/*",
+      "node_modules/exceljs/**/*"
     ],
     "linux": {
       "target": ["AppImage"],
@@ -49,6 +54,10 @@
     "mac": {
       "target": ["dmg", "zip"],
       "category": "public.app-category.business"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
     },
     "directories": {
       "output": "release"
