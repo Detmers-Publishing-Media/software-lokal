@@ -3,14 +3,16 @@
 /**
  * Post-build validation for Electron packaging.
  *
- * Checks that the unpacked build directory contains all required files
- * (workspace packages, native addons, electron entry points).
+ * Checks that the built app contains all required files:
+ * - JS entry points (electron/main.cjs, dist/index.html, etc.)
+ * - Workspace packages (@codefabrik/*)
+ * - Native addons (better-sqlite3)
+ *
+ * Supports both asar archives and unpacked directories.
+ * Native addons are checked in app.asar.unpacked (where electron-builder puts them).
  *
  * Usage:
  *   node scripts/validate-electron-packaging.mjs <product-dir>
- *
- * Example:
- *   node scripts/validate-electron-packaging.mjs products/berater-lokal
  *
  * Exit code 0 = all checks passed, 1 = missing files detected.
  */
@@ -27,75 +29,29 @@ if (!productDir) {
 const absProductDir = resolve(productDir);
 const releaseDir = join(absProductDir, 'release');
 
-// Detect platform-specific unpacked directory
-function findUnpackedDir() {
-  if (!existsSync(releaseDir)) {
-    return null;
-  }
+// Find the platform-specific resources directory
+function findResourcesDir() {
+  if (!existsSync(releaseDir)) return null;
 
   const candidates = [
-    'linux-unpacked/resources/app',
-    'linux-unpacked/resources/app.asar.unpacked',
-    'win-unpacked/resources/app',
-    'win-unpacked/resources/app.asar.unpacked',
-    'mac/resources/app',
-    'mac-arm64/resources/app',
+    'linux-unpacked/resources',
+    'win-unpacked/resources',
+    'mac/resources',
+    'mac-arm64/resources',
   ];
 
-  // Also check for .app bundles on macOS
+  // macOS .app bundles
   try {
     const entries = readdirSync(releaseDir);
     for (const entry of entries) {
       if (entry.endsWith('.app')) {
-        candidates.push(`${entry}/Contents/Resources/app`);
-        candidates.push(`${entry}/Contents/Resources/app.asar.unpacked`);
-      }
-      // mac-arm64 might contain .app
-      const subDir = join(releaseDir, entry);
-      if (existsSync(subDir) && entry.startsWith('mac')) {
-        try {
-          const subEntries = readdirSync(subDir);
-          for (const sub of subEntries) {
-            if (sub.endsWith('.app')) {
-              candidates.push(`${entry}/${sub}/Contents/Resources/app`);
-            }
-          }
-        } catch (_) {}
-      }
-    }
-  } catch (_) {}
-
-  for (const candidate of candidates) {
-    const full = join(releaseDir, candidate);
-    if (existsSync(full)) {
-      return full;
-    }
-  }
-
-  return null;
-}
-
-// Also try asar listing if unpacked dir not found
-function findAsarFile() {
-  const candidates = [
-    'linux-unpacked/resources/app.asar',
-    'win-unpacked/resources/app.asar',
-    'mac/resources/app.asar',
-    'mac-arm64/resources/app.asar',
-  ];
-
-  try {
-    const entries = readdirSync(releaseDir);
-    for (const entry of entries) {
-      if (entry.endsWith('.app')) {
-        candidates.push(`${entry}/Contents/Resources/app.asar`);
+        candidates.push(`${entry}/Contents/Resources`);
       }
       if (entry.startsWith('mac')) {
         try {
-          const subEntries = readdirSync(join(releaseDir, entry));
-          for (const sub of subEntries) {
+          for (const sub of readdirSync(join(releaseDir, entry))) {
             if (sub.endsWith('.app')) {
-              candidates.push(`${entry}/${sub}/Contents/Resources/app.asar`);
+              candidates.push(`${entry}/${sub}/Contents/Resources`);
             }
           }
         } catch (_) {}
@@ -103,125 +59,162 @@ function findAsarFile() {
     }
   } catch (_) {}
 
-  for (const candidate of candidates) {
-    const full = join(releaseDir, candidate);
-    if (existsSync(full)) {
-      return full;
-    }
+  for (const c of candidates) {
+    const full = join(releaseDir, c);
+    if (existsSync(full)) return full;
   }
   return null;
 }
 
-// Read required files from package.json build.files + detect dependencies
+// Categorize required paths
 function getRequiredPaths() {
   const pkgPath = join(absProductDir, 'package.json');
   const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8'));
-
-  // Always required for electron-platform products
-  const required = [
-    'electron/main.cjs',
-    'dist/index.html',
-  ];
-
-  // Check for app.config.cjs
-  if (existsSync(join(absProductDir, 'app.config.cjs'))) {
-    required.push('app.config.cjs');
-  }
-
-  // Check for custom preload
-  if (existsSync(join(absProductDir, 'electron/preload.cjs'))) {
-    required.push('electron/preload.cjs');
-  }
-
-  // Check workspace dependencies
   const deps = pkg.dependencies || {};
+
+  // Regular files (in asar or app/ directory)
+  const regular = ['electron/main.cjs', 'dist/index.html'];
+  if (existsSync(join(absProductDir, 'app.config.cjs'))) regular.push('app.config.cjs');
+  if (existsSync(join(absProductDir, 'electron/preload.cjs'))) regular.push('electron/preload.cjs');
+
   for (const dep of Object.keys(deps)) {
     if (dep.startsWith('@codefabrik/')) {
-      // At least the package.json must exist
-      required.push(`node_modules/${dep}/package.json`);
+      regular.push(`node_modules/${dep}/package.json`);
     }
   }
 
-  // Check for native addons
+  // Native addons (in app.asar.unpacked)
+  const native = [];
   const nativePackages = ['better-sqlite3', 'better-sqlite3-multiple-ciphers'];
-  for (const native of nativePackages) {
-    if (deps[native]) {
-      required.push(`node_modules/${native}/package.json`);
-    }
+  for (const pkg of nativePackages) {
+    if (deps[pkg]) native.push(`node_modules/${pkg}/package.json`);
   }
 
-  return required;
+  return { regular, native };
 }
 
-// Main
+// Check files in asar archive
+async function checkAsar(asarPath, paths) {
+  const { listPackage } = await import('@electron/asar');
+  const entries = listPackage(asarPath);
+  const found = [];
+  const missing = [];
+
+  for (const p of paths) {
+    const normalized = '/' + p.replace(/\\/g, '/');
+    if (entries.some(e => e === normalized || e.startsWith(normalized + '/'))) {
+      found.push(p);
+    } else {
+      missing.push(p);
+    }
+  }
+  return { found, missing };
+}
+
+// Check files in unpacked directory
+function checkDir(dir, paths) {
+  const found = [];
+  const missing = [];
+  for (const p of paths) {
+    if (existsSync(join(dir, p))) {
+      found.push(p);
+    } else {
+      missing.push(p);
+    }
+  }
+  return { found, missing };
+}
+
+// --- Main ---
 console.log(`\nValidating Electron packaging for: ${productDir}`);
 console.log(`Release directory: ${releaseDir}\n`);
 
 if (!existsSync(releaseDir)) {
-  console.error('ERROR: Release directory does not exist. Was electron-builder run?');
+  console.error('ERROR: Release directory does not exist.');
   process.exit(1);
 }
 
-const unpackedDir = findUnpackedDir();
-const asarFile = findAsarFile();
-
-if (!unpackedDir && !asarFile) {
-  console.error('ERROR: No unpacked directory or asar file found in release/');
+const resourcesDir = findResourcesDir();
+if (!resourcesDir) {
+  console.error('ERROR: No platform resources directory found in release/');
   console.error('Contents:', readdirSync(releaseDir).join(', '));
   process.exit(1);
 }
 
-const requiredPaths = getRequiredPaths();
-const missing = [];
-const found = [];
+const asarPath = join(resourcesDir, 'app.asar');
+const unpackedPath = join(resourcesDir, 'app.asar.unpacked');
+const appPath = join(resourcesDir, 'app');
+const hasAsar = existsSync(asarPath);
+const hasUnpacked = existsSync(unpackedPath);
+const hasAppDir = existsSync(appPath);
 
-if (unpackedDir) {
-  console.log(`Checking unpacked directory: ${unpackedDir}\n`);
+console.log(`Resources: ${resourcesDir}`);
+console.log(`  app.asar: ${hasAsar ? 'yes' : 'no'}`);
+console.log(`  app.asar.unpacked: ${hasUnpacked ? 'yes' : 'no'}`);
+console.log(`  app/: ${hasAppDir ? 'yes' : 'no'}\n`);
 
-  for (const reqPath of requiredPaths) {
-    const full = join(unpackedDir, reqPath);
-    if (existsSync(full)) {
-      found.push(reqPath);
+const { regular, native } = getRequiredPaths();
+const allFound = [];
+const allMissing = [];
+
+// Check regular files in asar or app/ directory
+if (hasAsar) {
+  try {
+    const result = await checkAsar(asarPath, regular);
+    allFound.push(...result.found);
+    allMissing.push(...result.missing);
+  } catch (err) {
+    console.error(`WARNING: Could not read asar: ${err.message}`);
+    // Fallback to app/ directory
+    if (hasAppDir) {
+      const result = checkDir(appPath, regular);
+      allFound.push(...result.found);
+      allMissing.push(...result.missing);
     } else {
-      missing.push(reqPath);
+      allMissing.push(...regular);
     }
   }
-} else if (asarFile) {
-  // Use @electron/asar to list contents
-  console.log(`Checking asar archive: ${asarFile}\n`);
+} else if (hasAppDir) {
+  const result = checkDir(appPath, regular);
+  allFound.push(...result.found);
+  allMissing.push(...result.missing);
+} else {
+  console.error('ERROR: Neither app.asar nor app/ directory found.');
+  process.exit(1);
+}
 
-  try {
-    const { listPackage } = await import('@electron/asar');
-    const entries = listPackage(asarFile);
-
-    for (const reqPath of requiredPaths) {
-      const normalized = '/' + reqPath.replace(/\\/g, '/');
-      if (entries.some(e => e === normalized || e.startsWith(normalized + '/'))) {
-        found.push(reqPath);
-      } else {
-        missing.push(reqPath);
-      }
+// Check native addons in app.asar.unpacked
+if (native.length > 0) {
+  if (hasUnpacked) {
+    const result = checkDir(unpackedPath, native);
+    allFound.push(...result.found);
+    allMissing.push(...result.missing);
+  } else if (hasAsar) {
+    // Some builds include native addons in asar too
+    try {
+      const result = await checkAsar(asarPath, native);
+      allFound.push(...result.found);
+      allMissing.push(...result.missing);
+    } catch (_) {
+      allMissing.push(...native);
     }
-  } catch (err) {
-    console.error(`WARNING: Could not read asar file: ${err.message}`);
-    console.error('Install @electron/asar to enable asar validation.');
-    process.exit(1);
+  } else if (hasAppDir) {
+    const result = checkDir(appPath, native);
+    allFound.push(...result.found);
+    allMissing.push(...result.missing);
+  } else {
+    allMissing.push(...native);
   }
 }
 
 // Report
-for (const f of found) {
-  console.log(`  OK  ${f}`);
-}
-for (const m of missing) {
-  console.log(`  MISSING  ${m}`);
-}
+for (const f of allFound) console.log(`  OK  ${f}`);
+for (const m of allMissing) console.log(`  MISSING  ${m}`);
 
-console.log(`\n${found.length} found, ${missing.length} missing\n`);
+console.log(`\n${allFound.length} found, ${allMissing.length} missing\n`);
 
-if (missing.length > 0) {
+if (allMissing.length > 0) {
   console.error('PACKAGING VALIDATION FAILED');
-  console.error('These files are missing from the built app.');
   console.error('Check build.files in package.json.\n');
   process.exit(1);
 } else {
