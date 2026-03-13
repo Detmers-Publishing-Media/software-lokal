@@ -84,6 +84,9 @@ jobs:
         run: pnpm electron:build
         working-directory: ${{ inputs.product_dir }}
 
+      - name: Validate Packaging
+        run: node scripts/validate-electron-packaging.mjs ${{ inputs.product_dir }}
+
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -124,6 +127,9 @@ jobs:
         run: pnpm electron:build
         working-directory: ${{ inputs.product_dir }}
 
+      - name: Validate Packaging
+        run: node scripts/validate-electron-packaging.mjs ${{ inputs.product_dir }}
+
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -160,6 +166,9 @@ jobs:
       - name: Build Electron App
         run: pnpm electron:build
         working-directory: ${{ inputs.product_dir }}
+
+      - name: Validate Packaging
+        run: node scripts/validate-electron-packaging.mjs ${{ inputs.product_dir }}
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4

@@ -36,9 +36,12 @@ jobs:
       - uses: pnpm/action-setup@v4
         with:
           version: latest
+      - run: sudo apt-get update && sudo apt-get install -y build-essential python3
       - run: pnpm install
       - run: pnpm electron:build
         working-directory: products/berater-lokal
+      - name: Validate Packaging
+        run: node scripts/validate-electron-packaging.mjs products/berater-lokal
       - uses: actions/upload-artifact@v4
         with:
           name: berater-lokal-linux
@@ -58,6 +61,8 @@ jobs:
       - run: pnpm install
       - run: pnpm electron:build
         working-directory: products/berater-lokal
+      - name: Validate Packaging
+        run: node scripts/validate-electron-packaging.mjs products/berater-lokal
       - uses: actions/upload-artifact@v4
         with:
           name: berater-lokal-macos
@@ -80,6 +85,8 @@ jobs:
       - run: pnpm install
       - run: pnpm electron:build
         working-directory: products/berater-lokal
+      - name: Validate Packaging
+        run: node scripts/validate-electron-packaging.mjs products/berater-lokal
       - uses: actions/upload-artifact@v4
         with:
           name: berater-lokal-windows

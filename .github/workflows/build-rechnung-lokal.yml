@@ -40,6 +40,8 @@ jobs:
       - run: pnpm install
       - run: pnpm electron:build
         working-directory: products/rechnung-lokal
+      - name: Validate Packaging
+        run: node scripts/validate-electron-packaging.mjs products/rechnung-lokal
       - uses: actions/upload-artifact@v4
         with:
           name: rechnung-lokal-linux
@@ -59,6 +61,8 @@ jobs:
       - run: pnpm install
       - run: pnpm electron:build
         working-directory: products/rechnung-lokal
+      - name: Validate Packaging
+        run: node scripts/validate-electron-packaging.mjs products/rechnung-lokal
       - uses: actions/upload-artifact@v4
         with:
           name: rechnung-lokal-macos
@@ -81,6 +85,8 @@ jobs:
       - run: pnpm install
       - run: pnpm electron:build
         working-directory: products/rechnung-lokal
+      - name: Validate Packaging
+        run: node scripts/validate-electron-packaging.mjs products/rechnung-lokal
       - uses: actions/upload-artifact@v4
         with:
           name: rechnung-lokal-windows
