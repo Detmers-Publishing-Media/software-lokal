@@ -10,6 +10,7 @@ source "$LIB_DIR/secrets.sh"
 source "$LIB_DIR/docker.sh"
 source "$LIB_DIR/upcloud.sh"
 source "$LIB_DIR/release.sh"
+source "$LIB_DIR/tunnel.sh"
 
 trap cleanup EXIT INT TERM
 log_header
@@ -32,6 +33,7 @@ show_menu() {
     echo "    9) status         — Lokalen Docker-Status pruefen" >&2
     echo "   10) rotate-token   — Forgejo API-Token rotieren" >&2
     echo "   11) recover        — Env-Dateien vom Server recovern" >&2
+    echo "   12) tunnel         — SSH-Tunnel (AnythingLLM + Forgejo)" >&2
     echo "  q) Beenden" >&2
     echo "" >&2
     read -rp "Auswahl: " choice
@@ -114,9 +116,13 @@ preflight_base
 ask_keepass_password
 load_secrets
 
-# Nuke: nur API-Aufrufe, kein Workspace/Docker noetig
+# Leichtgewichtige Aktionen: kein Workspace/Docker noetig
 if [ "$ACTION" = "nuke" ]; then
     nuke_all_servers
+    exit 0
+fi
+if [ "$ACTION" = "tunnel" ] || [ "$ACTION" = "12" ]; then
+    run_tunnel
     exit 0
 fi
 
@@ -133,6 +139,7 @@ if [ -n "$ACTION" ]; then
         3|reconcile)    run_reconcile ;;
         5|teardown)     run_teardown ;;
         6|sichern)      run_sichern ;;
+        12|tunnel)      run_tunnel ;;
         status)         run_status ;;
         *)
             playbook=$(playbook_for "$ACTION") || die "Unbekannte Aktion: $ACTION. Erlaubt: bootstrap, upgrade, reconcile, teardown, sichern, nuke, status"
@@ -155,6 +162,7 @@ else
             8|fabrik)       run_ansible "playbooks/fabrik.yml"; writeback_runtime ;;
             9|status)       run_status ;;
             10|rotate-token) run_ansible "playbooks/rotate-token.yml"; writeback_runtime ;;
+            12|tunnel)      run_tunnel ;;
             *)              echo "Ungueltige Auswahl" ;;
         esac
     done

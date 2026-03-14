@@ -19,7 +19,7 @@ preflight_full() {
         now_epoch=$(date +%s)
         age_minutes=$(( (now_epoch - build_epoch) / 60 ))
         if [ "$age_minutes" -gt 60 ]; then
-            warn "Tarball ist $age_minutes Minuten alt (gebaut: $build_time). Neu bauen mit build-installer.sh?"
+            die "Tarball ist ${age_minutes}min alt (gebaut: $build_time). Neu bauen: ./scripts/build-installer.sh"
         fi
     fi
 }

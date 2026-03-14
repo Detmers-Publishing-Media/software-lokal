@@ -1,0 +1,212 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# =============================================================================
+# sync-anythingllm.sh — Wissensbasis-Sync fuer Code-Fabrik Prozessdokumentation
+# =============================================================================
+# Synchronisiert .md-Dateien aus Forgejo-Repos nach AnythingLLM.
+# Kann manuell oder vom Poller aufgerufen werden.
+#
+# Nutzung:
+#   /opt/codefabrik/sync-anythingllm.sh                  # Normaler Lauf
+#   /opt/codefabrik/sync-anythingllm.sh --dry-run        # Zeigt was passieren wuerde
+#   /opt/codefabrik/sync-anythingllm.sh --full-sync      # Erzwingt Voll-Sync
+# =============================================================================
+
+ANYTHINGLLM_URL="http://localhost:3001"
+ANYTHINGLLM_API_KEY="${ANYTHINGLLM_API_KEY:-}"
+ANYTHINGLLM_DB="/var/lib/docker/volumes/codefabrik_anythingllm_storage/_data/anythingllm.db"
+WORKSPACE_SLUG="codefabrik-docs"
+REPO_DIR="/mnt/data/repos/process-repo"
+
+EXCLUDE_PATTERN="(vault\.yml|\.env$|\.env\.example$|\.kdbx$)"
+MAX_FILE_SIZE=1048576  # 1 MB
+RETRY_COUNT=3
+RETRY_DELAY=5
+
+DRY_RUN=false
+FULL_SYNC=false
+SYNCED=0
+DELETED=0
+ERRORS=0
+SKIPPED=0
+
+for arg in "$@"; do
+  case "$arg" in
+    --dry-run)   DRY_RUN=true ;;
+    --full-sync) FULL_SYNC=true ;;
+    --help|-h)
+      echo "Usage: sync-anythingllm.sh [--dry-run] [--full-sync]"
+      exit 0 ;;
+    *) echo "Unbekanntes Argument: $arg" >&2; exit 1 ;;
+  esac
+done
+
+log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] SYNC: $*"; }
+
+api() {
+  local method="$1" endpoint="$2"; shift 2
+  local attempt=0
+  while [ $attempt -lt $RETRY_COUNT ]; do
+    if curl -sf -X "$method" \
+        -H "Authorization: Bearer $ANYTHINGLLM_API_KEY" \
+        "$ANYTHINGLLM_URL/api$endpoint" "$@" 2>/dev/null; then
+      return 0
+    fi
+    attempt=$((attempt + 1))
+    if [ $attempt -lt $RETRY_COUNT ]; then
+      log "RETRY: $method $endpoint (Versuch $((attempt + 1))/$RETRY_COUNT)"
+      sleep "$RETRY_DELAY"
+    fi
+  done
+  return 1
+}
+
+get_last_sync_sha() {
+  docker exec factory-postgres psql -U forgejo -d forgejo -tAq \
+    -c "SELECT extra_data FROM poller_state WHERE object_id='anythingllm-sync'" \
+    2>/dev/null || echo ""
+}
+
+save_sync_sha() {
+  local sha="$1"
+  docker exec factory-postgres psql -U forgejo -d forgejo -tAq \
+    -c "INSERT INTO poller_state (object_id, stage, extra_data, updated_at)
+        VALUES ('anythingllm-sync', 'done', '$sha', now())
+        ON CONFLICT (object_id)
+        DO UPDATE SET extra_data = EXCLUDED.extra_data,
+                      stage = 'done',
+                      updated_at = now()" 2>/dev/null || true
+}
+
+sanitize_path() { echo "$1" | sed 's|/|--|g'; }
+
+upload_file() {
+  local filepath="$1"
+  local sanitized
+  sanitized=$(sanitize_path "$filepath")
+  local tmpfile="/tmp/anythingllm-upload-${sanitized}"
+
+  if ! git -C "$REPO_DIR" show "HEAD:$filepath" > "$tmpfile" 2>/dev/null; then
+    log "WARN: Kann $filepath nicht lesen"
+    rm -f "$tmpfile"
+    return 1
+  fi
+
+  local size
+  size=$(stat -c%s "$tmpfile" 2>/dev/null || echo 0)
+  if [ "$size" -gt "$MAX_FILE_SIZE" ]; then
+    log "SKIP: $filepath (${size} Bytes, >1MB)"
+    rm -f "$tmpfile"
+    SKIPPED=$((SKIPPED + 1))
+    return 0
+  fi
+
+  if $DRY_RUN; then
+    log "[DRY-RUN] UPLOAD: $filepath (${size} Bytes)"
+    rm -f "$tmpfile"
+    SYNCED=$((SYNCED + 1))
+    return 0
+  fi
+
+  local response
+  if ! response=$(api POST /v1/document/upload -F "file=@${tmpfile};filename=${sanitized}"); then
+    log "ERROR: Upload fehlgeschlagen fuer $filepath"
+    rm -f "$tmpfile"
+    return 1
+  fi
+
+  local doc_location
+  doc_location=$(echo "$response" | jq -r '.documents[0].location // empty' 2>/dev/null)
+  if [ -z "$doc_location" ]; then
+    log "ERROR: Keine location in API-Antwort fuer $filepath"
+    rm -f "$tmpfile"
+    return 1
+  fi
+
+  if ! api POST "/v1/workspace/$WORKSPACE_SLUG/update-embeddings" \
+      -H "Content-Type: application/json" \
+      -d "{\"adds\": [\"$doc_location\"]}" > /dev/null; then
+    log "ERROR: Embedding fehlgeschlagen fuer $filepath"
+    rm -f "$tmpfile"
+    return 1
+  fi
+
+  rm -f "$tmpfile"
+  log "OK: $filepath"
+  SYNCED=$((SYNCED + 1))
+  return 0
+}
+
+# --- API-Key aus ENV oder SQLite ---
+if [ -z "$ANYTHINGLLM_API_KEY" ]; then
+  if command -v sqlite3 >/dev/null 2>&1 && [ -f "$ANYTHINGLLM_DB" ]; then
+    ANYTHINGLLM_API_KEY=$(sqlite3 "$ANYTHINGLLM_DB" 'SELECT secret FROM api_keys LIMIT 1;' 2>/dev/null || echo "")
+  fi
+fi
+
+if [ -z "$ANYTHINGLLM_API_KEY" ]; then
+  log "ERROR: Kein ANYTHINGLLM_API_KEY"
+  exit 1
+fi
+
+if ! api GET /v1/workspaces > /dev/null 2>&1; then
+  log "ERROR: AnythingLLM API nicht erreichbar ($ANYTHINGLLM_URL)"
+  exit 1
+fi
+
+# --- Repo pruefen ---
+if [ ! -d "$REPO_DIR/.git" ]; then
+  log "ERROR: Repo nicht vorhanden: $REPO_DIR"
+  exit 1
+fi
+
+cd "$REPO_DIR"
+
+LAST_SHA=$(get_last_sync_sha)
+CURRENT_SHA=$(git rev-parse HEAD 2>/dev/null)
+
+if $FULL_SYNC; then
+  LAST_SHA=""
+  log "FULL SYNC erzwungen"
+fi
+
+if [ "$LAST_SHA" = "$CURRENT_SHA" ] && ! $FULL_SYNC; then
+  exit 0
+fi
+
+log "START last=${LAST_SHA:-<erster Lauf>} current=$CURRENT_SHA"
+
+# --- Diff berechnen ---
+if [ -z "$LAST_SHA" ]; then
+  CHANGED_FILES=$(git ls-tree -r --name-only HEAD \
+    | grep '\.md$' \
+    | grep -vE "$EXCLUDE_PATTERN" || true)
+  DELETED_FILES=""
+  log "VOLL-SYNC: $(echo "$CHANGED_FILES" | grep -c . || echo 0) Dateien"
+else
+  CHANGED_FILES=$(git diff --name-only --diff-filter=ACM "$LAST_SHA" HEAD \
+    | grep '\.md$' \
+    | grep -vE "$EXCLUDE_PATTERN" || true)
+  DELETED_FILES=$(git diff --name-only --diff-filter=D "$LAST_SHA" HEAD \
+    | grep '\.md$' \
+    | grep -vE "$EXCLUDE_PATTERN" || true)
+fi
+
+if [ -z "$CHANGED_FILES" ] && [ -z "$DELETED_FILES" ]; then
+  log "Keine .md-Aenderungen seit letztem Sync"
+  save_sync_sha "$CURRENT_SHA"
+  exit 0
+fi
+
+for file in $CHANGED_FILES; do
+  if ! upload_file "$file"; then
+    ERRORS=$((ERRORS + 1))
+  fi
+done
+
+if ! $DRY_RUN; then
+  save_sync_sha "$CURRENT_SHA"
+fi
+
+log "DONE synced=$SYNCED errors=$ERRORS skipped=$SKIPPED"

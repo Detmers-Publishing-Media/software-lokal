@@ -36,7 +36,11 @@
             size: "{{ portal_downloads_storage_size }}"
             tier: "{{ upcloud_storage_tier }}"
         status_code: [200, 201]
+        timeout: 120
       register: new_storage_result
+      retries: 3
+      delay: 15
+      until: new_storage_result is not failed
       when: downloads_storage_uuid | length == 0
 
     - name: "Neue Storage UUID setzen"
@@ -79,6 +83,7 @@
                 - action: attach
                   storage: "{{ downloads_storage_uuid }}"
         status_code: [200, 201, 202]
+        timeout: 120
       register: portal_server_result
 
     - name: "Portal UUID und IP speichern"

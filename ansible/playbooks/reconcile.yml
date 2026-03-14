@@ -49,6 +49,7 @@
   hosts: factory-prod
   gather_facts: true
   vars:
+    server_ip: "{{ ansible_host }}"
     forgejo_admin_password: "{{ lookup('ini', 'forgejo_admin_password type=properties file=/output/.factory-passwords.env') }}"
     postgres_password: "{{ lookup('ini', 'postgres_password type=properties file=/output/.factory-passwords.env') }}"
     jwt_secret: "{{ lookup('ini', 'jwt_secret type=properties file=/output/.factory-passwords.env') }}"
@@ -59,6 +60,12 @@
     - gateway
 
   post_tasks:
+    - name: "AnythingLLM Env-Datei erstellen (vor Docker-Start)"
+      ansible.builtin.template:
+        src: ../roles/anythingllm/templates/anythingllm.env.j2
+        dest: "{{ docker_compose_dir }}/anythingllm.env"
+        mode: '0600'
+
     - name: "docker-compose.yml abgleichen"
       ansible.builtin.template:
         src: ../templates/docker-compose.yml.j2
@@ -96,6 +103,7 @@
   hosts: factory-prod
   gather_facts: false
   vars:
+    server_ip: "{{ ansible_host }}"
     forgejo_admin_password: "{{ lookup('ini', 'forgejo_admin_password type=properties file=/output/.factory-passwords.env') }}"
     postgres_password: "{{ lookup('ini', 'postgres_password type=properties file=/output/.factory-passwords.env') }}"
     jwt_secret: "{{ lookup('ini', 'jwt_secret type=properties file=/output/.factory-passwords.env') }}"
@@ -105,10 +113,13 @@
     - forgejo
     - secrets
     - poller
+    - anythingllm
     - nightstop
 
 - name: "Phase 3: Smoke-Test"
   hosts: factory-prod
   gather_facts: false
+  vars:
+    server_ip: "{{ ansible_host }}"
   roles:
     - smoke-test

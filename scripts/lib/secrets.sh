@@ -54,8 +54,7 @@ output_dir = sys.argv[5]
 SECRET_MAP = {
     "upcloud-api-token": "vault_upcloud_api_token",
     "cloudflare-api-token": "vault_cloudflare_api_token",
-    "anthropic-api-key": "vault_anthropic_api_key",
-    "ollama-api-key": "vault_ollama_api_key",
+"ollama-api-key": "vault_ollama_api_key",
     "ollama-host": "vault_ollama_host",
     "ollama-model": "vault_ollama_model",
     "digistore-ipn-passphrase": "vault_digistore_ipn_passphrase",

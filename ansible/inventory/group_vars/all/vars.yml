@@ -1,7 +1,7 @@
 ---
 # Server
 upcloud_zone: de-fra1
-upcloud_plan: DEV-1xCPU-2GB
+upcloud_plan: DEV-2xCPU-4GB
 upcloud_os_storage: 25
 upcloud_storage_tier: hdd
 upcloud_os_template: 01000000-0000-4000-8000-000030240200  # Ubuntu 24.04
@@ -9,12 +9,16 @@ upcloud_os_template: 01000000-0000-4000-8000-000030240200  # Ubuntu 24.04
 # DNS
 cloudflare_zone: detmers-publish.de
 cloudflare_zone_id: b9525ee2fa8f0e14ce58b1f1b184c597
+# Subdomains (Single Source of Truth)
+forgejo_subdomain: git
+gateway_subdomain: gateway
+
 dns_records:
-  - { name: "git", target: "{{ server_ip }}", proxied: true }
-  - { name: "gateway", target: "{{ server_ip }}", proxied: true }
+  - { name: "{{ forgejo_subdomain }}", target: "{{ server_ip }}", proxied: true }
+  - { name: "{{ gateway_subdomain }}", target: "{{ server_ip }}", proxied: true }
 
 # Forgejo
-forgejo_domain: "git.detmers-publish.de"
+forgejo_domain: "{{ forgejo_subdomain }}.{{ cloudflare_zone }}"
 forgejo_image: "codeberg.org/forgejo/forgejo:10"
 
 # Docker

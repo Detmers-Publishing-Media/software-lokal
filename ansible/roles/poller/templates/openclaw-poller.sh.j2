@@ -435,8 +435,11 @@ TASKEOF
   fi
 fi
 
-# ─── Phase 3: OPENCLAW — Feature-Branch → Claude Code implementiert ────────
-log "--- Phase 3: openclaw ---"
+# ─── Phase 3: OPENCLAW — Feature-Branch → Aider + DeepSeek implementiert ────
+log "--- Phase 3: openclaw via aider + deepseek ---"
+
+AIDER_BIN="{{ aider_bin | default('/opt/aider-venv/bin/aider') }}"
+OLLAMA_API_KEY="{{ vault_ollama_api_key }}"
 
 # Alle in-progress Stories verarbeiten
 shopt -s nullglob
@@ -451,76 +454,56 @@ for story_file in "$WORK_DIR/process/work/04-in-progress"/*.yml; do
   story_produkt=$( (grep '^produkt:' "$story_file" 2>/dev/null || true) | awk '{print $2}' | tr -d '"'"'" | tr -d '[:space:]')
   : "${story_produkt:=$PRODUCT_REPO}"
 
-  # Branch-Name aus poller_state lesen
   BRANCH_NAME=$(get_scalar_sql "SELECT commit_hash FROM poller_state WHERE object_id='$(sql_escape "$story_id")'" 2>/dev/null || printf '')
 
   if [ -z "$BRANCH_NAME" ]; then
-    log "openclaw: $story_id hat keinen Branch — überspringe"
+    log "openclaw: $story_id hat keinen Branch — ueberspringe"
     continue
   fi
 
-  log "openclaw: $story_id (stage=$current_stage) → Branch $BRANCH_NAME → Claude Code"
+  log "openclaw: $story_id stage=$current_stage branch=$BRANCH_NAME via aider+deepseek"
 
-  # Sicherstellen dass junior User und Claude Code vorhanden
-  docker exec factory-openclaw bash -c '
-    id junior 2>/dev/null || useradd -m -s /bin/bash junior
-    mkdir -p /home/junior/.ssh /home/junior/repos
-    [ -f /home/junior/.ssh/openclaw_deploy_key ] || cp /root/.ssh/openclaw_deploy_key /home/junior/.ssh/
-    [ -f /home/junior/.ssh/known_hosts ] || cp /root/.ssh/known_hosts /home/junior/.ssh/ 2>/dev/null || true
-    cat > /home/junior/.ssh/config << EOF
-Host factory-forgejo
-  HostName factory-forgejo
-  Port 22
-  User git
-  IdentityFile /home/junior/.ssh/openclaw_deploy_key
-  StrictHostKeyChecking no
-EOF
-    chmod 600 /home/junior/.ssh/*
-    chown -R junior:junior /home/junior/.ssh /home/junior/repos
-    git config --global user.name "Factory Junior" 2>/dev/null || true
-  ' 2>/dev/null || true
-  docker exec factory-openclaw su junior -c \
-    "git config --global user.name 'Factory Junior'; git config --global user.email 'junior@factory.local'" 2>/dev/null || true
-  docker exec factory-openclaw npm install -g @anthropic-ai/claude-code 2>/dev/null || true
+  # Repo klonen direkt auf Host
+  IMPL_DIR=$(mktemp -d)
+  PROD_CLONE_URL="http://factory-admin:${FORGEJO_API_TOKEN}@localhost:3000/$FORGEJO_ORG/$story_produkt.git"
 
-  # Prompt bestimmen: bei needs-fix auch _review.md einbeziehen
-  PROMPT_CMD='cat _task.md'
-  if [ "$current_stage" = "needs-fix" ]; then
-    PROMPT_CMD='echo "## Original-Task"; cat _task.md; echo ""; echo "## Review-Feedback (bitte alle Punkte beheben)"; cat _review.md 2>/dev/null || echo "Keine Review-Datei gefunden"'
-    log "openclaw: $story_id — needs-fix Modus, _review.md wird einbezogen"
+  if ! git clone --quiet "$PROD_CLONE_URL" "$IMPL_DIR/$story_produkt" 2>/dev/null; then
+    log "openclaw: $story_id — Klonen fehlgeschlagen — ueberspringe"
+    rm -rf "$IMPL_DIR"
+    continue
   fi
 
-  # Script für junior erstellen
-  SCRIPT_FILE="/tmp/openclaw-run-${story_id}.sh"
-  cat > "$SCRIPT_FILE" << RUNEOF
-#!/bin/bash
-set -e
-cd /home/junior/repos
-rm -rf $story_produkt
-git clone ssh://git@factory-forgejo/$FORGEJO_ORG/$story_produkt.git
-cd $story_produkt
-git checkout $BRANCH_NAME 2>/dev/null || git checkout -b $BRANCH_NAME
-export ANTHROPIC_API_KEY="{{ vault_anthropic_api_key }}"
-PROMPT=\$($PROMPT_CMD)
-claude --model {{ impl_model }} --dangerously-skip-permissions -p "\$PROMPT" 2>&1 | tee /var/log/openclaw-${story_id}.log
-git add -A
-git diff --cached --quiet || git commit -m "${story_id}: Implementierung durch Factory Junior"
-git push origin $BRANCH_NAME 2>/dev/null
-RUNEOF
+  cd "$IMPL_DIR/$story_produkt"
+  git config user.name "Factory Junior"
+  git config user.email "junior@factory.local"
+  git checkout "$BRANCH_NAME" 2>/dev/null || git checkout -b "$BRANCH_NAME"
 
-  docker cp "$SCRIPT_FILE" factory-openclaw:"$SCRIPT_FILE"
-  docker exec factory-openclaw chmod +x "$SCRIPT_FILE"
-  docker exec factory-openclaw chown junior:junior "$SCRIPT_FILE"
-  rm -f "$SCRIPT_FILE"
+  # Prompt bestimmen
+  if [ "$current_stage" = "needs-fix" ] && [ -f "_review.md" ]; then
+    PROMPT="$(printf '## Original-Task\n\n'; cat _task.md; printf '\n\n## Review-Feedback - bitte alle Punkte beheben\n\n'; cat _review.md)"
+    log "openclaw: $story_id — needs-fix Modus, _review.md wird einbezogen"
+  else
+    PROMPT="$(cat _task.md)"
+  fi
 
-  run_openclaw_task() {
-    docker exec factory-openclaw su junior -c "bash $SCRIPT_FILE" 2>&1 | \
-      tee -a "$LOGFILE"
+  run_aider_task() {
+    cd "$IMPL_DIR/$story_produkt"
+    OPENAI_API_BASE=https://ollama.com/v1 \
+    OPENAI_API_KEY="$OLLAMA_API_KEY" \
+    $AIDER_BIN \
+      --model openai/{{ impl_model | default('deepseek-v3.1:671b') }} \
+      --message "$PROMPT" \
+      --yes \
+      --no-stream \
+      --auto-commits \
+      --no-show-model-warnings \
+      2>&1 | tee -a "$LOGFILE"
+    git push origin "$BRANCH_NAME" --quiet 2>/dev/null
   }
 
-  if retry_with_backoff 3 "openclaw:$story_id" run_openclaw_task; then
+  if retry_with_backoff 3 "openclaw:$story_id" run_aider_task; then
     update_poller_state "$story_id" "openclaw-done" "$BRANCH_NAME"
-    log_poller_event "$story_id" "openclaw-done" "Implementierung abgeschlossen"
+    log_poller_event "$story_id" "openclaw-done" "Implementierung abgeschlossen via aider+deepseek"
     log "openclaw: $story_id Implementierung abgeschlossen"
   else
     update_poller_state "$story_id" "openclaw-error" "$BRANCH_NAME"
@@ -530,6 +513,9 @@ RUNEOF
     record_metric "$story_id" "retry_count" "3"
     log "openclaw: $story_id Fehler nach 3 Versuchen"
   fi
+
+  rm -rf "$IMPL_DIR"
+  cd "$WORK_DIR/process"
 done
 shopt -u nullglob
 
@@ -639,26 +625,20 @@ Antworte mit GENAU einer der folgenden Zeilen am Ende:
 
 Bei NEEDS_FIX: Liste vorher die konkreten Probleme und Loesungsvorschlaege auf."
 
-  # Review-Prompt in Datei schreiben (fuer Claude)
+  # Review via Ollama.com API - DeepSeek, kein Docker noetig
   REVIEW_PROMPT_FILE="/tmp/review-prompt-${story_id}.txt"
   echo "$REVIEW_PROMPT" > "$REVIEW_PROMPT_FILE"
 
-  # Opus Review starten
-  REVIEW_SCRIPT="/tmp/review-run-${story_id}.sh"
-  cat > "$REVIEW_SCRIPT" << REVIEWEOF
-#!/bin/bash
-set -e
-export ANTHROPIC_API_KEY="{{ vault_anthropic_api_key }}"
-claude --model {{ review_model }} --dangerously-skip-permissions -p "\$(cat $REVIEW_PROMPT_FILE)" 2>&1
-REVIEWEOF
+  REVIEW_PROMPT_JSON=$(python3 -c "import sys,json; print(json.dumps(open(sys.argv[1]).read()))" "$REVIEW_PROMPT_FILE")
 
-  docker cp "$REVIEW_PROMPT_FILE" factory-openclaw:"$REVIEW_PROMPT_FILE"
-  docker cp "$REVIEW_SCRIPT" factory-openclaw:"$REVIEW_SCRIPT"
-  docker exec factory-openclaw chmod +x "$REVIEW_SCRIPT"
-  docker exec factory-openclaw chown junior:junior "$REVIEW_SCRIPT" "$REVIEW_PROMPT_FILE"
-  rm -f "$REVIEW_PROMPT_FILE" "$REVIEW_SCRIPT"
-
-  REVIEW_OUTPUT=$(docker exec factory-openclaw su junior -c "bash $REVIEW_SCRIPT" 2>&1 || echo "REVIEW_ERROR")
+  REVIEW_OUTPUT=$(curl -sf --max-time 300 \
+    -H "Authorization: Bearer $OLLAMA_API_KEY" \
+    -H "Content-Type: application/json" \
+    -d "{\"model\": \"{{ review_model | default('deepseek-v3.1:671b') }}\", \"messages\": [{\"role\": \"user\", \"content\": $REVIEW_PROMPT_JSON}], \"max_tokens\": 4096, \"stream\": false}" \
+    "https://ollama.com/v1/chat/completions" 2>/dev/null \
+    | python3 -c 'import sys,json; r=json.load(sys.stdin); print(r["choices"][0]["message"]["content"])' 2>/dev/null \
+    || echo "REVIEW_ERROR")
+  rm -f "$REVIEW_PROMPT_FILE"
 
   # Verdict parsen
   VERDICT=$(echo "$REVIEW_OUTPUT" | sed -n 's/.*VERDICT:[[:space:]]*\([A-Z_]*\).*/\1/p' | tail -1)

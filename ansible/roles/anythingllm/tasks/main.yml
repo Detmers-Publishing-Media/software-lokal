@@ -1,0 +1,197 @@
+---
+# AnythingLLM — Private RAG fuer Prozessdokumentation
+# Vollstaendig headless: .env + API-Key + Settings + Workspace + Docs-Sync
+
+- name: "AnythingLLM Env-Datei erstellen"
+  ansible.builtin.template:
+    src: anythingllm.env.j2
+    dest: "{{ docker_compose_dir }}/anythingllm.env"
+    mode: '0666'
+
+- name: "Warte auf AnythingLLM Container"
+  ansible.builtin.shell: |
+    for i in $(seq 1 30); do
+      if docker inspect -f '{{ '{{' }}.State.Running{{ '}}' }}' factory-anythingllm 2>/dev/null | grep -q true; then
+        exit 0
+      fi
+      sleep 5
+    done
+    echo "AnythingLLM Container nicht gestartet"
+    exit 1
+  changed_when: false
+
+- name: "Warte auf AnythingLLM API"
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:3001/api/ping"
+    status_code: 200
+  retries: 20
+  delay: 3
+  register: alm_ping
+  ignore_errors: true
+
+- name: "AnythingLLM Settings per API setzen"
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:3001/api/system/update-env"
+    method: POST
+    body_format: json
+    body:
+      LLMProvider: "generic-openai"
+      GenericOpenAiBasePath: "{{ vault_ollama_host }}"
+      GenericOpenAiKey: "{{ vault_ollama_api_key }}"
+      GenericOpenAiModelPref: "{{ vault_ollama_model }}"
+      GenericOpenAiMaxTokens: "4096"
+      EmbeddingEngine: "native"
+      VectorDB: "lancedb"
+    status_code: [200, 403]
+  register: alm_settings
+  when: alm_ping is succeeded
+  ignore_errors: true
+
+- name: "AnythingLLM Onboarding als erledigt markieren"
+  ansible.builtin.shell: |
+    docker exec factory-anythingllm sqlite3 /app/server/storage/anythingllm.db \
+      "INSERT OR REPLACE INTO system_settings (label, value) VALUES ('hasSetup', 'true');"
+  changed_when: true
+  ignore_errors: true
+
+- name: "AnythingLLM API-Key erstellen"
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:3001/api/system/generate-api-key"
+    method: POST
+    body_format: json
+    body: {}
+    status_code: [200]
+  register: alm_apikey_result
+  when: alm_ping is succeeded
+  ignore_errors: true
+
+- name: "AnythingLLM API-Key aus SQLite lesen (Fallback)"
+  ansible.builtin.shell: |
+    sqlite3 /var/lib/docker/volumes/codefabrik_anythingllm_storage/_data/anythingllm.db \
+      'SELECT secret FROM api_keys LIMIT 1;'
+  register: alm_apikey_db
+  changed_when: false
+  when: alm_apikey_result is failed or alm_apikey_result is skipped
+  ignore_errors: true
+
+- name: "API-Key setzen"
+  ansible.builtin.set_fact:
+    alm_api_key: >-
+      {{ (alm_apikey_result.json.apiKey.secret | default(''))
+         if (alm_apikey_result is succeeded and alm_apikey_result.json is defined)
+         else (alm_apikey_db.stdout | default('')) }}
+
+- name: "AnythingLLM Workspace erstellen"
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:3001/api/v1/workspace/new"
+    method: POST
+    body_format: json
+    headers:
+      Authorization: "Bearer {{ alm_api_key }}"
+    body:
+      name: "codefabrik-docs"
+    status_code: [200, 403]
+  register: alm_workspace
+  when: alm_api_key | length > 0
+  ignore_errors: true
+
+- name: "Pakete fuer Docs-Sync installieren"
+  ansible.builtin.apt:
+    name:
+      - jq
+      - sqlite3
+      - git
+    state: present
+  ignore_errors: true
+
+- name: "AnythingLLM Docs synchronisieren"
+  ansible.builtin.shell: |
+    set -euo pipefail
+    API_KEY="{{ alm_api_key }}"
+    FORGEJO_TOKEN="{{ forgejo_api_token }}"
+    WORKSPACE_SLUG="codefabrik-docs"
+    REPOS_DIR="/mnt/data/repos"
+
+    [ -n "$API_KEY" ] || { echo "Kein API-Key"; exit 1; }
+    [ -n "$FORGEJO_TOKEN" ] || { echo "Kein Forgejo-Token"; exit 1; }
+
+    # Repos abrufen
+    REPO_NAMES=$(curl -sf "http://localhost:3000/api/v1/repos/search?limit=50" \
+        -H "Authorization: token $FORGEJO_TOKEN" \
+        | python3 -c "import sys,json; [print(r['name']) for r in json.loads(sys.stdin.read()).get('data',[])]")
+
+    [ -n "$REPO_NAMES" ] || { echo "Keine Repos gefunden"; exit 1; }
+
+    mkdir -p "$REPOS_DIR"
+    for REPO in $REPO_NAMES; do
+        REPO_PATH="$REPOS_DIR/$REPO"
+        if [ -d "$REPO_PATH/.git" ]; then
+            git -C "$REPO_PATH" pull -q 2>/dev/null || true
+        else
+            git clone -q "http://factory-admin:${FORGEJO_TOKEN}@localhost:3000/factory/$REPO.git" \
+                "$REPO_PATH" 2>/dev/null || true
+        fi
+    done
+
+    SYNCED=0
+    ERRORS=0
+    for REPO in $REPO_NAMES; do
+        REPO_PATH="$REPOS_DIR/$REPO"
+        [ -d "$REPO_PATH" ] || continue
+        MD_FILES=$(find "$REPO_PATH" -name '*.md' -not -path '*/.git/*' -not -path '*/node_modules/*' 2>/dev/null || true)
+        [ -z "$MD_FILES" ] && continue
+
+        while IFS= read -r filepath; do
+            [ -z "$filepath" ] && continue
+            REL_PATH="$REPO/$(echo "$filepath" | sed "s|$REPO_PATH/||")"
+            SANITIZED=$(echo "$REL_PATH" | sed 's|/|--|g')
+
+            RESPONSE=""
+            for attempt in 1 2 3; do
+                RESPONSE=$(curl -sf -X POST \
+                    -H "Authorization: Bearer $API_KEY" \
+                    "http://localhost:3001/api/v1/document/upload" \
+                    -F "file=@${filepath};filename=${SANITIZED}" 2>/dev/null || echo "")
+                [ -n "$RESPONSE" ] && break
+                sleep 3
+            done
+            [ -z "$RESPONSE" ] && { ERRORS=$((ERRORS+1)); continue; }
+
+            DOC_LOCATION=$(echo "$RESPONSE" | jq -r '.documents[0].location // empty' 2>/dev/null)
+            [ -z "$DOC_LOCATION" ] && { ERRORS=$((ERRORS+1)); continue; }
+
+            curl -sf -X POST \
+                -H "Authorization: Bearer $API_KEY" \
+                -H "Content-Type: application/json" \
+                "http://localhost:3001/api/v1/workspace/$WORKSPACE_SLUG/update-embeddings" \
+                -d "{\"adds\": [\"$DOC_LOCATION\"]}" >/dev/null 2>&1 \
+                || { ERRORS=$((ERRORS+1)); continue; }
+
+            SYNCED=$((SYNCED+1))
+            sleep 2
+        done <<< "$MD_FILES"
+    done
+
+    echo "Docs-Sync: $SYNCED hochgeladen, $ERRORS Fehler"
+  args:
+    executable: /bin/bash
+  register: alm_docs_sync
+  when: alm_api_key | length > 0
+  changed_when: true
+  ignore_errors: true
+
+- name: "AnythingLLM Sync-Script deployen"
+  ansible.builtin.template:
+    src: sync-anythingllm.sh.j2
+    dest: "{{ docker_compose_dir }}/sync-anythingllm.sh"
+    mode: '0755'
+
+- name: "AnythingLLM Status"
+  ansible.builtin.debug:
+    msg: >
+      AnythingLLM laeuft auf http://localhost:3001
+      (SSH-Tunnel: ssh -L 3001:localhost:3001 root@{{ ansible_host }}).
+      Settings: {{ 'API gesetzt' if alm_settings is succeeded else 'manuell pruefen' }}.
+      API-Key: {{ 'vorhanden' if alm_api_key | length > 0 else 'fehlt' }}.
+      Workspace: {{ 'erstellt' if alm_workspace is succeeded else 'manuell pruefen' }}.
+      Docs: {{ alm_docs_sync.stdout_lines[-1] | default('nicht synchronisiert') }}.

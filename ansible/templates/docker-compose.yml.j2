@@ -44,15 +44,19 @@ services:
     networks:
       - factory-net
 
-  openclaw:
-    build:
-      context: ./docker/openclaw
-      dockerfile: Dockerfile
-    container_name: factory-openclaw
+  anythingllm:
+    image: mintplexlabs/anythingllm:latest
+    container_name: factory-anythingllm
     restart: unless-stopped
+    cap_add:
+      - SYS_ADMIN
+    ports:
+      - "127.0.0.1:3001:3001"
     volumes:
-      - openclaw_data:/root/.openclaw
-      - /mnt/data/repos:/repos:rw
+      - anythingllm_storage:/app/server/storage
+      - ./anythingllm.env:/app/server/.env
+    environment:
+      - STORAGE_DIR=/app/server/storage
     networks:
       - factory-net
 
@@ -90,7 +94,8 @@ services:
 volumes:
   postgres_data:
   forgejo_data:
-  openclaw_data:
+
+  anythingllm_storage:
   caddy_data:
   caddy_config:
 

@@ -1,147 +1,36 @@
 ---
-- name: "OpenClaw Verzeichnisse erstellen"
+# Aider Setup (ersetzt den ehemaligen OpenClaw Docker Container)
+# Aider laeuft direkt auf dem Host mit Ollama.com API
+
+- name: "Aider venv erstellen"
+  ansible.builtin.command:
+    cmd: python3 -m venv /opt/aider-venv
+    creates: /opt/aider-venv/bin/python3
+
+- name: "Aider installieren"
+  ansible.builtin.pip:
+    name: aider-chat
+    virtualenv: /opt/aider-venv
+    state: present
+
+- name: "Aider Version pruefen"
+  ansible.builtin.command:
+    cmd: /opt/aider-venv/bin/aider --version
+  register: aider_version
+  changed_when: false
+
+- name: "Aider Version anzeigen"
+  ansible.builtin.debug:
+    msg: "Aider: {{ aider_version.stdout }}"
+
+- name: "Repos-Verzeichnis erstellen"
   ansible.builtin.file:
-    path: "{{ item }}"
+    path: /mnt/data/repos
     state: directory
     mode: '0755'
-  loop:
-    - "{{ docker_compose_dir }}/docker/openclaw"
-    - /mnt/data/repos
 
-- name: "OpenClaw Dockerfile erstellen"
-  ansible.builtin.copy:
-    content: |
-      FROM node:22-slim
-      RUN apt-get update && apt-get install -y \
-          git curl xvfb procps ssh \
-          && rm -rf /var/lib/apt/lists/*
-      RUN git config --global user.name "Factory Junior" && \
-          git config --global user.email "junior@factory.local"
-      WORKDIR /app
-      COPY start-with-xvfb.sh /start-with-xvfb.sh
-      RUN chmod +x /start-with-xvfb.sh
-      ENTRYPOINT ["/start-with-xvfb.sh"]
-    dest: "{{ docker_compose_dir }}/docker/openclaw/Dockerfile"
-
-- name: "start-with-xvfb.sh erstellen"
-  ansible.builtin.copy:
-    content: |
-      #!/bin/bash
-      export DISPLAY=:99
-      Xvfb :99 -screen 0 1024x768x24 &
-      sleep 1
-      exec tail -f /dev/null
-    dest: "{{ docker_compose_dir }}/docker/openclaw/start-with-xvfb.sh"
-    mode: '0755'
-
-- name: "Warte auf OpenClaw Container"
+- name: "Git-Konfiguration fuer Aider"
   ansible.builtin.shell: |
-    for i in $(seq 1 30); do
-      docker exec factory-openclaw echo alive 2>/dev/null && exit 0
-      sleep 3
-    done
-    exit 1
-
-- name: "openclaw Config-Verzeichnis erstellen"
-  ansible.builtin.shell: |
-    docker exec factory-openclaw mkdir -p /root/.openclaw /root/.ssh
-
-- name: "openclaw.json erstellen und deployen"
-  ansible.builtin.shell: |
-    cat > /tmp/openclaw.json << 'OCEOF'
-    {
-      "mcpServers": {},
-      "globalShortcut": "",
-      "selectedProvider": "ollama",
-      "providers": {
-        "ollama": {
-          "name": "Ollama Cloud",
-          "apiKey": "{{ vault_ollama_api_key }}",
-          "baseUrl": "{{ vault_ollama_host }}",
-          "models": ["{{ vault_ollama_model }}"],
-          "selectedModel": "{{ vault_ollama_model }}"
-        }
-      }
-    }
-    OCEOF
-    docker cp /tmp/openclaw.json factory-openclaw:/root/.openclaw/openclaw.json
-    rm -f /tmp/openclaw.json
-
-- name: "SOUL.md deployen"
-  ansible.builtin.shell: |
-    cat > /tmp/SOUL.md << 'SOULEOF'
-    # SOUL — Factory Junior Developer
-
-    Du bist der Junior Developer der Code-Fabrik.
-    Du arbeitest vollautomatisch im Headless-Modus.
-
-    ## NIEMALS:
-    - Fragen stellen
-    - Auf Bestätigung warten
-    - TODO-Kommentare statt echtem Code
-    - Placeholder-Code
-
-    ## IMMER:
-    - Beste Lösung direkt implementieren
-    - Alle Dateien vollständig schreiben
-    - Tests für jedes Akzeptanzkriterium
-    - Error-Handling überall
-    - Commits auf Deutsch
-
-    <!-- BEGIN CODEFABRIK ROLE -->
-    Rolle: Junior Developer der Code-Fabrik v0.6.3
-    Pipeline: Liest Task aus Branch, implementiert, committed
-    Produkte: shared, app-shared, mitglieder-lokal, finanz-rechner
-    <!-- END CODEFABRIK ROLE -->
-    SOULEOF
-    docker cp /tmp/SOUL.md factory-openclaw:/root/.openclaw/SOUL.md
-    rm -f /tmp/SOUL.md
-
-- name: "TOOLS.md deployen"
-  ansible.builtin.shell: |
-    cat > /tmp/TOOLS.md << 'TOOLSEOF'
-    # TOOLS — Git-Konfiguration
-
-    ## SSH
-    - Key: /root/.ssh/openclaw_deploy_key
-    - Config: /root/.ssh/config
-    - Known Hosts: /root/.ssh/known_hosts
-
-    ## Git
-    - User: Factory Junior
-    - Email: junior@factory.local
-    - Remote: ssh://git@localhost:2222/factory/{repo}.git
-    TOOLSEOF
-    docker cp /tmp/TOOLS.md factory-openclaw:/root/.openclaw/TOOLS.md
-    rm -f /tmp/TOOLS.md
-
-- name: "Deploy Key für OpenClaw generieren"
-  ansible.builtin.shell: |
-    ssh-keygen -t ed25519 -f /tmp/openclaw_deploy_key -N "" -C "openclaw@factory" -q
-    docker cp /tmp/openclaw_deploy_key factory-openclaw:/root/.ssh/openclaw_deploy_key
-    docker exec factory-openclaw chmod 600 /root/.ssh/openclaw_deploy_key
-    cat /tmp/openclaw_deploy_key.pub
-  register: deploy_key_pub
-
-- name: "SSH-Config im OpenClaw Container"
-  ansible.builtin.shell: |
-    docker exec factory-openclaw bash -c 'cat > /root/.ssh/config << EOF
-    Host forgejo
-      HostName factory-forgejo
-      Port 22
-      User git
-      IdentityFile /root/.ssh/openclaw_deploy_key
-      StrictHostKeyChecking no
-    Host factory-forgejo
-      HostName factory-forgejo
-      Port 22
-      User git
-      IdentityFile /root/.ssh/openclaw_deploy_key
-      StrictHostKeyChecking no
-    EOF
-    chmod 600 /root/.ssh/config'
-
-- name: "Known Hosts im OpenClaw Container"
-  ansible.builtin.shell: |
-    docker exec factory-openclaw bash -c \
-      'ssh-keyscan -p 22 factory-forgejo 2>/dev/null > /root/.ssh/known_hosts || touch /root/.ssh/known_hosts'
+    git config --global user.name "Factory Junior"
+    git config --global user.email "junior@factory.local"
+  changed_when: false

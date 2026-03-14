@@ -137,6 +137,12 @@
         src: ../templates/docker-compose.yml.j2
         dest: "{{ docker_compose_dir }}/docker-compose.yml"
 
+    - name: "AnythingLLM Env-Datei erstellen (vor Docker-Start)"
+      ansible.builtin.template:
+        src: ../roles/anythingllm/templates/anythingllm.env.j2
+        dest: "{{ docker_compose_dir }}/anythingllm.env"
+        mode: '0666'
+
     - name: "Passwörter für spätere Phasen speichern"
       ansible.builtin.copy:
         content: |
@@ -194,6 +200,14 @@
     - repos
     - secrets
     - poller
+
+- name: "Phase 3b: AnythingLLM"
+  hosts: factory-prod
+  gather_facts: false
+  vars:
+    forgejo_api_token: "{{ lookup('ini', 'FORGEJO_API_TOKEN type=properties file=/output/.tokens-env') }}"
+  roles:
+    - anythingllm
 
 - name: "Phase 4: Nacht-Stopp Timer"
   hosts: factory-prod

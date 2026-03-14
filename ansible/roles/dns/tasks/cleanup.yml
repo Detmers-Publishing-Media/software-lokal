@@ -1,4 +1,7 @@
 ---
+# DNS-Cleanup: loescht Records fuer bekannte Subdomains
+# plus Legacy-Records mit "codefabrik" im Namen
+# Verwendet NICHT dns_records (enthaelt server_ip, die bei Cleanup nicht existiert)
 - name: "DNS Records auflisten"
   delegate_to: localhost
   ansible.builtin.uri:
@@ -8,12 +11,26 @@
       Authorization: "Bearer {{ vault_cloudflare_api_token }}"
   register: dns_records_result
 
-- name: "Codefabrik DNS Records löschen"
+- name: "Zu loeschende DNS-Namen zusammenstellen"
+  ansible.builtin.set_fact:
+    dns_cleanup_names:
+      - "{{ forgejo_subdomain }}.{{ cloudflare_zone }}"
+      - "{{ gateway_subdomain }}.{{ cloudflare_zone }}"
+
+- name: "DNS Records loeschen (aktuelle + Legacy)"
   delegate_to: localhost
   ansible.builtin.uri:
     url: "https://api.cloudflare.com/client/v4/zones/{{ cloudflare_zone_id }}/dns_records/{{ item.id }}"
     method: DELETE
     headers:
       Authorization: "Bearer {{ vault_cloudflare_api_token }}"
-  loop: "{{ dns_records_result.json.result | selectattr('name', 'search', 'codefabrik') | list }}"
+  loop: >-
+    {{ dns_records_result.json.result
+       | selectattr('name', 'in', dns_cleanup_names)
+       | list
+       + dns_records_result.json.result
+       | selectattr('name', 'search', 'codefabrik')
+       | list }}
+  loop_control:
+    label: "{{ item.name }}"
   ignore_errors: true

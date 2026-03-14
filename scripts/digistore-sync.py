@@ -322,8 +322,9 @@ def cmd_setup(api_key, spec):
         spec['product_id'] = str(product_id)
         print(f"\n  HINWEIS: product_id: {product_id} in digistore.yml eintragen!\n")
 
-    print(f"\n=== IPN konfigurieren ===\n")
-    cmd_ipn(api_key, spec)
+    # IPN wird NICHT pro Produkt konfiguriert — der globale IPN
+    # (detmers-publish-dev) deckt alle Produkte ab.
+    # Falls doch noetig: python scripts/digistore-sync.py ipn <digistore.yml>
 
     print(f"\n=== Zahlungsplan erstellen ===\n")
     cmd_payment_plan(api_key, spec)
