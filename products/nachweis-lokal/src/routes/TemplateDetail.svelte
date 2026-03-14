@@ -1,12 +1,13 @@
 <script>
   import { onMount } from 'svelte';
   import { currentView } from '../lib/stores/navigation.js';
-  import { getTemplate, getTemplateItems, deleteTemplate, getInspections } from '../lib/db.js';
+  import { getTemplate, getTemplateItems, deleteTemplate, getInspections, duplicateTemplate } from '../lib/db.js';
 
   let { templateId } = $props();
   let template = $state(null);
   let items = $state([]);
   let inspectionCount = $state(0);
+  let duplicating = $state(false);
 
   onMount(async () => {
     template = await getTemplate(templateId);
@@ -21,6 +22,15 @@
       currentView.set('templates');
     }
   }
+
+  async function handleDuplicate() {
+    duplicating = true;
+    const newId = await duplicateTemplate(templateId);
+    duplicating = false;
+    if (newId) {
+      currentView.set(`template:${newId}`);
+    }
+  }
 </script>
 
 {#if template}
@@ -29,6 +39,9 @@
       <h1>{template.name}</h1>
       <div class="actions">
         <button class="btn-primary" onclick={() => currentView.set(`template:edit:${templateId}`)}>Bearbeiten</button>
+        <button class="btn-secondary" onclick={handleDuplicate} disabled={duplicating}>
+          {duplicating ? 'Wird dupliziert...' : 'Duplizieren'}
+        </button>
         <button class="btn-primary" onclick={() => currentView.set('inspection:new')}>Pruefung starten</button>
         <button class="btn-danger" onclick={handleDelete}>Deaktivieren</button>
       </div>

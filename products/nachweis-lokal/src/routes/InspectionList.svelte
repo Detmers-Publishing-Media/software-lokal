@@ -2,9 +2,10 @@
   import { onMount } from 'svelte';
   import { currentView } from '../lib/stores/navigation.js';
   import { inspections, searchQuery, statusFilter, filteredInspections } from '../lib/stores/inspections.js';
-  import { getInspections, exportInspectionsCSV } from '../lib/db.js';
-  import { generateListPdf } from '../lib/pdf.js';
-  import { getOrgProfile } from '../lib/db.js';
+  import { getInspections, getInspectionResults, exportInspectionsCSV, getOrgProfile } from '../lib/db.js';
+  import { generateListPdf, generateBatchProtocolPdf } from '../lib/pdf.js';
+
+  let generatingBatch = $state(false);
 
   onMount(async () => {
     inspections.set(await getInspections());
@@ -51,6 +52,20 @@
     ]);
     generateListPdf('Pruefungsliste', columns, rows, profile, false);
   }
+
+  async function handleBatchPdf() {
+    const data = $filteredInspections;
+    if (data.length === 0) return;
+    generatingBatch = true;
+    const profile = await getOrgProfile();
+    const entries = [];
+    for (const insp of data) {
+      const results = await getInspectionResults(insp.id);
+      entries.push({ inspection: insp, results });
+    }
+    generateBatchProtocolPdf(entries, profile, false);
+    generatingBatch = false;
+  }
 </script>
 
 <div class="page">
@@ -69,7 +84,10 @@
       <option value="abgebrochen">Abgebrochen</option>
     </select>
     <button class="btn-secondary" onclick={handleExportCSV}>CSV</button>
-    <button class="btn-secondary" onclick={handleExportPDF}>PDF</button>
+    <button class="btn-secondary" onclick={handleExportPDF}>PDF Liste</button>
+    <button class="btn-secondary" onclick={handleBatchPdf} disabled={generatingBatch || $filteredInspections.length === 0}>
+      {generatingBatch ? 'Erstelle...' : `Sammel-PDF (${$filteredInspections.length})`}
+    </button>
   </div>
 
   {#if $filteredInspections.length === 0}
@@ -105,7 +123,7 @@
 <style>
   .page { display: flex; flex-direction: column; gap: 1rem; }
   .header { display: flex; justify-content: space-between; align-items: center; }
-  .filters { display: flex; gap: 0.5rem; align-items: center; }
+  .filters { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
   .search { flex: 1; max-width: 300px; }
   .empty { color: var(--color-text-muted); font-style: italic; padding: 2rem 0; }
   table { width: 100%; border-collapse: collapse; }

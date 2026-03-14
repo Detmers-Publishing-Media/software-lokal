@@ -1,14 +1,15 @@
 <script>
   import { onMount } from 'svelte';
   import { currentView } from '../lib/stores/navigation.js';
-  import { getInspection, getInspectionResults, deleteInspection, getOrgProfile, getDefects, createReinspection, getAttachments } from '../lib/db.js';
-  import { generateProtocolPdf, generateDeficiencyPdf } from '../lib/pdf.js';
+  import { getInspection, getInspectionResults, deleteInspection, getOrgProfile, getDefects, createReinspection, getAttachmentsByInspection } from '../lib/db.js';
+  import { generateProtocolPdf, generateDeficiencyPdf, loadImageAsDataUrl } from '../lib/pdf.js';
   import PhotoAttachment from '../components/PhotoAttachment.svelte';
 
   let { inspectionId } = $props();
   let inspection = $state(null);
   let results = $state([]);
   let defects = $state([]);
+  let generatingPdf = $state(false);
 
   onMount(async () => {
     inspection = await getInspection(inspectionId);
@@ -44,8 +45,25 @@
   }
 
   async function handlePrintProtocol() {
+    generatingPdf = true;
     const profile = await getOrgProfile();
-    generateProtocolPdf(inspection, results, profile, false);
+
+    // Load photo attachments as data URLs
+    const allAttachments = await getAttachmentsByInspection(inspectionId);
+    const attachmentMap = new Map();
+    for (const att of allAttachments) {
+      const dataUrl = await loadImageAsDataUrl(att.file_path);
+      if (dataUrl) {
+        if (!attachmentMap.has(att.inspection_result_id)) {
+          attachmentMap.set(att.inspection_result_id, []);
+        }
+        attachmentMap.get(att.inspection_result_id).push({ dataUrl, fileName: att.file_name });
+      }
+    }
+
+    const qrText = `Nachweis Lokal | #${inspectionId} | ${inspection.inspection_date} | ${inspection.status}`;
+    generateProtocolPdf(inspection, results, profile, false, { attachments: attachmentMap, qrText });
+    generatingPdf = false;
   }
 
   async function handlePrintDeficiencies() {
@@ -84,7 +102,9 @@
         {#if inspection.status === 'offen'}
           <button class="btn-primary" onclick={() => currentView.set(`inspection:execute:${inspectionId}`)}>Fortsetzen</button>
         {/if}
-        <button class="btn-secondary" onclick={handlePrintProtocol}>PDF Protokoll</button>
+        <button class="btn-secondary" onclick={handlePrintProtocol} disabled={generatingPdf}>
+          {generatingPdf ? 'Erstelle PDF...' : 'PDF Protokoll'}
+        </button>
         {#if deficiencyCount > 0}
           <button class="btn-secondary" onclick={handlePrintDeficiencies}>PDF Maengel ({deficiencyCount})</button>
         {/if}

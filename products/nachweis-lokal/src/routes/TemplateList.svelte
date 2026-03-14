@@ -3,7 +3,6 @@
   import { currentView } from '../lib/stores/navigation.js';
   import { getTemplates } from '../lib/db.js';
 
-  let { limitReached = false } = $props();
   let templates = $state([]);
 
   onMount(async () => {
@@ -23,8 +22,6 @@
       </button>
       <button
         class="btn-primary"
-        disabled={limitReached}
-        title={limitReached ? 'Probe-Limit erreicht (10 Vorlagen)' : ''}
         onclick={() => currentView.set('template:new')}
       >
         + Neue Vorlage

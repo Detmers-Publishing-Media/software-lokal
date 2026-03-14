@@ -1,10 +1,11 @@
 <script>
   import { onMount } from 'svelte';
   import { currentView } from '../lib/stores/navigation.js';
-  import { getTemplates, getObjects, saveInspection, initInspectionResults } from '../lib/db.js';
+  import { getTemplates, getObjects, getInspectors, saveInspection, initInspectionResults } from '../lib/db.js';
 
   let templates = $state([]);
   let objects = $state([]);
+  let inspectors = $state([]);
   let form = $state({
     template_id: '',
     object_id: '',
@@ -18,6 +19,7 @@
   onMount(async () => {
     templates = await getTemplates();
     objects = await getObjects();
+    inspectors = await getInspectors();
   });
 
   $effect(() => {
@@ -75,7 +77,12 @@
     <div class="row">
       <div class="field">
         <label for="inspector">Pruefer *</label>
-        <input id="inspector" bind:value={form.inspector} required />
+        <input id="inspector" bind:value={form.inspector} required list="inspector-list" placeholder="Name eingeben oder waehlen..." />
+        <datalist id="inspector-list">
+          {#each inspectors as insp}
+            <option value={insp.name}>{insp.role ? `${insp.name} (${insp.role})` : insp.name}</option>
+          {/each}
+        </datalist>
       </div>
       <div class="field">
         <label for="date">Datum</label>

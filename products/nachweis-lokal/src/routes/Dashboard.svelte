@@ -7,6 +7,9 @@
   let dueItems = $state([]);
   let openDefects = $state(0);
 
+  let overdueCount = $derived(dueItems.filter(d => d.urgency === 'ueberfaellig').length);
+  let soonDueCount = $derived(dueItems.filter(d => d.urgency === 'bald_faellig').length);
+
   onMount(async () => {
     stats = await getInspectionStats();
     dueItems = await getDueInspections();
@@ -34,6 +37,23 @@
 
 <div class="dashboard">
   <h1>Dashboard</h1>
+
+  {#if overdueCount > 0 || soonDueCount > 0}
+    <div class="reminders">
+      {#if overdueCount > 0}
+        <div class="reminder reminder-danger">
+          <strong>{overdueCount} {overdueCount === 1 ? 'Pruefung' : 'Pruefungen'} ueberfaellig!</strong>
+          Bitte zeitnah durchfuehren.
+        </div>
+      {/if}
+      {#if soonDueCount > 0}
+        <div class="reminder reminder-warning">
+          <strong>{soonDueCount} {soonDueCount === 1 ? 'Pruefung' : 'Pruefungen'} bald faellig</strong>
+          (innerhalb 14 Tage).
+        </div>
+      {/if}
+    </div>
+  {/if}
 
   <div class="stats">
     <div class="stat-card">
@@ -94,6 +114,22 @@
 
 <style>
   .dashboard { display: flex; flex-direction: column; gap: 1.5rem; }
+  .reminders { display: flex; flex-direction: column; gap: 0.5rem; }
+  .reminder {
+    padding: 0.75rem 1rem;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+  }
+  .reminder-danger {
+    background: #fed7d7;
+    color: #9b2c2c;
+    border-left: 4px solid #e53e3e;
+  }
+  .reminder-warning {
+    background: #fefcbf;
+    color: #744210;
+    border-left: 4px solid #ecc94b;
+  }
   .stats { display: flex; gap: 1rem; }
   .stat-card {
     flex: 1;

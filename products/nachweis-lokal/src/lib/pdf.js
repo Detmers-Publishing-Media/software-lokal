@@ -4,6 +4,31 @@ import pdfFonts from 'pdfmake/build/vfs_fonts';
 pdfMake.vfs = pdfFonts.vfs;
 
 /**
+ * Load a local image file as a base64 data URL (for embedding in PDFs).
+ * Uses HTML Image + Canvas to convert, works in Electron renderer.
+ * @param {string} filePath - Absolute path to image file
+ * @returns {Promise<string|null>} Data URL or null on error
+ */
+export function loadImageAsDataUrl(filePath) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      // Limit to 400px width for PDF embedding
+      const maxWidth = 400;
+      const scale = img.naturalWidth > maxWidth ? maxWidth / img.naturalWidth : 1;
+      canvas.width = img.naturalWidth * scale;
+      canvas.height = img.naturalHeight * scale;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      resolve(canvas.toDataURL('image/jpeg', 0.7));
+    };
+    img.onerror = () => resolve(null);
+    img.src = `file://${filePath}`;
+  });
+}
+
+/**
  * Generate and open a PDF list document.
  * @param {string} title - Document title
  * @param {Array<{text: string, width: number|string}>} columns - Column definitions
@@ -74,27 +99,29 @@ export function generateListPdf(title, columns, rows, orgProfile, isProbe) {
 }
 
 /**
- * Generate a single inspection protocol PDF.
+ * Build the content blocks for a single inspection protocol.
+ * Used by both single and batch PDF generation.
  * @param {Object} inspection - Inspection data
  * @param {Array<Object>} results - Inspection results with labels
  * @param {Object} orgProfile - Organization profile for letterhead
- * @param {boolean} isProbe - Whether to show trial watermark
+ * @param {Object} [options] - Optional: attachments (Map), qrText (string)
+ * @returns {Array} pdfMake content array
  */
-export function generateProtocolPdf(inspection, results, orgProfile, isProbe) {
-  const today = new Date().toLocaleDateString('de-DE');
+function buildProtocolContent(inspection, results, orgProfile, options = {}) {
+  const content = [];
 
-  const headerContent = [];
+  // Letterhead
   if (orgProfile?.name) {
-    headerContent.push({ text: orgProfile.name, fontSize: 14, bold: true, margin: [0, 0, 0, 2] });
+    content.push({ text: orgProfile.name, fontSize: 14, bold: true, margin: [0, 0, 0, 2] });
     const addressParts = [orgProfile.street, [orgProfile.zip, orgProfile.city].filter(Boolean).join(' ')].filter(Boolean);
     if (addressParts.length) {
-      headerContent.push({ text: addressParts.join(', '), fontSize: 9, color: '#666', margin: [0, 0, 0, 8] });
+      content.push({ text: addressParts.join(', '), fontSize: 9, color: '#666', margin: [0, 0, 0, 8] });
     }
   }
 
   // Protocol header
-  headerContent.push({ text: 'Pruefprotokoll', fontSize: 14, bold: true, margin: [0, 8, 0, 4] });
-  headerContent.push({ text: inspection.title, fontSize: 12, margin: [0, 0, 0, 8] });
+  content.push({ text: 'Pruefprotokoll', fontSize: 14, bold: true, margin: [0, 8, 0, 4] });
+  content.push({ text: inspection.title, fontSize: 12, margin: [0, 0, 0, 8] });
 
   // Meta table
   const metaRows = [
@@ -107,6 +134,18 @@ export function generateProtocolPdf(inspection, results, orgProfile, isProbe) {
   if (inspection.due_date) {
     metaRows.push(['Naechste Pruefung:', formatDate(inspection.due_date)]);
   }
+
+  content.push({
+    table: {
+      widths: [80, '*'],
+      body: metaRows.map(([label, value]) => [
+        { text: label, fontSize: 9, bold: true },
+        { text: value, fontSize: 9 },
+      ]),
+    },
+    layout: 'noBorders',
+    margin: [0, 0, 0, 12],
+  });
 
   // Results table
   const resultHeader = [
@@ -122,47 +161,150 @@ export function generateProtocolPdf(inspection, results, orgProfile, isProbe) {
     { text: r.remark ?? '', fontSize: 8, color: '#666' },
   ]);
 
+  content.push({ text: 'Pruefergebnisse', fontSize: 11, bold: true, margin: [0, 8, 0, 6] });
+  content.push({
+    table: {
+      headerRows: 1,
+      widths: [30, '*', 70, '*'],
+      body: [resultHeader, ...resultRows],
+    },
+    layout: {
+      hLineWidth: (i, node) => (i === 0 || i === 1 || i === node.table.body.length) ? 0.5 : 0.25,
+      vLineWidth: () => 0,
+      hLineColor: () => '#cccccc',
+      paddingLeft: () => 4,
+      paddingRight: () => 4,
+      paddingTop: () => 3,
+      paddingBottom: () => 3,
+    },
+  });
+
+  // Notes
+  if (inspection.notes) {
+    content.push({ text: 'Hinweise', fontSize: 11, bold: true, margin: [0, 12, 0, 4] });
+    content.push({ text: inspection.notes, fontSize: 9, color: '#333' });
+  }
+
+  // Photo attachments
+  const attachments = options.attachments;
+  if (attachments && attachments.size > 0) {
+    const photoItems = [];
+    for (const [resultId, photos] of attachments) {
+      const result = results.find(r => r.id === resultId);
+      if (!result || photos.length === 0) continue;
+      for (const photo of photos) {
+        if (photo.dataUrl) {
+          photoItems.push({
+            stack: [
+              { text: result.label, fontSize: 7, color: '#666', margin: [0, 0, 0, 2] },
+              { image: photo.dataUrl, width: 180, margin: [0, 0, 0, 4] },
+              { text: photo.fileName, fontSize: 6, color: '#999', margin: [0, 0, 0, 8] },
+            ],
+          });
+        }
+      }
+    }
+    if (photoItems.length > 0) {
+      content.push({ text: 'Fotos', fontSize: 11, bold: true, margin: [0, 16, 0, 8] });
+      // 2-column layout for photos
+      const photoColumns = [];
+      for (let i = 0; i < photoItems.length; i += 2) {
+        const row = [photoItems[i]];
+        if (photoItems[i + 1]) row.push(photoItems[i + 1]);
+        else row.push({ text: '' });
+        photoColumns.push({ columns: row, columnGap: 12, margin: [0, 0, 0, 4] });
+      }
+      content.push(...photoColumns);
+    }
+  }
+
+  // QR code
+  const qrText = options.qrText;
+  if (qrText) {
+    content.push({
+      columns: [
+        { text: '', width: '*' },
+        {
+          stack: [
+            { qr: qrText, fit: 80, margin: [0, 16, 0, 4] },
+            { text: 'Pruefprotokoll-Referenz', fontSize: 6, color: '#999' },
+          ],
+          width: 'auto',
+          alignment: 'right',
+        },
+      ],
+    });
+  }
+
+  return content;
+}
+
+/**
+ * Generate a single inspection protocol PDF.
+ * @param {Object} inspection - Inspection data
+ * @param {Array<Object>} results - Inspection results with labels
+ * @param {Object} orgProfile - Organization profile for letterhead
+ * @param {boolean} isProbe - Whether to show trial watermark
+ * @param {Object} [options] - Optional: attachments (Map<resultId, [{dataUrl, fileName}]>), qrText (string)
+ */
+export function generateProtocolPdf(inspection, results, orgProfile, isProbe, options = {}) {
+  const today = new Date().toLocaleDateString('de-DE');
+
+  const content = buildProtocolContent(inspection, results, orgProfile, options);
+
   const docDefinition = {
     pageSize: 'A4',
     pageMargins: [40, 40, 40, 60],
-    content: [
-      ...headerContent,
-      {
-        table: {
-          widths: [80, '*'],
-          body: metaRows.map(([label, value]) => [
-            { text: label, fontSize: 9, bold: true },
-            { text: value, fontSize: 9 },
-          ]),
-        },
-        layout: 'noBorders',
-        margin: [0, 0, 0, 12],
-      },
-      { text: 'Pruefergebnisse', fontSize: 11, bold: true, margin: [0, 8, 0, 6] },
-      {
-        table: {
-          headerRows: 1,
-          widths: [30, '*', 70, '*'],
-          body: [resultHeader, ...resultRows],
-        },
-        layout: {
-          hLineWidth: (i, node) => (i === 0 || i === 1 || i === node.table.body.length) ? 0.5 : 0.25,
-          vLineWidth: () => 0,
-          hLineColor: () => '#cccccc',
-          paddingLeft: () => 4,
-          paddingRight: () => 4,
-          paddingTop: () => 3,
-          paddingBottom: () => 3,
-        },
-      },
-      ...(inspection.notes ? [
-        { text: 'Hinweise', fontSize: 11, bold: true, margin: [0, 12, 0, 4] },
-        { text: inspection.notes, fontSize: 9, color: '#333' },
-      ] : []),
-    ],
+    content,
     footer: (currentPage, pageCount) => {
       const footerColumns = [
         { text: `Erstellt: ${today}`, fontSize: 7, color: '#999', margin: [40, 0, 0, 0] },
+        { text: `Seite ${currentPage} / ${pageCount}`, fontSize: 7, color: '#999', alignment: 'right', margin: [0, 0, 40, 0] },
+      ];
+      if (isProbe) {
+        return {
+          stack: [
+            { text: 'Erstellt mit Probe-Version — codefabrik.de', fontSize: 7, color: '#999', alignment: 'center', margin: [0, 0, 0, 4] },
+            { columns: footerColumns },
+          ],
+          margin: [0, 10, 0, 0],
+        };
+      }
+      return { columns: footerColumns, margin: [0, 20, 0, 0] };
+    },
+  };
+
+  pdfMake.createPdf(docDefinition).open();
+}
+
+/**
+ * Generate a batch protocol PDF for multiple inspections.
+ * Each inspection starts on a new page.
+ * @param {Array<{inspection: Object, results: Array<Object>}>} entries - Inspection+results pairs
+ * @param {Object} orgProfile - Organization profile for letterhead
+ * @param {boolean} isProbe - Whether to show trial watermark
+ */
+export function generateBatchProtocolPdf(entries, orgProfile, isProbe) {
+  const today = new Date().toLocaleDateString('de-DE');
+  const content = [];
+
+  for (let i = 0; i < entries.length; i++) {
+    const { inspection, results } = entries[i];
+    if (i > 0) {
+      content.push({ text: '', pageBreak: 'before' });
+    }
+    const qrText = `Nachweis Lokal | #${inspection.id} | ${inspection.inspection_date} | ${inspection.status}`;
+    const sectionContent = buildProtocolContent(inspection, results, orgProfile, { qrText });
+    content.push(...sectionContent);
+  }
+
+  const docDefinition = {
+    pageSize: 'A4',
+    pageMargins: [40, 40, 40, 60],
+    content,
+    footer: (currentPage, pageCount) => {
+      const footerColumns = [
+        { text: `Sammel-Protokoll, erstellt: ${today}`, fontSize: 7, color: '#999', margin: [40, 0, 0, 0] },
         { text: `Seite ${currentPage} / ${pageCount}`, fontSize: 7, color: '#999', alignment: 'right', margin: [0, 0, 40, 0] },
       ];
       if (isProbe) {

@@ -34,7 +34,7 @@ src/
     TemplateList.svelte      Vorlagenliste
     TemplateForm.svelte      Vorlage anlegen/bearbeiten + Pruefpunkte
     TemplateDetail.svelte    Vorlagendetail + Pruefhistorie
-    TemplateLibrary.svelte   Vorlagen-Bibliothek (5 fertige Vorlagen)
+    TemplateLibrary.svelte   Vorlagen-Bibliothek (15 fertige Vorlagen)
     ObjectList.svelte        Objektliste (Geraete, Raeume, Anlagen)
     ObjectForm.svelte        Objekt anlegen/bearbeiten
     ObjectDetail.svelte      Objektdetail + Pruefhistorie
@@ -50,7 +50,7 @@ src/
   components/
     PhotoAttachment.svelte   Foto-Picker + Thumbnail-Galerie pro Ergebnis
   assets/
-    template-library.json    5 Vorlagen (Brandschutz, Elektro, Spielgeraete, Leitern, Erste-Hilfe)
+    template-library.json    15 Vorlagen (Brandschutz, Elektro, Spielgeraete, Leitern, Erste-Hilfe, Regale, UVV-Fahrzeug, PSA, Hygiene, Buero, Unterweisung, IT-Serverraum, Aufzug, Legionellen, Fluchtwege)
   App.svelte                Root-Komponente, Navigation, DB-Init
 tests/
   fixtures/              SQLite-Fixtures pro Version (NIE loeschen)
@@ -59,10 +59,12 @@ tests/
 
 ## DB-Layer (src/lib/db.js)
 
-- `initDb()` erstellt Schema v2 (10 Tabellen, Migration v1→v2 integriert)
+- `initDb()` erstellt Schema v3 (11 Tabellen, Migration v1→v2→v3 integriert)
 - Templates: `getTemplates()`, `saveTemplate()`, `deleteTemplate()` (Soft-Delete)
 - Template Items: `getTemplateItems()`, `saveTemplateItems()` (Replace-Strategie)
 - Template Library: `importLibraryTemplate(libraryTemplate)` — Import aus Vorlagen-Bibliothek
+- Template Duplication: `duplicateTemplate(id)` — Vorlage als Kopie anlegen
+- Inspectors: `getInspectors()`, `saveInspector()`, `deleteInspector()` — Prueferverwaltung
 - Objects: `getObjects()`, `saveObject()`, `deleteObject()` (Soft-Delete)
 - Inspections: `getInspections(filter)`, `saveInspection()`, `deleteInspection()` (Hard-Delete)
 - Recurring: `createRecurringInspection(sourceInspectionId)` — Folgepruefung aus Intervall
@@ -86,9 +88,9 @@ tests/
   - Spezial: 'inspection:execute:ID'
 - Shared Components: `SupportView`, `FeatureRequestView`, `LicenseSection` aus `@codefabrik/app-shared/components`
 
-## Aktuelle Version: v0.2.0
+## Aktuelle Version: v0.3.0
 
-24 Features (20 aus v0.1.0 + 4 neu in v0.2.0):
+31 Features (20 aus v0.1.0 + 4 aus v0.2.0 + 7 neu in v0.3.0):
 - Vorlagen-CRUD mit Pruefpunkten (beliebig viele)
 - Objekt-/Gegenstandsverwaltung mit Pruefhistorie
 - Pruefungsverwaltung (anlegen, durchfuehren, abschliessen)
@@ -102,7 +104,14 @@ tests/
 - Integritaetspruefung (sichtbar im UI)
 - Probe-Lizenz (10 Vorlagen Limit)
 - Support-Integration + Feature-Requests
-- **NEU v0.2.0:** Vorlagen-Bibliothek (5 fertige Vorlagen zum Uebernehmen)
-- **NEU v0.2.0:** Wiederkehrende Pruefungen (automatische Folgepruefung)
-- **NEU v0.2.0:** Foto-Anhaenge (pro Pruefpunkt, Thumbnail-Galerie)
-- **NEU v0.2.0:** Maengeltracking (offen/behoben/verifiziert, Nachpruefung)
+- Vorlagen-Bibliothek (5 → 15 fertige Vorlagen)
+- Wiederkehrende Pruefungen (automatische Folgepruefung)
+- Foto-Anhaenge (pro Pruefpunkt, Thumbnail-Galerie)
+- Maengeltracking (offen/behoben/verifiziert, Nachpruefung)
+- **NEU v0.3.0:** Erweiterte Vorlagen-Bibliothek (15 Vorlagen: +Regale, UVV-Fahrzeug, PSA, Hygiene, Buero, Unterweisung, IT-Serverraum, Aufzug, Legionellen, Fluchtwege)
+- **NEU v0.3.0:** Sammel-PDF (mehrere Pruefprotokolle in einem Dokument)
+- **NEU v0.3.0:** Fotos in PDF (eingebettete Foto-Anhaenge im Pruefprotokoll)
+- **NEU v0.3.0:** Vorlagen duplizieren (Kopie erstellen und anpassen)
+- **NEU v0.3.0:** Erinnerungen (Warnbanner fuer ueberfaellige/bald faellige Pruefungen)
+- **NEU v0.3.0:** Prueferverwaltung (Pruefer mit Rolle/Qualifikation, Autovervollstaendigung)
+- **NEU v0.3.0:** QR-Code auf PDF (Pruefungsreferenz zur Zuordnung)

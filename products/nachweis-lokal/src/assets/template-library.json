@@ -82,5 +82,185 @@
       { "label": "Aushang Ersthelfer und Notrufnummern aktuell?", "hint": "Name, Telefon, Standort der Ersthelfer", "required": true },
       { "label": "Defibrillator (AED) vorhanden und einsatzbereit?", "hint": "Nur wenn vorhanden, Batterie und Pads pruefen", "required": false }
     ]
+  },
+  {
+    "id": "regalpruefung",
+    "name": "Regalpruefung",
+    "description": "Jaehrliche Pruefung von Lagerregalen nach DIN EN 15635 / DGUV Regel 108-007",
+    "category": "Lager",
+    "interval_days": 365,
+    "items": [
+      { "label": "Standsicherheit gegeben (lotrecht, kein Kippen)?", "hint": "Sichtpruefung und ggf. Wasserwaage", "required": true },
+      { "label": "Bodenverankerung fest und vollstaendig?", "hint": "Alle Duebel/Schrauben vorhanden und fest", "required": true },
+      { "label": "Stuetzen ohne Verformung oder Beschaedigung?", "hint": "Verbiegung > 3 mm = Austausch noetig", "required": true },
+      { "label": "Traverse ohne Verformung, Haken eingerastet?", "hint": "Sicherungsstifte pruefen", "required": true },
+      { "label": "Fachboeden unbeschaedigt und korrekt eingelegt?", "required": true },
+      { "label": "Maximale Fachlast nicht ueberschritten?", "hint": "Belastungsschild pruefen", "required": true },
+      { "label": "Anfahrschutz vorhanden und intakt?", "hint": "Bei Regalen im Fahrverkehr", "required": false },
+      { "label": "Belastungsschild vorhanden und lesbar?", "hint": "Angaben zu Feld-/Fachlast", "required": true },
+      { "label": "Freiraum zu Waenden und anderen Regalen ausreichend?", "required": false }
+    ]
+  },
+  {
+    "id": "uvv-fahrzeug",
+    "name": "UVV Fahrzeugpruefung",
+    "description": "Jaehrliche Unfallverhuetungsvorschrift-Pruefung fuer Dienstfahrzeuge nach DGUV V70",
+    "category": "Fahrzeuge",
+    "interval_days": 365,
+    "items": [
+      { "label": "Beleuchtung vollstaendig und funktionsfaehig?", "hint": "Abblendlicht, Fernlicht, Blinker, Bremslicht, Rueckfahrlicht", "required": true },
+      { "label": "Bremsen funktionsfaehig (Betriebs- und Feststellbremse)?", "required": true },
+      { "label": "Reifen in ordnungsgemaessem Zustand?", "hint": "Mindestprofiltiefe 1,6 mm, keine Beschaedigungen", "required": true },
+      { "label": "Lenkung leichtgaengig und ohne Spiel?", "required": true },
+      { "label": "Sicherheitsgurte vorhanden und funktionsfaehig?", "required": true },
+      { "label": "Scheiben unbeschaedigt, Scheibenwischer funktionsfaehig?", "required": true },
+      { "label": "Fluessigkeitsstaende geprueft (Oel, Kuehlmittel, Bremsfl.)?", "required": true },
+      { "label": "Warndreieck, Warnweste, Verbandkasten vorhanden?", "required": true },
+      { "label": "Fahrgestellnummer und Kennzeichen stimmen ueberein?", "required": true },
+      { "label": "Naechster HU/AU-Termin noch gueltig?", "hint": "TUeV-Plakette pruefen", "required": true }
+    ]
+  },
+  {
+    "id": "psa-pruefung",
+    "name": "PSA-Pruefung",
+    "description": "Pruefung der Persoenlichen Schutzausruestung nach PSA-Benutzungsverordnung",
+    "category": "Arbeitsschutz",
+    "interval_days": 365,
+    "items": [
+      { "label": "Schutzhelm unbeschaedigt, Alterung im Rahmen?", "hint": "Thermoplaste max. 4 Jahre, Duroplaste max. 8 Jahre", "required": true },
+      { "label": "Schutzbrille ohne Kratzer, Buegelspannung in Ordnung?", "required": true },
+      { "label": "Gehoerschutz vorhanden und funktionsfaehig?", "hint": "Kapselgehoerschutz: Dichtung und Buegel pruefen", "required": false },
+      { "label": "Schutzhandschuhe unbeschaedigt, Material passend?", "hint": "Schnittschutz, Chemikalienschutz je nach Einsatz", "required": true },
+      { "label": "Sicherheitsschuhe in ordnungsgemaessem Zustand?", "hint": "Sohle, Zehenkappe, Schaft pruefen", "required": true },
+      { "label": "Warnweste/Warnkleidung sauber und reflektierend?", "required": false },
+      { "label": "Auffanggurt (PSAgA) geprueft und innerhalb Nutzungsdauer?", "hint": "Nur bei Hoehenarbeit. Naehte, Karabiner, Gurte pruefen", "required": false },
+      { "label": "Atemschutz vorhanden und Filter aktuell?", "hint": "Nur bei Bedarf. Verfallsdatum Filter pruefen", "required": false }
+    ]
+  },
+  {
+    "id": "hygiene-kueche",
+    "name": "Hygiene-Kontrolle Kueche",
+    "description": "Regelmaessige Hygienekontrolle fuer Kuechen und Gemeinschaftsverpflegung nach HACCP",
+    "category": "Hygiene",
+    "interval_days": 30,
+    "items": [
+      { "label": "Arbeitsflaechen sauber und desinfiziert?", "required": true },
+      { "label": "Kuehlschranktemperatur <= 7 Grad Celsius?", "hint": "Thermometer ablesen und dokumentieren", "required": true },
+      { "label": "Tiefkuehltemperatur <= -18 Grad Celsius?", "hint": "Thermometer ablesen und dokumentieren", "required": true },
+      { "label": "Handwaschbecken mit Seife und Einwegtuechern ausgestattet?", "required": true },
+      { "label": "Lebensmittel korrekt gelagert (FIFO-Prinzip)?", "hint": "First In, First Out — Aelteres vorne", "required": true },
+      { "label": "Keine abgelaufenen Lebensmittel vorhanden?", "required": true },
+      { "label": "Abfallbehaelter geleert und gereinigt?", "required": true },
+      { "label": "Schaedlingsbefall ausgeschlossen?", "hint": "Keine Spuren von Nagern, Insekten oder Schimmel", "required": true },
+      { "label": "Personalkleidung sauber, Haarnetz/Kopfbedeckung getragen?", "required": true },
+      { "label": "Reinigungsplan aktuell und eingehalten?", "required": true }
+    ]
+  },
+  {
+    "id": "gefaehrdungsbeurteilung-buero",
+    "name": "Gefaehrdungsbeurteilung Bueroarbeitsplatz",
+    "description": "Beurteilung der Arbeitsbedingungen an Bildschirmarbeitsplaetzen nach ArbStaettV",
+    "category": "Arbeitsschutz",
+    "interval_days": 365,
+    "items": [
+      { "label": "Bildschirm flimmerfrei und ausreichend gross?", "hint": "Mind. 22 Zoll, obere Bildschirmkante auf Augenhoehe", "required": true },
+      { "label": "Tastatur und Maus ergonomisch angeordnet?", "hint": "Unterarme waagerecht, Handgelenke gerade", "required": true },
+      { "label": "Stuhl hoehenverstellbar und ergonomisch eingestellt?", "hint": "Fuesse flach am Boden, Oberschenkel waagerecht", "required": true },
+      { "label": "Schreibtischflaeche ausreichend (mind. 160 x 80 cm)?", "required": true },
+      { "label": "Beleuchtung ausreichend und blendfrei?", "hint": "Mind. 500 Lux, keine Reflexionen auf Bildschirm", "required": true },
+      { "label": "Raumtemperatur im Behaglichkeitsbereich (20-26 Grad)?", "required": true },
+      { "label": "Laermpegel angemessen (< 55 dB fuer geistige Arbeit)?", "required": false },
+      { "label": "Stolperfallen und Kabelgewirr beseitigt?", "required": true },
+      { "label": "Bildschirmpausen moeglich (5 Min. pro Stunde)?", "required": true }
+    ]
+  },
+  {
+    "id": "sicherheitsunterweisung",
+    "name": "Sicherheitsunterweisung",
+    "description": "Jaehrliche Sicherheitsunterweisung nach ArbSchG §12 und DGUV Vorschrift 1",
+    "category": "Arbeitsschutz",
+    "interval_days": 365,
+    "items": [
+      { "label": "Allgemeine Gefahren am Arbeitsplatz besprochen?", "required": true },
+      { "label": "Flucht- und Rettungswege bekannt gemacht?", "hint": "Sammelplatz, Notausgaenge zeigen", "required": true },
+      { "label": "Brandschutzordnung erlaeutert?", "hint": "Verhalten im Brandfall, Feuerloescherstandorte", "required": true },
+      { "label": "Erste-Hilfe-Einrichtungen und Ersthelfer benannt?", "required": true },
+      { "label": "Persoenliche Schutzausruestung erlaeutert?", "hint": "Welche PSA wann tragen", "required": false },
+      { "label": "Umgang mit Gefahrstoffen besprochen?", "hint": "Nur wenn relevant fuer den Arbeitsplatz", "required": false },
+      { "label": "Ergonomie am Arbeitsplatz thematisiert?", "required": false },
+      { "label": "Meldepflicht bei Unfaellen und Beinahe-Unfaellen erlaeutert?", "required": true },
+      { "label": "Teilnehmerliste unterschrieben?", "hint": "Alle Anwesenden muessen unterschreiben", "required": true }
+    ]
+  },
+  {
+    "id": "it-serverraum",
+    "name": "IT-Serverraum Kontrolle",
+    "description": "Regelmaessige Kontrolle des Serverraums (physische Sicherheit und Umgebung)",
+    "category": "IT",
+    "interval_days": 90,
+    "items": [
+      { "label": "Zutrittskontrolle funktionsfaehig?", "hint": "Schloss, Kartenleser oder Code", "required": true },
+      { "label": "Raumtemperatur im Sollbereich (18-25 Grad)?", "hint": "Klimaanlage pruefen, Thermometer ablesen", "required": true },
+      { "label": "Luftfeuchtigkeit im Sollbereich (40-60%)?", "required": false },
+      { "label": "USV (unterbrechungsfreie Stromversorgung) funktionsfaehig?", "hint": "Status-LEDs pruefen, Batterie-Alter beachten", "required": true },
+      { "label": "Rauchmelder/Brandmelder vorhanden und aktiv?", "required": true },
+      { "label": "Kabelmanagement ordentlich (keine losen Kabel)?", "required": true },
+      { "label": "Backup-Medien vorhanden und aktuell?", "hint": "Letzte Sicherung pruefen", "required": true },
+      { "label": "Keine unbefugten Gegenstaende im Raum?", "hint": "Kartons, Papier, brennbare Materialien", "required": true },
+      { "label": "Notfall-Dokumentation aktuell und zugaenglich?", "hint": "Kontaktlisten, Recovery-Anleitungen", "required": true }
+    ]
+  },
+  {
+    "id": "aufzugspruefung",
+    "name": "Aufzugspruefung",
+    "description": "Wiederkehrende Pruefung von Aufzugsanlagen nach BetrSichV (Zwischenpruefung)",
+    "category": "Aufzug",
+    "interval_days": 730,
+    "items": [
+      { "label": "Tueren schliessen und verriegeln korrekt?", "hint": "Automatik- und Handbetrieb pruefen", "required": true },
+      { "label": "Notrufeinrichtung funktionsfaehig?", "hint": "Notruf ausloesen und Verbindung pruefen", "required": true },
+      { "label": "Beleuchtung in Kabine und Schacht ausreichend?", "required": true },
+      { "label": "Haltegenauigkeit an allen Haltestellen?", "hint": "Max. +/- 20 mm Abweichung", "required": true },
+      { "label": "Fahrkorb-Innenschutz (Spiegel, Handlauf) intakt?", "required": true },
+      { "label": "Tragseile/Tragmittel ohne sichtbare Schaeden?", "hint": "Drahtbrueche, Korrosion, Abrieb", "required": true },
+      { "label": "Sicherheitseinrichtungen (Fangvorrichtung, Puffer) vorhanden?", "required": true },
+      { "label": "Maschinenraum sauber und zugaenglich?", "hint": "Kein Fremdlager, Beleuchtung funktionsfaehig", "required": true },
+      { "label": "Wartungsbuch / Pruefbuch aktuell gefuehrt?", "required": true },
+      { "label": "Naechster Prueftermin (ZUeS) vermerkt?", "hint": "Zugelassene Ueberwachungsstelle", "required": true }
+    ]
+  },
+  {
+    "id": "legionellen",
+    "name": "Legionellenpruefung",
+    "description": "Pruefung der Trinkwasseranlage auf Legionellen nach TrinkwV §14b",
+    "category": "Hygiene",
+    "interval_days": 365,
+    "items": [
+      { "label": "Warmwassertemperatur am Austritt >= 60 Grad?", "hint": "Am Boiler/Speicher messen", "required": true },
+      { "label": "Kaltwassertemperatur <= 25 Grad?", "hint": "An der entferntesten Entnahmestelle messen", "required": true },
+      { "label": "Zirkulation funktionsfaehig (Ruecklauf >= 55 Grad)?", "required": true },
+      { "label": "Probenentnahme an vorgeschriebenen Stellen durchgefuehrt?", "hint": "Entfernteste Entnahmestelle + Warmwasseraustritt Speicher", "required": true },
+      { "label": "Selten genutzte Leitungen identifiziert und gespuelt?", "hint": "Stagnation > 72h vermeiden", "required": true },
+      { "label": "Totleitungen (stillgelegte Anschluesse) zurueckgebaut?", "required": true },
+      { "label": "Wartungsprotokoll der Trinkwasseranlage aktuell?", "required": true },
+      { "label": "Laborbefund des letzten Jahres liegt vor?", "hint": "Technischer Massnahmewert: 100 KBE/100 ml", "required": true }
+    ]
+  },
+  {
+    "id": "fluchtweg-pruefung",
+    "name": "Fluchtweg- und Notausgang-Pruefung",
+    "description": "Halbjaehrliche Pruefung der Flucht- und Rettungswege nach ASR A2.3",
+    "category": "Sicherheit",
+    "interval_days": 180,
+    "items": [
+      { "label": "Fluchttueren oeffnen in Fluchtrichtung und ohne Schluessel?", "hint": "Panikschloss/Paniktuer pruefen", "required": true },
+      { "label": "Fluchtwege frei von Hindernissen und Lagergut?", "hint": "Mindestbreite 1,20 m eingehalten", "required": true },
+      { "label": "Sicherheitsbeleuchtung / Notbeleuchtung funktionsfaehig?", "hint": "Test: Hauptbeleuchtung abschalten", "required": true },
+      { "label": "Rettungszeichen (Pfeile, Notausgang) vollstaendig und sichtbar?", "hint": "Nachleuchtend oder beleuchtet", "required": true },
+      { "label": "Sammelplatz gekennzeichnet und zugaenglich?", "required": true },
+      { "label": "Flucht- und Rettungsplan aktuell und ausgehaengt?", "hint": "Mindestens an jeder Etage, max. 3 Jahre alt", "required": true },
+      { "label": "Treppenraeume frei und Tueren selbstschliessend?", "hint": "Keine Keile, keine offenstehenden Brandschutztueren", "required": true },
+      { "label": "Aussenbereiche der Fluchttueren frei zugaenglich?", "hint": "Keine parkenden Fahrzeuge, keine Absperrungen", "required": true }
+    ]
   }
 ]

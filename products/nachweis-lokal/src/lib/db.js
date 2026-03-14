@@ -108,7 +108,7 @@ const SCHEMA_SQL = [
   )`,
 ];
 
-// --- Schema v2 Migration ---
+// --- Schema v2 Migration (Attachments + Defects) ---
 
 const MIGRATION_V2_SQL = [
   // Feature: Foto-Anhaenge
@@ -141,6 +141,21 @@ const MIGRATION_V2_SQL = [
   `CREATE INDEX IF NOT EXISTS idx_defects_status ON defects(status)`,
 ];
 
+// --- Schema v3 Migration (Inspectors) ---
+
+const MIGRATION_V3_SQL = [
+  `CREATE TABLE IF NOT EXISTS inspectors (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    role TEXT DEFAULT '',
+    qualification TEXT DEFAULT '',
+    active INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+  )`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS idx_inspectors_name ON inspectors(name)`,
+];
+
 // --- Init ---
 
 export async function initDb() {
@@ -163,16 +178,29 @@ export async function initDb() {
     } catch {
       // Column already exists — ignore
     }
-    await execute(
-      `INSERT OR REPLACE INTO _schema_meta (id, schema_version, app_version, last_migration) VALUES (1, 2, '0.2.0', datetime('now'))`
-    );
-  } else {
-    await execute(
-      `INSERT OR REPLACE INTO _schema_meta (id, schema_version, app_version, last_migration) VALUES (1, 2, '0.2.0', datetime('now'))`
-    );
   }
 
-  await appendEvent('AppGestartet', { version: '0.2.0', schema_version: 2 });
+  if (currentVersion < 3) {
+    // Migrate v2 → v3
+    for (const sql of MIGRATION_V3_SQL) {
+      await execute(sql);
+    }
+    // Seed inspectors from existing inspection data
+    try {
+      await execute(`
+        INSERT OR IGNORE INTO inspectors (name)
+        SELECT DISTINCT inspector FROM inspections WHERE inspector != '' AND inspector IS NOT NULL
+      `);
+    } catch {
+      // Table might be empty — ignore
+    }
+  }
+
+  await execute(
+    `INSERT OR REPLACE INTO _schema_meta (id, schema_version, app_version, last_migration) VALUES (1, 3, '0.3.0', datetime('now'))`
+  );
+
+  await appendEvent('AppGestartet', { version: '0.3.0', schema_version: 3 });
 }
 
 // --- Org Profile ---
@@ -610,6 +638,58 @@ export async function deleteAttachment(id) {
   await execute('DELETE FROM attachments WHERE id = ?', [id]);
   await appendEvent('AnhangGeloescht', { id, file_name: attachment?.file_name });
   return attachment;
+}
+
+// --- Inspectors (Prueferverwaltung) ---
+
+export async function getInspectors() {
+  return query('SELECT * FROM inspectors WHERE active = 1 ORDER BY name');
+}
+
+export async function saveInspector(inspector) {
+  if (inspector.id) {
+    await execute(`
+      UPDATE inspectors SET name = ?, role = ?, qualification = ?, active = ?, updated_at = datetime('now')
+      WHERE id = ?
+    `, [inspector.name, inspector.role ?? '', inspector.qualification ?? '', inspector.active ?? 1, inspector.id]);
+    await appendEvent('PrueferGeaendert', { ...inspector });
+    return inspector.id;
+  } else {
+    const result = await execute(`
+      INSERT INTO inspectors (name, role, qualification) VALUES (?, ?, ?)
+    `, [inspector.name, inspector.role ?? '', inspector.qualification ?? '']);
+    await appendEvent('PrueferAngelegt', { id: result.lastInsertId, ...inspector });
+    return result.lastInsertId;
+  }
+}
+
+export async function deleteInspector(id) {
+  const rows = await query('SELECT name FROM inspectors WHERE id = ?', [id]);
+  await execute("UPDATE inspectors SET active = 0, updated_at = datetime('now') WHERE id = ?", [id]);
+  await appendEvent('PrueferDeaktiviert', { id, name: rows[0]?.name });
+}
+
+// --- Template Duplication ---
+
+export async function duplicateTemplate(id) {
+  const template = await getTemplate(id);
+  if (!template) return null;
+  const items = await getTemplateItems(id);
+  const newId = await saveTemplate({
+    name: `${template.name} (Kopie)`,
+    description: template.description,
+    category: template.category,
+    interval_days: template.interval_days,
+  });
+  if (items.length > 0) {
+    await saveTemplateItems(newId, items.map(item => ({
+      label: item.label,
+      hint: item.hint,
+      required: item.required,
+    })));
+  }
+  await appendEvent('VorlageDupliziert', { source_id: id, new_id: newId, name: template.name });
+  return newId;
 }
 
 // --- Defects (Maengeltracking) ---

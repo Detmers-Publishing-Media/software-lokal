@@ -1,11 +1,16 @@
 <script>
   import { onMount } from 'svelte';
-  import { getOrgProfile, saveOrgProfile } from '../lib/db.js';
+  import { getOrgProfile, saveOrgProfile, getInspectors, saveInspector, deleteInspector } from '../lib/db.js';
   import { LicenseSection } from '@codefabrik/app-shared/components';
 
   let form = $state({ name: '', street: '', zip: '', city: '', contact_email: '', contact_phone: '', responsible: '' });
   let saving = $state(false);
   let saved = $state(false);
+
+  // Inspector management
+  let inspectorList = $state([]);
+  let newInspector = $state({ name: '', role: '', qualification: '' });
+  let savingInspector = $state(false);
 
   onMount(async () => {
     const profile = await getOrgProfile();
@@ -20,6 +25,7 @@
         responsible: profile.responsible ?? '',
       };
     }
+    inspectorList = await getInspectors();
   });
 
   async function handleSave(e) {
@@ -29,6 +35,25 @@
     saving = false;
     saved = true;
     setTimeout(() => saved = false, 2000);
+  }
+
+  async function handleAddInspector(e) {
+    e.preventDefault();
+    if (!newInspector.name.trim()) return;
+    savingInspector = true;
+    await saveInspector({
+      name: newInspector.name.trim(),
+      role: newInspector.role.trim(),
+      qualification: newInspector.qualification.trim(),
+    });
+    inspectorList = await getInspectors();
+    newInspector = { name: '', role: '', qualification: '' };
+    savingInspector = false;
+  }
+
+  async function handleDeleteInspector(id) {
+    await deleteInspector(id);
+    inspectorList = await getInspectors();
   }
 </script>
 
@@ -85,6 +110,40 @@
   </section>
 
   <section>
+    <h2>Pruefer verwalten</h2>
+    <p class="hint">Bekannte Pruefer erscheinen als Vorschlaege beim Anlegen neuer Pruefungen.</p>
+
+    {#if inspectorList.length > 0}
+      <table>
+        <thead>
+          <tr><th>Name</th><th>Rolle</th><th>Qualifikation</th><th></th></tr>
+        </thead>
+        <tbody>
+          {#each inspectorList as insp}
+            <tr>
+              <td class="bold">{insp.name}</td>
+              <td class="muted">{insp.role || '-'}</td>
+              <td class="muted">{insp.qualification || '-'}</td>
+              <td>
+                <button class="btn-small btn-danger" onclick={() => handleDeleteInspector(insp.id)}>Entfernen</button>
+              </td>
+            </tr>
+          {/each}
+        </tbody>
+      </table>
+    {:else}
+      <p class="empty">Noch keine Pruefer angelegt. Pruefer werden auch automatisch aus vorhandenen Pruefungen uebernommen.</p>
+    {/if}
+
+    <form class="inline-form" onsubmit={handleAddInspector}>
+      <input bind:value={newInspector.name} placeholder="Name *" required />
+      <input bind:value={newInspector.role} placeholder="Rolle (optional)" />
+      <input bind:value={newInspector.qualification} placeholder="Qualifikation (optional)" />
+      <button type="submit" class="btn-primary" disabled={savingInspector}>Hinzufuegen</button>
+    </form>
+  </section>
+
+  <section>
     <h2>Supportvertrag</h2>
     <LicenseSection />
   </section>
@@ -101,5 +160,15 @@
   input { width: 100%; }
   .actions { display: flex; gap: 0.75rem; align-items: center; }
   .saved { color: var(--color-success); font-size: 0.875rem; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { padding: 0.5rem; border-bottom: 1px solid var(--color-border); text-align: left; }
+  th { background: var(--color-surface); font-weight: 600; font-size: 0.8125rem; }
+  .bold { font-weight: 600; }
+  .muted { color: var(--color-text-muted); font-size: 0.8125rem; }
+  .empty { color: var(--color-text-muted); font-style: italic; font-size: 0.875rem; }
+  .inline-form { display: flex; gap: 0.5rem; align-items: center; }
+  .inline-form input { flex: 1; }
   .btn-primary { padding: 0.5rem 1rem; background: var(--color-primary); color: white; border: none; border-radius: 0.375rem; }
+  .btn-small { padding: 0.25rem 0.5rem; font-size: 0.75rem; border-radius: 0.25rem; }
+  .btn-danger { background: var(--color-danger); color: white; border: none; }
 </style>
