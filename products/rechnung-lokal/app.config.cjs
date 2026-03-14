@@ -3,6 +3,7 @@ const path = require('node:path');
 module.exports = {
   name: 'Rechnung Lokal',
   identifier: 'de.detmers-publish.rechnung-lokal',
+  productId: 'rechnung-lokal',
   windowTitle: 'Rechnung Lokal — Rechnungsstellung',
   version: '0.2.0',
   width: 1100,

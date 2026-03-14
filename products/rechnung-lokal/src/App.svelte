@@ -12,7 +12,7 @@
   import TransactionList from './routes/TransactionList.svelte';
   import TransactionForm from './routes/TransactionForm.svelte';
   import ProfileSettings from './routes/ProfileSettings.svelte';
-  import { SupportView, FeatureRequestView } from '@codefabrik/app-shared/components';
+  import { SupportView, FeatureRequestView, ChangelogView } from '@codefabrik/app-shared/components';
 
   let dbReady = $state(false);
   let dbError = $state(null);
@@ -34,7 +34,8 @@
     { id: 'transactions', label: 'Buchungen' },
     { id: 'euer', label: 'EÜR' },
     { id: 'profile', label: 'Profil' },
-    { id: 'feature-request', label: 'Wünsche' },
+    { id: 'feature-request', label: 'Ideen' },
+    { id: 'changelog', label: 'Was ist neu?' },
     { id: 'support', label: 'Support' },
   ];
 
@@ -115,6 +116,8 @@
       <ProfileSettings />
     {:else if route.page === 'feature-request'}
       <FeatureRequestView />
+    {:else if route.page === 'changelog'}
+      <ChangelogView />
     {:else if route.page === 'support'}
       <SupportView />
     {/if}

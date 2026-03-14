@@ -3,6 +3,7 @@ const path = require('node:path');
 module.exports = {
   name: 'FinanzRechner Lokal',
   identifier: 'de.detmers-publish.finanzrechner-lokal',
+  productId: 'finanz-rechner',
   windowTitle: 'FinanzRechner Lokal — Finanzrechner fuer Versicherungsmakler',
   width: 1024,
   height: 768,

@@ -3,6 +3,7 @@ const path = require('node:path');
 module.exports = {
   name: 'Mitglieder Lokal',
   identifier: 'de.detmers-publish.mitglieder-lokal',
+  productId: 'mitglieder-lokal',
   windowTitle: 'Mitglieder Lokal — Mitgliederverwaltung',
   width: 1024,
   height: 768,

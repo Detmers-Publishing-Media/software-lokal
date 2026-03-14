@@ -2,36 +2,25 @@
   import { onMount } from 'svelte';
   import { currentView } from './lib/stores/navigation.js';
   import { initDb } from './lib/db.js';
-  import { checkMemberLimit } from './lib/license.js';
   import MemberList from './routes/MemberList.svelte';
   import MemberForm from './routes/MemberForm.svelte';
   import MemberDetail from './routes/MemberDetail.svelte';
   import Import from './routes/Import.svelte';
   import Payments from './routes/Payments.svelte';
   import Settings from './routes/Settings.svelte';
-  import { SupportView, FeatureRequestView } from '@codefabrik/app-shared/components';
+  import { SupportView, FeatureRequestView, ChangelogView } from '@codefabrik/app-shared/components';
 
   let dbReady = $state(false);
   let dbError = $state(null);
-  let limitReached = $state(false);
 
   onMount(async () => {
     try {
       await initDb();
       dbReady = true;
-      const limit = await checkMemberLimit();
-      limitReached = !limit.allowed;
       window.electronAPI?.app?.rendererReady?.();
     } catch (err) {
       dbError = err.message;
       window.electronAPI?.app?.rendererReady?.();
-    }
-  });
-
-  // Re-check limit when navigating back to list (after save/delete)
-  $effect(() => {
-    if ($currentView === 'list' && dbReady) {
-      checkMemberLimit().then(l => limitReached = !l.allowed);
     }
   });
 
@@ -41,7 +30,8 @@
     { id: 'add', label: 'Neu' },
     { id: 'import', label: 'Import' },
     { id: 'settings', label: 'Einstellungen' },
-    { id: 'feature-request', label: 'Wuensche' },
+    { id: 'feature-request', label: 'Ideen' },
+    { id: 'changelog', label: 'Was ist neu?' },
     { id: 'support', label: 'Support' },
   ];
 </script>
@@ -56,9 +46,7 @@
         <li>
           <button
             class:active={$currentView.startsWith(item.id)}
-            disabled={item.id === 'add' && limitReached}
             onclick={() => currentView.set(item.id)}
-            title={item.id === 'add' && limitReached ? 'Probe-Limit erreicht' : ''}
           >
             {item.label}
           </button>
@@ -88,6 +76,8 @@
       <Settings />
     {:else if $currentView === 'feature-request'}
       <FeatureRequestView />
+    {:else if $currentView === 'changelog'}
+      <ChangelogView />
     {:else if $currentView === 'support'}
       <SupportView />
     {/if}

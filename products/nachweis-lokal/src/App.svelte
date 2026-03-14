@@ -2,7 +2,6 @@
   import { onMount } from 'svelte';
   import { currentView } from './lib/stores/navigation.js';
   import { initDb } from './lib/db.js';
-  import { checkTemplateLimit } from './lib/license.js';
   import Dashboard from './routes/Dashboard.svelte';
   import TemplateList from './routes/TemplateList.svelte';
   import TemplateForm from './routes/TemplateForm.svelte';
@@ -20,28 +19,19 @@
   import DefectDetail from './routes/DefectDetail.svelte';
   import Integrity from './routes/Integrity.svelte';
   import Settings from './routes/Settings.svelte';
-  import { SupportView, FeatureRequestView } from '@codefabrik/app-shared/components';
+  import { SupportView, FeatureRequestView, ChangelogView } from '@codefabrik/app-shared/components';
 
   let dbReady = $state(false);
   let dbError = $state(null);
-  let limitReached = $state(false);
 
   onMount(async () => {
     try {
       await initDb();
       dbReady = true;
-      const limit = await checkTemplateLimit();
-      limitReached = !limit.allowed;
       window.electronAPI?.app?.rendererReady?.();
     } catch (err) {
       dbError = err.message;
       window.electronAPI?.app?.rendererReady?.();
-    }
-  });
-
-  $effect(() => {
-    if ($currentView === 'templates' && dbReady) {
-      checkTemplateLimit().then(l => limitReached = !l.allowed);
     }
   });
 
@@ -55,7 +45,8 @@
     { id: 'import', label: 'Import' },
     { id: 'integrity', label: 'Integritaet' },
     { id: 'settings', label: 'Einstellungen' },
-    { id: 'feature-request', label: 'Wuensche' },
+    { id: 'feature-request', label: 'Ideen' },
+    { id: 'changelog', label: 'Was ist neu?' },
     { id: 'support', label: 'Support' },
   ];
 
@@ -86,7 +77,6 @@
         <li>
           <button
             class:active={$currentView.startsWith(item.id)}
-            disabled={item.id === 'template:new' && limitReached}
             onclick={() => currentView.set(item.id)}
           >
             {item.label}
@@ -112,7 +102,7 @@
     {:else if route.page === 'inspection-execute'}
       <InspectionExecute inspectionId={route.id} />
     {:else if route.page === 'templates'}
-      <TemplateList {limitReached} />
+      <TemplateList />
     {:else if route.page === 'template-new'}
       <TemplateForm />
     {:else if route.page === 'template-edit'}
@@ -141,6 +131,8 @@
       <Settings />
     {:else if route.page === 'feature-request'}
       <FeatureRequestView />
+    {:else if route.page === 'changelog'}
+      <ChangelogView />
     {:else if route.page === 'support'}
       <SupportView />
     {/if}

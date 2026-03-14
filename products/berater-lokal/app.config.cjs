@@ -4,6 +4,7 @@ const ExcelJS = require('exceljs');
 module.exports = {
   name: 'Berater Lokal',
   identifier: 'de.detmers-publish.berater-lokal',
+  productId: 'berater-lokal',
   windowTitle: 'Berater Lokal — Ganzheitliche Beratungssoftware',
   width: 1280,
   height: 900,

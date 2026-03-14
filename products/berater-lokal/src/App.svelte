@@ -2,7 +2,6 @@
   import { onMount } from 'svelte';
   import { currentView } from './lib/stores/navigation.js';
   import { initDb } from './lib/db.js';
-  import { checkKundenLimit } from './lib/license.js';
   import Dashboard from './routes/Dashboard.svelte';
   import KundenListe from './routes/KundenListe.svelte';
   import KundeForm from './routes/KundeForm.svelte';
@@ -15,24 +14,15 @@
 
   let dbReady = $state(false);
   let dbError = $state(null);
-  let limitReached = $state(false);
 
   onMount(async () => {
     try {
       await initDb();
       dbReady = true;
-      const limit = await checkKundenLimit();
-      limitReached = !limit.allowed;
       window.electronAPI?.app?.rendererReady?.();
     } catch (err) {
       dbError = err.message;
       window.electronAPI?.app?.rendererReady?.();
-    }
-  });
-
-  $effect(() => {
-    if ($currentView === 'kunden' && dbReady) {
-      checkKundenLimit().then(l => limitReached = !l.allowed);
     }
   });
 
@@ -43,7 +33,7 @@
     { id: 'import', label: 'Import / Export', icon: '📁' },
     { id: 'integrity', label: 'Integritaet', icon: '🔒' },
     { id: 'settings', label: 'Einstellungen', icon: '⚙' },
-    { id: 'feature-request', label: 'Wuensche', icon: '💡' },
+    { id: 'feature-request', label: 'Ideen', icon: '💡' },
     { id: 'changelog', label: 'Was ist neu?', icon: '📢' },
     { id: 'support', label: 'Support', icon: '🛟' },
   ];

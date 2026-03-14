@@ -3,6 +3,7 @@ const path = require('node:path');
 module.exports = {
   name: 'Nachweis Lokal',
   identifier: 'de.detmers-publish.nachweis-lokal',
+  productId: 'nachweis-lokal',
   windowTitle: 'Nachweis Lokal — Pruefprotokolle & Checklisten',
   width: 1024,
   height: 768,
