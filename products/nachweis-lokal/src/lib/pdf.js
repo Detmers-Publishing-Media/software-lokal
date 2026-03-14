@@ -118,7 +118,7 @@ export function generateBlankFormPdf(template, items, orgProfile) {
     }
   }
 
-  content.push({ text: 'Pruefprotokoll (Leerformular)', fontSize: 14, bold: true, margin: [0, 8, 0, 4] });
+  content.push({ text: 'Prüfprotokoll (Leerformular)', fontSize: 14, bold: true, margin: [0, 8, 0, 4] });
   content.push({ text: template.name, fontSize: 12, margin: [0, 0, 0, 4] });
   if (template.description) {
     content.push({ text: template.description, fontSize: 9, color: '#666', margin: [0, 0, 0, 8] });
@@ -130,13 +130,13 @@ export function generateBlankFormPdf(template, items, orgProfile) {
       widths: [80, '*', 80, '*'],
       body: [
         [
-          { text: 'Geraet/Raum:', fontSize: 9, bold: true },
+          { text: 'Gerät / Raum:', fontSize: 9, bold: true },
           { text: '', fontSize: 9 },
           { text: 'Datum:', fontSize: 9, bold: true },
           { text: '', fontSize: 9 },
         ],
         [
-          { text: 'Pruefer:', fontSize: 9, bold: true },
+          { text: 'Prüfer:', fontSize: 9, bold: true },
           { text: '', fontSize: 9 },
           { text: 'Unterschrift:', fontSize: 9, bold: true },
           { text: '', fontSize: 9 },
@@ -155,7 +155,7 @@ export function generateBlankFormPdf(template, items, orgProfile) {
   // Checklist table with checkboxes
   const headerRow = [
     { text: 'Nr.', bold: true, fontSize: 8, fillColor: '#f0f0f0' },
-    { text: 'Pruefpunkt', bold: true, fontSize: 8, fillColor: '#f0f0f0' },
+    { text: 'Prüfpunkt', bold: true, fontSize: 8, fillColor: '#f0f0f0' },
     { text: 'OK', bold: true, fontSize: 8, fillColor: '#f0f0f0', alignment: 'center' },
     { text: 'Mangel', bold: true, fontSize: 8, fillColor: '#f0f0f0', alignment: 'center' },
     { text: 'N/A', bold: true, fontSize: 8, fillColor: '#f0f0f0', alignment: 'center' },
@@ -177,7 +177,7 @@ export function generateBlankFormPdf(template, items, orgProfile) {
     ];
   });
 
-  content.push({ text: 'Pruefpunkte', fontSize: 11, bold: true, margin: [0, 4, 0, 6] });
+  content.push({ text: 'Prüfpunkte', fontSize: 11, bold: true, margin: [0, 4, 0, 6] });
   content.push({
     table: {
       headerRows: 1,
@@ -253,19 +253,19 @@ function buildProtocolContent(inspection, results, orgProfile, options = {}) {
   }
 
   // Protocol header
-  content.push({ text: 'Pruefprotokoll', fontSize: 14, bold: true, margin: [0, 8, 0, 4] });
+  content.push({ text: 'Prüfprotokoll', fontSize: 14, bold: true, margin: [0, 8, 0, 4] });
   content.push({ text: inspection.title, fontSize: 12, margin: [0, 0, 0, 8] });
 
   // Meta table
   const metaRows = [
-    ['Vorlage:', inspection.template_name ?? '-'],
-    ['Objekt:', inspection.object_name ?? '-'],
-    ['Pruefer:', inspection.inspector],
+    ['Checkliste:', inspection.template_name ?? '-'],
+    ['Gerät / Raum:', inspection.object_name ?? '-'],
+    ['Prüfer:', inspection.inspector],
     ['Datum:', formatDate(inspection.inspection_date)],
     ['Status:', statusLabel(inspection.status)],
   ];
   if (inspection.due_date) {
-    metaRows.push(['Naechste Pruefung:', formatDate(inspection.due_date)]);
+    metaRows.push(['Nächste Prüfung:', formatDate(inspection.due_date)]);
   }
 
   content.push({
@@ -283,7 +283,7 @@ function buildProtocolContent(inspection, results, orgProfile, options = {}) {
   // Results table
   const resultHeader = [
     { text: 'Nr.', bold: true, fontSize: 8, fillColor: '#f0f0f0', width: 30 },
-    { text: 'Pruefpunkt', bold: true, fontSize: 8, fillColor: '#f0f0f0' },
+    { text: 'Prüfpunkt', bold: true, fontSize: 8, fillColor: '#f0f0f0' },
     { text: 'Ergebnis', bold: true, fontSize: 8, fillColor: '#f0f0f0', width: 70 },
     { text: 'Bemerkung', bold: true, fontSize: 8, fillColor: '#f0f0f0' },
   ];
@@ -294,7 +294,7 @@ function buildProtocolContent(inspection, results, orgProfile, options = {}) {
     { text: r.remark ?? '', fontSize: 8, color: '#666' },
   ]);
 
-  content.push({ text: 'Pruefergebnisse', fontSize: 11, bold: true, margin: [0, 8, 0, 6] });
+  content.push({ text: 'Prüfergebnisse', fontSize: 11, bold: true, margin: [0, 8, 0, 6] });
   content.push({
     table: {
       headerRows: 1,
@@ -360,7 +360,7 @@ function buildProtocolContent(inspection, results, orgProfile, options = {}) {
         {
           stack: [
             { qr: qrText, fit: 80, margin: [0, 16, 0, 4] },
-            { text: 'Pruefprotokoll-Referenz', fontSize: 6, color: '#999' },
+            { text: 'Prüfprotokoll-Referenz', fontSize: 6, color: '#999' },
           ],
           width: 'auto',
           alignment: 'right',
@@ -465,7 +465,7 @@ export function generateDeficiencyPdf(inspection, results, orgProfile, isProbe) 
 
   const columns = [
     { text: 'Nr.', width: 30 },
-    { text: 'Pruefpunkt', width: '*' },
+    { text: 'Prüfpunkt', width: '*' },
     { text: 'Bemerkung', width: '*' },
   ];
   const rows = deficiencies.map((r, i) => [
@@ -474,7 +474,7 @@ export function generateDeficiencyPdf(inspection, results, orgProfile, isProbe) 
     r.remark ?? '-',
   ]);
 
-  const title = `Maengelbericht — ${inspection.title} (${formatDate(inspection.inspection_date)})`;
+  const title = `Mängelbericht — ${inspection.title} (${formatDate(inspection.inspection_date)})`;
   generateListPdf(title, columns, rows, orgProfile, isProbe);
 }
 
@@ -490,7 +490,7 @@ function statusLabel(status) {
 }
 
 function resultLabel(result) {
-  const labels = { offen: 'Offen', ok: 'OK', maengel: 'Maengel', nicht_anwendbar: 'N/A' };
+  const labels = { offen: 'Offen', ok: 'OK', maengel: 'Mängel', nicht_anwendbar: 'N/A' };
   return labels[result] ?? result;
 }
 

@@ -59,7 +59,7 @@
         : overdue.slice(0, 3).map(d => d.template_name).join(', ') + (overdue.length > 3 ? ` (+${overdue.length - 3} weitere)` : '');
 
       new Notification(
-        `${overdue.length} ${overdue.length === 1 ? 'Pruefung' : 'Pruefungen'} ueberfaellig`, {
+        `${overdue.length} ${overdue.length === 1 ? 'Prüfung' : 'Prüfungen'} überfällig`, {
           body,
           icon: undefined,
           silent: false,
