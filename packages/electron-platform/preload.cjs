@@ -41,11 +41,17 @@ contextBridge.exposeInMainWorld('electronAPI', {
     removeKey: () => ipcRenderer.invoke('license:removeKey'),
     getHash: () => ipcRenderer.invoke('license:getHash'),
     revalidate: () => ipcRenderer.invoke('license:revalidate'),
+    requestTrial: () => ipcRenderer.invoke('license:requestTrial'),
   },
   featureRequest: {
     submit: (data) => ipcRenderer.invoke('featureRequest:submit', data),
     list: () => ipcRenderer.invoke('featureRequest:list'),
     get: (requestNumber) => ipcRenderer.invoke('featureRequest:get', requestNumber),
+    listPublic: () => ipcRenderer.invoke('featureRequest:listPublic'),
+    vote: (requestNumber) => ipcRenderer.invoke('featureRequest:vote', requestNumber),
+  },
+  changelog: {
+    list: () => ipcRenderer.invoke('changelog:list'),
   },
   app: {
     rendererReady: () => ipcRenderer.invoke('app:rendererReady'),

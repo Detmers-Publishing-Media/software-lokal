@@ -24,6 +24,7 @@ function registerSupportHandlers({ ipcMain, app, config, getDb, safeMode }) {
   const logDir = path.join(userDataPath, 'logs');
   const backupDir = path.join(userDataPath, 'backups');
   const dbPath = config.dbName ? path.join(userDataPath, config.dbName) : null;
+  const productId = config.productId || config.identifier;
 
   ipcMain.handle('support:collectBundle', () => {
     return collectDiagnostics({
@@ -164,7 +165,7 @@ function registerSupportHandlers({ ipcMain, app, config, getDb, safeMode }) {
     try {
       const result = await postJson(portalUrl, '/api/support/ticket', {
         licenseHash,
-        productId: config.identifier,
+        productId,
         userDescription: userDescription || null,
         kiBundle,
       });
@@ -266,6 +267,60 @@ function registerSupportHandlers({ ipcMain, app, config, getDb, safeMode }) {
       return await getJson(url.toString());
     } catch (err) {
       return null;
+    }
+  });
+
+  ipcMain.handle('featureRequest:listPublic', async () => {
+    const portalUrl = config.portalUrl;
+    if (!portalUrl) return [];
+
+    let safeStorage = null;
+    try { safeStorage = require('electron').safeStorage; } catch (_) {}
+
+    const cache = readLicenseCache(safeStorage, userDataPath);
+    if (!cache.licenseKey) return [];
+
+    try {
+      const url = new URL('/api/requests/public', portalUrl);
+      url.searchParams.set('key', cache.licenseKey);
+      return await getJson(url.toString());
+    } catch (err) {
+      logWarn('support', 'Public-Requests-Abruf fehlgeschlagen', { error: err.message });
+      return [];
+    }
+  });
+
+  ipcMain.handle('featureRequest:vote', async (_event, requestNumber) => {
+    const portalUrl = config.portalUrl;
+    if (!portalUrl) return { ok: false, error: 'Portal-URL nicht konfiguriert' };
+
+    let safeStorage = null;
+    try { safeStorage = require('electron').safeStorage; } catch (_) {}
+
+    const cache = readLicenseCache(safeStorage, userDataPath);
+    if (!cache.licenseKey) return { ok: false, error: 'Kein Lizenzkey hinterlegt' };
+
+    try {
+      const result = await postJson(portalUrl, `/api/requests/${requestNumber}/vote`, {
+        license_key: cache.licenseKey,
+      });
+      return { ok: true, ...result };
+    } catch (err) {
+      logWarn('support', 'Vote fehlgeschlagen', { error: err.message });
+      return { ok: false, error: err.message };
+    }
+  });
+
+  ipcMain.handle('changelog:list', async () => {
+    const portalUrl = config.portalUrl;
+    if (!portalUrl) return [];
+
+    try {
+      const url = new URL(`/api/changelog/${productId}`, portalUrl);
+      return await getJson(url.toString());
+    } catch (err) {
+      logWarn('support', 'Changelog-Abruf fehlgeschlagen', { error: err.message });
+      return [];
     }
   });
 

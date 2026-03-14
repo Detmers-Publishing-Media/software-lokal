@@ -9,6 +9,7 @@ const {
   removeLicenseCache,
   getLicenseStatus,
   needsRevalidation,
+  getOrCreateInstanceId,
 } = require('../lib/license-client.js');
 const { logInfo, logWarn } = require('../lib/logger.js');
 
@@ -24,6 +25,8 @@ function registerLicenseHandlers({ ipcMain, app, config }) {
   const userDataPath = app.getPath('userData');
   const prefix = config.licensePrefix || 'CF';
   const portalUrl = config.portalUrl || null;
+  const productId = config.productId || config.identifier;
+  const instanceId = getOrCreateInstanceId(userDataPath);
 
   let safeStorage = null;
   try {
@@ -48,7 +51,7 @@ function registerLicenseHandlers({ ipcMain, app, config }) {
 
     if (portalUrl) {
       try {
-        validationResult = await validateOnline(portalUrl, key, config.identifier);
+        validationResult = await validateOnline(portalUrl, key, productId, instanceId);
         if (!validationResult.valid) {
           return { ok: false, reason: validationResult.reason || 'Server-Validierung fehlgeschlagen' };
         }
@@ -105,11 +108,42 @@ function registerLicenseHandlers({ ipcMain, app, config }) {
     if (!cache.licenseKey) return { ok: false, reason: 'no_license' };
 
     try {
-      const result = await validateOnline(portalUrl, cache.licenseKey, config.identifier);
-      writeLicenseCache(safeStorage, userDataPath, cache.licenseKey, config.identifier, result);
+      const result = await validateOnline(portalUrl, cache.licenseKey, productId, instanceId);
+      writeLicenseCache(safeStorage, userDataPath, cache.licenseKey, productId, result);
       return { ok: true, status: getLicenseStatus(result) };
     } catch (err) {
       logWarn('license', 'Re-Validierung fehlgeschlagen', { error: err.message });
+      return { ok: false, reason: err.message };
+    }
+  });
+
+  // Request auto-trial key from portal (called on first start with no license)
+  ipcMain.handle('license:requestTrial', async () => {
+    if (!portalUrl) return { ok: false, reason: 'no_portal' };
+
+    // Check if already have a license
+    const cache = readLicenseCache(safeStorage, userDataPath);
+    if (cache.licenseKey) return { ok: false, reason: 'already_licensed' };
+
+    try {
+      const result = await requestTrialKey(portalUrl, productId);
+      if (!result.licenseKey) {
+        return { ok: false, reason: result.error || 'Trial-Key konnte nicht erstellt werden' };
+      }
+
+      // Validate + register instance
+      const validation = await validateOnline(portalUrl, result.licenseKey, productId, instanceId);
+      writeLicenseCache(safeStorage, userDataPath, result.licenseKey, config.identifier, validation);
+      logInfo('license', 'Auto-Trial-Key aktiviert', { expiresAt: result.expiresAt });
+
+      return {
+        ok: true,
+        licenseKey: result.licenseKey,
+        expiresAt: result.expiresAt,
+        status: getLicenseStatus(validation),
+      };
+    } catch (err) {
+      logWarn('license', 'Auto-Trial fehlgeschlagen', { error: err.message });
       return { ok: false, reason: err.message };
     }
   });
@@ -123,14 +157,18 @@ function registerLicenseHandlers({ ipcMain, app, config }) {
  * @param {string} portalUrl - Portal base URL
  * @param {string} licenseKey - The license key
  * @param {string} productId - Product identifier
+ * @param {string} [instanceId] - Instance UUID for device tracking
  * @returns {Promise<Object>} Validation result
  */
-function validateOnline(portalUrl, licenseKey, productId) {
+function validateOnline(portalUrl, licenseKey, productId, instanceId) {
   return new Promise((resolve, reject) => {
-    const body = JSON.stringify({
+    const payload = {
       licenseKey: licenseKey.toUpperCase().trim(),
       productId,
-    });
+    };
+    if (instanceId) payload.instanceId = instanceId;
+
+    const body = JSON.stringify(payload);
 
     const url = new URL('/api/license/validate', portalUrl);
     const transport = url.protocol === 'https:' ? https : http;
@@ -148,6 +186,55 @@ function validateOnline(portalUrl, licenseKey, productId) {
       res.on('end', () => {
         try {
           resolve(JSON.parse(data));
+        } catch (_) {
+          reject(new Error('Ungueltige Antwort vom Server'));
+        }
+      });
+    });
+
+    req.on('error', reject);
+    req.on('timeout', () => {
+      req.destroy();
+      reject(new Error('Zeitueberschreitung'));
+    });
+
+    req.write(body);
+    req.end();
+  });
+}
+
+/**
+ * Requests a trial key from the portal (public endpoint).
+ *
+ * @param {string} portalUrl - Portal base URL
+ * @param {string} productId - Product identifier
+ * @returns {Promise<{ licenseKey: string, productId: string, expiresAt: string }>}
+ */
+function requestTrialKey(portalUrl, productId) {
+  return new Promise((resolve, reject) => {
+    const body = JSON.stringify({ productId });
+
+    const url = new URL('/api/license/trial', portalUrl);
+    const transport = url.protocol === 'https:' ? https : http;
+
+    const req = transport.request(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(body),
+      },
+      timeout: 10000,
+    }, (res) => {
+      let data = '';
+      res.on('data', chunk => { data += chunk; });
+      res.on('end', () => {
+        try {
+          const parsed = JSON.parse(data);
+          if (res.statusCode === 201) {
+            resolve(parsed);
+          } else {
+            reject(new Error(parsed.error || `HTTP ${res.statusCode}`));
+          }
         } catch (_) {
           reject(new Error('Ungueltige Antwort vom Server'));
         }

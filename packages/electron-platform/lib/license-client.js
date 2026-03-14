@@ -16,6 +16,7 @@ const KEY_PATTERN = /^[A-Z]{2,4}-[A-Z2-9]{4}-[A-Z2-9]{4}-[A-Z2-9]{4}-[A-Z2-9]{4}
 
 const HMAC_PEPPER = 'codefabrik-support-v1';
 const LICENSE_FILE = 'license.json';
+const INSTANCE_FILE = 'instance.json';
 
 // Maps product prefix to product ID (production + trial keys)
 const PREFIX_TO_PRODUCT = {
@@ -247,6 +248,33 @@ function needsRevalidation(lastValidation) {
   return cacheAge > revalidateMs;
 }
 
+/**
+ * Returns or creates a persistent instance ID (UUID v4).
+ * Stored in a separate file so it survives license removal.
+ *
+ * @param {string} userDataPath
+ * @returns {string} UUID v4
+ */
+function getOrCreateInstanceId(userDataPath) {
+  const filePath = path.join(userDataPath, INSTANCE_FILE);
+
+  try {
+    if (fs.existsSync(filePath)) {
+      const data = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+      if (data.instanceId && typeof data.instanceId === 'string') {
+        return data.instanceId;
+      }
+    }
+  } catch (_) {
+    // Corrupted file — regenerate
+  }
+
+  const instanceId = crypto.randomUUID();
+  fs.writeFileSync(filePath, JSON.stringify({ instanceId, createdAt: new Date().toISOString() }, null, 2));
+  logInfo('license', 'Instance-ID erstellt', { instanceId });
+  return instanceId;
+}
+
 module.exports = {
   SAFE_ALPHABET,
   PREFIX_TO_PRODUCT,
@@ -258,4 +286,5 @@ module.exports = {
   removeLicenseCache,
   getLicenseStatus,
   needsRevalidation,
+  getOrCreateInstanceId,
 };

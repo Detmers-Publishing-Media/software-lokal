@@ -16,6 +16,7 @@ const {
   removeLicenseCache,
   getLicenseStatus,
   needsRevalidation,
+  getOrCreateInstanceId,
 } = require('../lib/license-client.js');
 
 let tmpDir;
@@ -300,6 +301,46 @@ describe('license-client', () => {
     it('returns true for old validation (>30d)', () => {
       const old = new Date(Date.now() - 31 * 24 * 60 * 60 * 1000);
       assert.ok(needsRevalidation({ timestamp: old.toISOString() }));
+    });
+  });
+
+  describe('getOrCreateInstanceId', () => {
+    it('creates a new instance ID on first call', () => {
+      const id = getOrCreateInstanceId(tmpDir);
+      assert.ok(id);
+      assert.match(id, /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+    });
+
+    it('returns the same ID on subsequent calls', () => {
+      const id1 = getOrCreateInstanceId(tmpDir);
+      const id2 = getOrCreateInstanceId(tmpDir);
+      assert.equal(id1, id2);
+    });
+
+    it('persists ID to instance.json file', () => {
+      const id = getOrCreateInstanceId(tmpDir);
+      const filePath = path.join(tmpDir, 'instance.json');
+      assert.ok(fs.existsSync(filePath));
+      const data = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+      assert.equal(data.instanceId, id);
+      assert.ok(data.createdAt);
+    });
+
+    it('regenerates if file is corrupted', () => {
+      const filePath = path.join(tmpDir, 'instance.json');
+      fs.writeFileSync(filePath, 'invalid json');
+      const id = getOrCreateInstanceId(tmpDir);
+      assert.ok(id);
+      assert.match(id, /^[0-9a-f]{8}-/);
+    });
+
+    it('survives license removal', () => {
+      const id = getOrCreateInstanceId(tmpDir);
+      writeLicenseCache(mockSafeStorage, tmpDir, 'CFML-TEST-TEST-TEST-TEST', 'test', {});
+      removeLicenseCache(tmpDir);
+      // Instance file should still exist
+      const id2 = getOrCreateInstanceId(tmpDir);
+      assert.equal(id, id2);
     });
   });
 });
