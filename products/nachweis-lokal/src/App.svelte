@@ -1,8 +1,9 @@
 <script>
   import { onMount } from 'svelte';
   import { currentView } from './lib/stores/navigation.js';
-  import { initDb } from './lib/db.js';
+  import { initDb, getTemplates, getOrgProfile } from './lib/db.js';
   import Dashboard from './routes/Dashboard.svelte';
+  import FirstRunWizard from './routes/FirstRunWizard.svelte';
   import TemplateList from './routes/TemplateList.svelte';
   import TemplateForm from './routes/TemplateForm.svelte';
   import TemplateDetail from './routes/TemplateDetail.svelte';
@@ -13,21 +14,24 @@
   import InspectionForm from './routes/InspectionForm.svelte';
   import InspectionDetail from './routes/InspectionDetail.svelte';
   import InspectionExecute from './routes/InspectionExecute.svelte';
-  import ImportTemplates from './routes/ImportTemplates.svelte';
-  import TemplateLibrary from './routes/TemplateLibrary.svelte';
   import DefectList from './routes/DefectList.svelte';
   import DefectDetail from './routes/DefectDetail.svelte';
-  import Integrity from './routes/Integrity.svelte';
   import Settings from './routes/Settings.svelte';
-  import { SupportView, FeatureRequestView, ChangelogView } from '@codefabrik/app-shared/components';
+  import SupportHub from './routes/SupportHub.svelte';
 
   let dbReady = $state(false);
   let dbError = $state(null);
+  let showWizard = $state(false);
 
   onMount(async () => {
     try {
       await initDb();
       dbReady = true;
+      // First-Run-Erkennung: kein Profil und keine Vorlagen
+      const [templates, profile] = await Promise.all([getTemplates(), getOrgProfile()]);
+      if (templates.length === 0 && !profile?.name) {
+        showWizard = true;
+      }
       window.electronAPI?.app?.rendererReady?.();
     } catch (err) {
       dbError = err.message;
@@ -35,20 +39,36 @@
     }
   });
 
-  const navItems = [
-    { id: 'dashboard', label: 'Dashboard' },
-    { id: 'inspections', label: 'Pruefungen' },
-    { id: 'templates', label: 'Vorlagen' },
-    { id: 'objects', label: 'Objekte' },
-    { id: 'defects', label: 'Maengel' },
-    { id: 'templates:library', label: 'Pruefungsvorlagen' },
-    { id: 'import', label: 'Import' },
-    { id: 'integrity', label: 'Integritaet' },
-    { id: 'settings', label: 'Einstellungen' },
-    { id: 'feature-request', label: 'Ideen' },
-    { id: 'changelog', label: 'Was ist neu?' },
-    { id: 'support', label: 'Support' },
+  const navGroups = [
+    { items: [
+      { id: 'dashboard', label: 'Dashboard' },
+    ]},
+    { header: 'VORBEREITEN', items: [
+      { id: 'templates', label: 'Vorlagen' },
+      { id: 'objects', label: 'Objekte' },
+    ]},
+    { header: 'PRUEFEN', items: [
+      { id: 'inspections', label: 'Pruefungen' },
+    ]},
+    { header: 'NACHVERFOLGEN', items: [
+      { id: 'defects', label: 'Maengel' },
+    ]},
+    { separator: true, items: [
+      { id: 'settings', label: 'Einstellungen' },
+      { id: 'support', label: 'Support' },
+    ]},
   ];
+
+  function isActive(itemId) {
+    const v = $currentView;
+    if (itemId === 'templates') return v === 'templates' || v.startsWith('template') || v === 'import';
+    if (itemId === 'objects') return v === 'objects' || v.startsWith('object');
+    if (itemId === 'inspections') return v === 'inspections' || v.startsWith('inspection');
+    if (itemId === 'defects') return v === 'defects' || v.startsWith('defect');
+    if (itemId === 'settings') return v === 'settings' || v === 'integrity';
+    if (itemId === 'support') return v === 'support' || v === 'feature-request' || v === 'changelog';
+    return v === itemId;
+  }
 
   let route = $derived.by(() => {
     const v = $currentView;
@@ -62,7 +82,9 @@
     if (v.startsWith('inspection:execute:')) return { page: 'inspection-execute', id: parseInt(v.split(':')[2]) };
     if (v.startsWith('inspection:')) return { page: 'inspection-detail', id: parseInt(v.split(':')[1]) };
     if (v.startsWith('defect:')) return { page: 'defect-detail', id: parseInt(v.split(':')[1]) };
-    if (v === 'templates:library') return { page: 'templates-library' };
+    if (v === 'templates:library' || v === 'import') return { page: 'templates' };
+    if (v === 'integrity') return { page: 'settings' };
+    if (v === 'feature-request' || v === 'changelog') return { page: 'support' };
     return { page: v };
   });
 </script>
@@ -73,18 +95,30 @@
       <h2>Nachweis Lokal</h2>
     </div>
     <ul>
-      {#each navItems as item}
-        <li>
-          <button
-            class:active={$currentView.startsWith(item.id)}
-            onclick={() => currentView.set(item.id)}
-          >
-            {item.label}
-          </button>
-        </li>
+      {#each navGroups as group}
+        {#if group.separator}
+          <li class="separator"></li>
+        {/if}
+        {#if group.header}
+          <li class="group-header">{group.header}</li>
+        {/if}
+        {#each group.items as item}
+          <li>
+            <button
+              class:active={isActive(item.id)}
+              onclick={() => currentView.set(item.id)}
+            >
+              {item.label}
+            </button>
+          </li>
+        {/each}
       {/each}
     </ul>
   </nav>
+
+  {#if showWizard}
+    <FirstRunWizard oncomplete={() => { showWizard = false; currentView.set('dashboard'); }} />
+  {/if}
 
   <main class="content">
     {#if dbError}
@@ -121,20 +155,10 @@
       <DefectList />
     {:else if route.page === 'defect-detail'}
       <DefectDetail defectId={route.id} />
-    {:else if route.page === 'templates-library'}
-      <TemplateLibrary />
-    {:else if route.page === 'import'}
-      <ImportTemplates />
-    {:else if route.page === 'integrity'}
-      <Integrity />
     {:else if route.page === 'settings'}
       <Settings />
-    {:else if route.page === 'feature-request'}
-      <FeatureRequestView />
-    {:else if route.page === 'changelog'}
-      <ChangelogView />
     {:else if route.page === 'support'}
-      <SupportView />
+      <SupportHub />
     {/if}
   </main>
 </div>
@@ -160,6 +184,19 @@
   }
 
   .sidebar ul { list-style: none; }
+
+  .group-header {
+    padding: 0.75rem 1rem 0.25rem;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    color: var(--color-text-muted);
+    letter-spacing: 0.05em;
+  }
+
+  .separator {
+    border-top: 1px solid var(--color-border);
+    margin: 0.5rem 0;
+  }
 
   .sidebar button {
     width: 100%;

@@ -46,12 +46,14 @@ src/
     DefectDetail.svelte      Einzelansicht, Status-Aenderung, Nachpruefung starten
     ImportTemplates.svelte   CSV-Import fuer Vorlagen
     Integrity.svelte         Hash-Ketten-Verifikation + Event-Log
-    Settings.svelte          Organisationsprofil + Supportvertrag
+    Settings.svelte          Organisationsprofil + Supportvertrag + Integritaet (Tabs)
+    SupportHub.svelte        Support + Ideen + Changelog (Tabs)
+    FirstRunWizard.svelte    4-Schritte-Einrichtungsassistent
   components/
     PhotoAttachment.svelte   Foto-Picker + Thumbnail-Galerie pro Ergebnis
   assets/
     template-library.json    15 Vorlagen (Brandschutz, Elektro, Spielgeraete, Leitern, Erste-Hilfe, Regale, UVV-Fahrzeug, PSA, Hygiene, Buero, Unterweisung, IT-Serverraum, Aufzug, Legionellen, Fluchtwege)
-  App.svelte                Root-Komponente, Navigation, DB-Init
+  App.svelte                Root-Komponente, Navigation, DB-Init, First-Run-Wizard
 tests/
   fixtures/              SQLite-Fixtures pro Version (NIE loeschen)
   test_*.js              Testdateien (node --test)
@@ -88,9 +90,9 @@ tests/
   - Spezial: 'inspection:execute:ID'
 - Shared Components: `SupportView`, `FeatureRequestView`, `LicenseSection` aus `@codefabrik/app-shared/components`
 
-## Aktuelle Version: v0.3.0
+## Aktuelle Version: v0.4.0
 
-31 Features (20 aus v0.1.0 + 4 aus v0.2.0 + 7 neu in v0.3.0):
+33 Features (20 aus v0.1.0 + 4 aus v0.2.0 + 7 aus v0.3.0 + 2 neu in v0.4.0):
 - Vorlagen-CRUD mit Pruefpunkten (beliebig viele)
 - Objekt-/Gegenstandsverwaltung mit Pruefhistorie
 - Pruefungsverwaltung (anlegen, durchfuehren, abschliessen)
@@ -104,14 +106,16 @@ tests/
 - Integritaetspruefung (sichtbar im UI)
 - Probe-Lizenz (10 Vorlagen Limit)
 - Support-Integration + Feature-Requests
-- Vorlagen-Bibliothek (5 → 15 fertige Vorlagen)
+- Vorlagen-Bibliothek (15 fertige Vorlagen)
 - Wiederkehrende Pruefungen (automatische Folgepruefung)
 - Foto-Anhaenge (pro Pruefpunkt, Thumbnail-Galerie)
 - Maengeltracking (offen/behoben/verifiziert, Nachpruefung)
-- **NEU v0.3.0:** Erweiterte Vorlagen-Bibliothek (15 Vorlagen: +Regale, UVV-Fahrzeug, PSA, Hygiene, Buero, Unterweisung, IT-Serverraum, Aufzug, Legionellen, Fluchtwege)
-- **NEU v0.3.0:** Sammel-PDF (mehrere Pruefprotokolle in einem Dokument)
-- **NEU v0.3.0:** Fotos in PDF (eingebettete Foto-Anhaenge im Pruefprotokoll)
-- **NEU v0.3.0:** Vorlagen duplizieren (Kopie erstellen und anpassen)
-- **NEU v0.3.0:** Erinnerungen (Warnbanner fuer ueberfaellige/bald faellige Pruefungen)
-- **NEU v0.3.0:** Prueferverwaltung (Pruefer mit Rolle/Qualifikation, Autovervollstaendigung)
-- **NEU v0.3.0:** QR-Code auf PDF (Pruefungsreferenz zur Zuordnung)
+- Erweiterte Vorlagen-Bibliothek (15 Vorlagen)
+- Sammel-PDF (mehrere Pruefprotokolle in einem Dokument)
+- Fotos in PDF (eingebettete Foto-Anhaenge im Pruefprotokoll)
+- Vorlagen duplizieren (Kopie erstellen und anpassen)
+- Erinnerungen (Warnbanner fuer ueberfaellige/bald faellige Pruefungen)
+- Prueferverwaltung (Pruefer mit Rolle/Qualifikation, Autovervollstaendigung)
+- QR-Code auf PDF (Pruefungsreferenz zur Zuordnung)
+- **NEU v0.4.0:** Workflow-orientierte Sidebar (Gruppenheader: Vorbereiten/Pruefen/Nachverfolgen, 12→7 Eintraege, Tabs fuer Vorlagen/Einstellungen/Support)
+- **NEU v0.4.0:** Einrichtungsassistent (4-Schritte-Wizard beim ersten Start: Organisation, Pruefer, Vorlagen, erstes Objekt)

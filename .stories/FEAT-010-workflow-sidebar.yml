@@ -1,0 +1,52 @@
+# Workflow-orientierte Sidebar — Nachweis Lokal
+
+id: "FEAT-010"
+title: "Workflow-orientierte Menuestruktur Nachweis Lokal"
+epic: "NACHWEIS-UX"
+status: "done"
+
+story_type: "product-fast"
+lane: "fast"
+platform_impact: "none"
+founder_gate_required: false
+force_approve_allowed: true
+auto_merge_allowed: true
+
+description: |
+  Die Sidebar wird von 12 flachen Eintraegen auf 7 workflow-orientierte
+  Eintraege mit Gruppenheadern reduziert:
+  - Dashboard (Einstieg)
+  - VORBEREITEN: Vorlagen, Objekte
+  - PRUEFEN: Pruefungen
+  - NACHVERFOLGEN: Maengel
+  - Einstellungen (Profil, Pruefer, Integritaet, Supportvertrag)
+  - Support (Tickets, Ideen, Changelog)
+
+  Bibliothek und Import werden Tabs in der Vorlagen-Seite.
+  Integritaet wird Tab in den Einstellungen.
+  Ideen und Changelog werden Tabs in der Support-Seite.
+
+acceptance_criteria:
+  - "Sidebar zeigt 7 Haupteintraege mit Gruppenheadern VORBEREITEN/PRUEFEN/NACHVERFOLGEN"
+  - "Vorlagen-Seite hat Tabs: Meine Vorlagen | Bibliothek | CSV-Import"
+  - "Einstellungen-Seite hat Tabs: Profil | Integritaet"
+  - "Support-Seite hat Tabs: Support | Ideen | Aenderungsprotokoll"
+  - "Alle bestehenden Navigationslinks funktionieren weiterhin"
+  - "Sidebar-Highlighting funktioniert korrekt fuer Sub-Routes"
+
+affected_files:
+  - "products/nachweis-lokal/src/App.svelte"
+  - "products/nachweis-lokal/src/routes/TemplateList.svelte"
+  - "products/nachweis-lokal/src/routes/TemplateLibrary.svelte"
+  - "products/nachweis-lokal/src/routes/ImportTemplates.svelte"
+  - "products/nachweis-lokal/src/routes/Settings.svelte"
+  - "products/nachweis-lokal/src/routes/Integrity.svelte"
+  - "products/nachweis-lokal/src/routes/SupportHub.svelte"
+  - "products/nachweis-lokal/src/routes/FirstRunWizard.svelte"
+  - "products/nachweis-lokal/package.json"
+  - "products/nachweis-lokal/CLAUDE.md"
+  - "CLAUDE.md"
+
+depends_on: []
+
+estimated_effort: "M"

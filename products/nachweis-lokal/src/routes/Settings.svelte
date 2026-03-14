@@ -1,8 +1,11 @@
 <script>
   import { onMount } from 'svelte';
+  import { currentView } from '../lib/stores/navigation.js';
   import { getOrgProfile, saveOrgProfile, getInspectors, saveInspector, deleteInspector } from '../lib/db.js';
   import { LicenseSection } from '@codefabrik/app-shared/components';
+  import Integrity from './Integrity.svelte';
 
+  let activeTab = $state('profile');
   let form = $state({ name: '', street: '', zip: '', city: '', contact_email: '', contact_phone: '', responsible: '' });
   let saving = $state(false);
   let saved = $state(false);
@@ -26,6 +29,14 @@
       };
     }
     inspectorList = await getInspectors();
+
+    // Wenn von aussen auf Integritaet navigiert wurde
+    if ($currentView === 'integrity') activeTab = 'integrity';
+  });
+
+  $effect(() => {
+    if ($currentView === 'integrity') activeTab = 'integrity';
+    else if ($currentView === 'settings') activeTab = 'profile';
   });
 
   async function handleSave(e) {
@@ -60,97 +71,135 @@
 <div class="page">
   <h1>Einstellungen</h1>
 
-  <section>
-    <h2>Organisationsprofil</h2>
-    <p class="hint">Wird als Briefkopf auf Pruefprotokollen und Listen angezeigt.</p>
+  <div class="tabs">
+    <button class="tab" class:active={activeTab === 'profile'} onclick={() => activeTab = 'profile'}>
+      Profil & Pruefer
+    </button>
+    <button class="tab" class:active={activeTab === 'integrity'} onclick={() => activeTab = 'integrity'}>
+      Integritaet
+    </button>
+  </div>
 
-    <form onsubmit={handleSave}>
-      <div class="field">
-        <label for="name">Organisation</label>
-        <input id="name" bind:value={form.name} placeholder="Name der Organisation" />
-      </div>
-      <div class="row">
+  {#if activeTab === 'profile'}
+    <section>
+      <h2>Organisationsprofil</h2>
+      <p class="hint">Wird als Briefkopf auf Pruefprotokollen und Listen angezeigt.</p>
+
+      <form onsubmit={handleSave}>
         <div class="field">
-          <label for="street">Strasse</label>
-          <input id="street" bind:value={form.street} />
+          <label for="name">Organisation</label>
+          <input id="name" bind:value={form.name} placeholder="Name der Organisation" />
         </div>
-        <div class="field small">
-          <label for="zip">PLZ</label>
-          <input id="zip" bind:value={form.zip} />
+        <div class="row">
+          <div class="field">
+            <label for="street">Strasse</label>
+            <input id="street" bind:value={form.street} />
+          </div>
+          <div class="field small">
+            <label for="zip">PLZ</label>
+            <input id="zip" bind:value={form.zip} />
+          </div>
+          <div class="field">
+            <label for="city">Ort</label>
+            <input id="city" bind:value={form.city} />
+          </div>
+        </div>
+        <div class="row">
+          <div class="field">
+            <label for="email">E-Mail</label>
+            <input id="email" bind:value={form.contact_email} />
+          </div>
+          <div class="field">
+            <label for="phone">Telefon</label>
+            <input id="phone" bind:value={form.contact_phone} />
+          </div>
         </div>
         <div class="field">
-          <label for="city">Ort</label>
-          <input id="city" bind:value={form.city} />
+          <label for="responsible">Verantwortliche Person</label>
+          <input id="responsible" bind:value={form.responsible} placeholder="z.B. Max Mustermann, Sicherheitsbeauftragter" />
         </div>
-      </div>
-      <div class="row">
-        <div class="field">
-          <label for="email">E-Mail</label>
-          <input id="email" bind:value={form.contact_email} />
+
+        <div class="actions">
+          <button type="submit" class="btn-primary" disabled={saving}>
+            {saving ? 'Speichere...' : 'Profil speichern'}
+          </button>
+          {#if saved}
+            <span class="saved">Gespeichert</span>
+          {/if}
         </div>
-        <div class="field">
-          <label for="phone">Telefon</label>
-          <input id="phone" bind:value={form.contact_phone} />
-        </div>
-      </div>
-      <div class="field">
-        <label for="responsible">Verantwortliche Person</label>
-        <input id="responsible" bind:value={form.responsible} placeholder="z.B. Max Mustermann, Sicherheitsbeauftragter" />
-      </div>
+      </form>
+    </section>
 
-      <div class="actions">
-        <button type="submit" class="btn-primary" disabled={saving}>
-          {saving ? 'Speichere...' : 'Profil speichern'}
-        </button>
-        {#if saved}
-          <span class="saved">Gespeichert</span>
-        {/if}
-      </div>
-    </form>
-  </section>
+    <section>
+      <h2>Pruefer verwalten</h2>
+      <p class="hint">Bekannte Pruefer erscheinen als Vorschlaege beim Anlegen neuer Pruefungen.</p>
 
-  <section>
-    <h2>Pruefer verwalten</h2>
-    <p class="hint">Bekannte Pruefer erscheinen als Vorschlaege beim Anlegen neuer Pruefungen.</p>
+      {#if inspectorList.length > 0}
+        <table>
+          <thead>
+            <tr><th>Name</th><th>Rolle</th><th>Qualifikation</th><th></th></tr>
+          </thead>
+          <tbody>
+            {#each inspectorList as insp}
+              <tr>
+                <td class="bold">{insp.name}</td>
+                <td class="muted">{insp.role || '-'}</td>
+                <td class="muted">{insp.qualification || '-'}</td>
+                <td>
+                  <button class="btn-small btn-danger" onclick={() => handleDeleteInspector(insp.id)}>Entfernen</button>
+                </td>
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+      {:else}
+        <p class="empty">Noch keine Pruefer angelegt. Pruefer werden auch automatisch aus vorhandenen Pruefungen uebernommen.</p>
+      {/if}
 
-    {#if inspectorList.length > 0}
-      <table>
-        <thead>
-          <tr><th>Name</th><th>Rolle</th><th>Qualifikation</th><th></th></tr>
-        </thead>
-        <tbody>
-          {#each inspectorList as insp}
-            <tr>
-              <td class="bold">{insp.name}</td>
-              <td class="muted">{insp.role || '-'}</td>
-              <td class="muted">{insp.qualification || '-'}</td>
-              <td>
-                <button class="btn-small btn-danger" onclick={() => handleDeleteInspector(insp.id)}>Entfernen</button>
-              </td>
-            </tr>
-          {/each}
-        </tbody>
-      </table>
-    {:else}
-      <p class="empty">Noch keine Pruefer angelegt. Pruefer werden auch automatisch aus vorhandenen Pruefungen uebernommen.</p>
-    {/if}
+      <form class="inline-form" onsubmit={handleAddInspector}>
+        <input bind:value={newInspector.name} placeholder="Name *" required />
+        <input bind:value={newInspector.role} placeholder="Rolle (optional)" />
+        <input bind:value={newInspector.qualification} placeholder="Qualifikation (optional)" />
+        <button type="submit" class="btn-primary" disabled={savingInspector}>Hinzufuegen</button>
+      </form>
+    </section>
 
-    <form class="inline-form" onsubmit={handleAddInspector}>
-      <input bind:value={newInspector.name} placeholder="Name *" required />
-      <input bind:value={newInspector.role} placeholder="Rolle (optional)" />
-      <input bind:value={newInspector.qualification} placeholder="Qualifikation (optional)" />
-      <button type="submit" class="btn-primary" disabled={savingInspector}>Hinzufuegen</button>
-    </form>
-  </section>
-
-  <section>
-    <h2>Supportvertrag</h2>
-    <LicenseSection />
-  </section>
+    <section>
+      <h2>Supportvertrag</h2>
+      <LicenseSection />
+    </section>
+  {:else if activeTab === 'integrity'}
+    <Integrity embedded={true} />
+  {/if}
 </div>
 
 <style>
-  .page { max-width: 700px; display: flex; flex-direction: column; gap: 2rem; }
+  .page { max-width: 700px; display: flex; flex-direction: column; gap: 1.5rem; }
+
+  .tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 2px solid var(--color-border);
+  }
+
+  .tab {
+    padding: 0.5rem 1rem;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    color: var(--color-text-muted);
+    font-size: 0.875rem;
+    cursor: pointer;
+  }
+
+  .tab:hover { color: var(--color-text); }
+  .tab.active {
+    color: var(--color-primary);
+    border-bottom-color: var(--color-primary);
+    font-weight: 600;
+  }
+
   section { display: flex; flex-direction: column; gap: 0.75rem; }
   .hint { color: var(--color-text-muted); font-size: 0.8125rem; }
   .field { display: flex; flex-direction: column; gap: 0.25rem; margin-bottom: 0.75rem; flex: 1; }

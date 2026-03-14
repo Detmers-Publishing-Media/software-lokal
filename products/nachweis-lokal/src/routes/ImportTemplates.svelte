@@ -2,6 +2,8 @@
   import { currentView } from '../lib/stores/navigation.js';
   import { saveTemplate, saveTemplateItems } from '../lib/db.js';
 
+  let { embedded = false } = $props();
+
   let csvText = $state('');
   let preview = $state([]);
   let importing = $state(false);
@@ -71,7 +73,9 @@
 </script>
 
 <div class="page">
-  <h1>Vorlagen importieren</h1>
+  {#if !embedded}
+    <h1>Vorlagen importieren</h1>
+  {/if}
   <p class="hint">
     CSV mit Semikolon-Trennung einfuegen. Spalten: Name, Beschreibung, Kategorie, Intervall (Tage), Pruefpunkte (getrennt mit |)
   </p>

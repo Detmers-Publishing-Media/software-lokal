@@ -162,7 +162,7 @@ Basiert auf `@codefabrik/finanz-shared` Kern mit Feature-Flags.
 **Stores:** navigation.js (String-basiert: 'invoices', 'customers', 'euer', 'profile', 'support', 'invoice:ID', 'invoice:edit:ID', 'customer:new', etc.)
 **Tests:** (in Aufbau)
 
-### Nachweis Lokal (v0.3.0)
+### Nachweis Lokal (v0.4.0)
 
 Pruefprotokolle, Checklisten und Nachweise. Bundle: `B-08-nachweis`. Hat eigene `CLAUDE.md`.
 
@@ -425,6 +425,14 @@ Aenderungen erfordern explizite PO-Freigabe:
 - Renderer darf kein `better-sqlite3`, `electron`, `node:fs`, `node:child_process` importieren
 - Shared-Packages duerfen keine Produkte importieren
 - Produkte duerfen keine anderen Produkte importieren (nur shared packages)
+
+## Session-Workflow
+
+- Lies `state.md` zu Beginn jeder Session
+- Aktualisiere `state.md` nach jedem abgeschlossenen Task
+- Aktualisiere `.stories/current.yml` wenn Story-Status sich aendert
+- Am Session-Ende: `/review` ausfuehren (aktualisiert state.md, prueft CLAUDE.md, gleicht Story ab)
+- Story-Format in state.md: ID + Titel + Status + Lane (aus current.yml)
 
 ## Bestehende Konventionen
 

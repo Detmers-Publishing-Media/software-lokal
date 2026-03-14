@@ -2,6 +2,8 @@
   import { onMount } from 'svelte';
   import { verifyChain, getEvents } from '../lib/db.js';
 
+  let { embedded = false } = $props();
+
   let verifyResult = $state(null);
   let events = $state([]);
   let verifying = $state(false);
@@ -34,7 +36,9 @@
 </script>
 
 <div class="page">
-  <h1>Integritaetspruefung</h1>
+  {#if !embedded}
+    <h1>Integritaetspruefung</h1>
+  {/if}
   <p class="hint">
     Nachweis Lokal fuehrt ein lueckenloses Aenderungsprotokoll mit HMAC-SHA256 Hash-Kette.
     Jeder Eintrag ist kryptographisch mit dem vorherigen verkettet. Manipulation wird erkannt.

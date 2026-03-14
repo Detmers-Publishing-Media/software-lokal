@@ -4,6 +4,8 @@
   import { importLibraryTemplate, getTemplates } from '../lib/db.js';
   import libraryData from '../assets/template-library.json';
 
+  let { embedded = false } = $props();
+
   let templates = $state([]);
   let existingNames = $state([]);
   let importing = $state(null);
@@ -30,7 +32,9 @@
 </script>
 
 <div class="page">
-  <h1>Vorlagen-Bibliothek</h1>
+  {#if !embedded}
+    <h1>Vorlagen-Bibliothek</h1>
+  {/if}
   <p class="description">Fertige Pruefvorlagen zum direkten Uebernehmen. Die Vorlagen koennen nach dem Import angepasst werden.</p>
 
   <div class="library-grid">
@@ -72,7 +76,9 @@
     {/each}
   </div>
 
-  <button class="btn-secondary" onclick={() => currentView.set('templates')}>Zurueck zu Vorlagen</button>
+  {#if !embedded}
+    <button class="btn-secondary" onclick={() => currentView.set('templates')}>Zurueck zu Vorlagen</button>
+  {/if}
 </div>
 
 <style>
