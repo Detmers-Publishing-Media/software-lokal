@@ -78,7 +78,7 @@
         <th onclick={() => toggleSort('policenCount')}>
           Policen {sortKey === 'policenCount' ? (sortDir === 'asc' ? '▲' : '▼') : ''}
         </th>
-        <th>Letzte Aenderung</th>
+        <th>Letzte Änderung</th>
       </tr>
     </thead>
     <tbody>

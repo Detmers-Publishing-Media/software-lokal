@@ -28,7 +28,7 @@
         keyInput = '';
         await loadStatus();
       } else {
-        message = result.reason || 'Key ungueltig';
+        message = result.reason || 'Key ungültig';
         messageType = 'error';
       }
     } catch (err) {
@@ -72,7 +72,7 @@
     <div class="license-active">
       <div class="status-badge active">Aktiv</div>
       {#if status.expiresAt}
-        <p>Gueltig bis: <strong>{formatDate(status.expiresAt)}</strong></p>
+        <p>Gültig bis: <strong>{formatDate(status.expiresAt)}</strong></p>
       {/if}
       {#if status.features?.length}
         <p class="features">Funktionen: {status.features.join(', ')}</p>
@@ -84,21 +84,21 @@
       <div class="status-badge inactive">
         {status.reason === 'expired' ? 'Abgelaufen'
           : status.reason === 'revoked' ? 'Widerrufen'
-          : status.reason === 'cache_expired' ? 'Pruefung noetig'
+          : status.reason === 'cache_expired' ? 'Prüfung nötig'
           : 'Inaktiv'}
       </div>
       {#if status.reason === 'cache_expired'}
-        <p class="hint">Bitte mit dem Internet verbinden, damit der Key geprueft werden kann.</p>
+        <p class="hint">Bitte mit dem Internet verbinden, damit der Key geprüft werden kann.</p>
       {:else if status.reason === 'expired'}
-        <p class="hint">Ihr Supportvertrag ist abgelaufen. Verlaengern Sie auf detmers-publish.de</p>
+        <p class="hint">Ihr Supportvertrag ist abgelaufen. Verlängern Sie auf detmers-publish.de</p>
       {/if}
       <button class="btn-danger-subtle" onclick={handleRemoveKey}>Key entfernen</button>
     </div>
   {:else}
     <div class="license-none">
       <p class="muted">
-        Alle Funktionen stehen Ihnen kostenlos zur Verfuegung.
-        Mit einem Supportvertrag erhalten Sie zusaetzlich persoenlichen Support,
+        Alle Funktionen stehen Ihnen kostenlos zur Verfügung.
+        Mit einem Supportvertrag erhalten Sie zusätzlich persönlichen Support,
         automatische Updates und weitere Services.
       </p>
       <form class="key-form" onsubmit={e => { e.preventDefault(); handleEnterKey(); }}>
@@ -110,11 +110,11 @@
           class="key-input"
         />
         <button type="submit" class="btn-primary" disabled={entering || !keyInput.trim()}>
-          {entering ? 'Pruefe...' : 'Key eingeben'}
+          {entering ? 'Prüfe...' : 'Key eingeben'}
         </button>
       </form>
       <p class="hint">
-        Supportvertraege erhaeltlich auf
+        Supportverträge erhältlich auf
         <span class="link">detmers-publish.de</span>
       </p>
     </div>

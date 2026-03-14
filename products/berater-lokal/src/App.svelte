@@ -31,7 +31,7 @@
     { id: 'kunden', label: 'Kunden', icon: '👥' },
     { id: 'konditionen', label: 'Konditionen', icon: '📋' },
     { id: 'import', label: 'Import / Export', icon: '📁' },
-    { id: 'integrity', label: 'Integritaet', icon: '🔒' },
+    { id: 'integrity', label: 'Integrität', icon: '🔒' },
     { id: 'settings', label: 'Einstellungen', icon: '⚙' },
     { id: 'feature-request', label: 'Ideen', icon: '💡' },
     { id: 'changelog', label: 'Was ist neu?', icon: '📢' },

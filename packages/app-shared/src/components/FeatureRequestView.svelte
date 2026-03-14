@@ -28,14 +28,14 @@
     { value: 'neue-funktion', label: 'Neue Funktion' },
     { value: 'erweiterung', label: 'Bestehende Funktion erweitern' },
     { value: 'integration', label: 'Integration / Schnittstelle' },
-    { value: 'oberflaeche', label: 'Oberflaeche / Bedienung' },
+    { value: 'oberflaeche', label: 'Oberfläche / Bedienung' },
     { value: 'export', label: 'Export / Import' },
     { value: 'sonstiges', label: 'Sonstiges' },
   ];
 
   const priorities = [
-    { value: 'low', label: 'Waere schoen (irgendwann)' },
-    { value: 'normal', label: 'Wuerde mir helfen (naechste Versionen)' },
+    { value: 'low', label: 'Wäre schön (irgendwann)' },
+    { value: 'normal', label: 'Würde mir helfen (nächste Versionen)' },
     { value: 'high', label: 'Brauche ich dringend (bald)' },
   ];
 
@@ -58,7 +58,7 @@
     parts.push(`\n**Was soll die Funktion tun?**\n${whatDescription.trim()}`);
     parts.push(`\n**Warum brauchen Sie das?**\n${whyDescription.trim()}`);
     if (howOften.trim()) {
-      parts.push(`\n**Wie oft wuerden Sie das nutzen?**\n${howOften.trim()}`);
+      parts.push(`\n**Wie oft würden Sie das nutzen?**\n${howOften.trim()}`);
     }
     if (workaround.trim()) {
       parts.push(`\n**Aktueller Workaround:**\n${workaround.trim()}`);
@@ -140,7 +140,7 @@
   function statusLabel(s) {
     const labels = {
       new: 'Neu', triaged: 'Gesichtet', planned: 'Vorgemerkt',
-      in_progress: 'In Arbeit', released: 'Umgesetzt', declined: 'Zurueckgestellt',
+      in_progress: 'In Arbeit', released: 'Umgesetzt', declined: 'Zurückgestellt',
     };
     return labels[s] || s;
   }
@@ -161,20 +161,20 @@
 </script>
 
 <div class="feature-request-page">
-  <h1>Ideen &amp; Vorschlaege</h1>
+  <h1>Ideen &amp; Vorschläge</h1>
 
   {#if step === 'form'}
     <section class="form-section">
       <p class="intro">
-        Sie haben eine Idee, wie wir dieses Produkt verbessern koennen?
-        Beschreiben Sie Ihren Vorschlag — andere Nutzer koennen dafuer abstimmen.
+        Sie haben eine Idee, wie wir dieses Produkt verbessern können?
+        Beschreiben Sie Ihren Vorschlag — andere Nutzer können dafür abstimmen.
         Wir konzentrieren uns auf die Ideen mit den meisten Stimmen.
       </p>
 
       <div class="field">
         <label for="fr-title">Kurztitel *</label>
         <input id="fr-title" type="text" bind:value={title}
-          placeholder="z.B. Sammelrechnung fuer mehrere Kunden" maxlength="100" />
+          placeholder="z.B. Sammelrechnung für mehrere Kunden" maxlength="100" />
         {#if title.length > 0 && title.length < 5}
           <span class="hint error">Mindestens 5 Zeichen</span>
         {/if}
@@ -183,7 +183,7 @@
       <div class="field">
         <label for="fr-category">Kategorie *</label>
         <select id="fr-category" bind:value={category}>
-          <option value="">Bitte waehlen...</option>
+          <option value="">Bitte wählen...</option>
           {#each categories as cat}
             <option value={cat.value}>{cat.label}</option>
           {/each}
@@ -193,32 +193,32 @@
       <div class="field">
         <label for="fr-what">Was soll die Funktion tun? *</label>
         <textarea id="fr-what" bind:value={whatDescription} rows="4"
-          placeholder="Beschreiben Sie die gewuenschte Funktion so konkret wie moeglich. Was soll passieren? Was soll das Ergebnis sein?"></textarea>
+          placeholder="Beschreiben Sie die gewünschte Funktion so konkret wie möglich. Was soll passieren? Was soll das Ergebnis sein?"></textarea>
         {#if whatDescription.length > 0 && whatDescription.length < 20}
-          <span class="hint error">Bitte etwas ausfuehrlicher beschreiben (mind. 20 Zeichen)</span>
+          <span class="hint error">Bitte etwas ausführlicher beschreiben (mind. 20 Zeichen)</span>
         {/if}
       </div>
 
       <div class="field">
         <label for="fr-why">Warum brauchen Sie das? *</label>
         <textarea id="fr-why" bind:value={whyDescription} rows="3"
-          placeholder="Welches Problem loest diese Funktion fuer Sie? Was koennen Sie aktuell nicht tun?"></textarea>
+          placeholder="Welches Problem löst diese Funktion für Sie? Was können Sie aktuell nicht tun?"></textarea>
       </div>
 
       <div class="field">
-        <label for="fr-howoften">Wie oft wuerden Sie das nutzen?</label>
+        <label for="fr-howoften">Wie oft würden Sie das nutzen?</label>
         <input id="fr-howoften" type="text" bind:value={howOften}
-          placeholder="z.B. taeglich, woechentlich, einmal im Monat, einmal im Jahr" />
+          placeholder="z.B. täglich, wöchentlich, einmal im Monat, einmal im Jahr" />
       </div>
 
       <div class="field">
         <label for="fr-workaround">Haben Sie aktuell einen Workaround?</label>
         <textarea id="fr-workaround" bind:value={workaround} rows="2"
-          placeholder="Falls ja: Wie loesen Sie das Problem aktuell?"></textarea>
+          placeholder="Falls ja: Wie lösen Sie das Problem aktuell?"></textarea>
       </div>
 
       <div class="field">
-        <label for="fr-priority">Wie wichtig ist das fuer Sie?</label>
+        <label for="fr-priority">Wie wichtig ist das für Sie?</label>
         <select id="fr-priority" bind:value={priority}>
           {#each priorities as p}
             <option value={p.value}>{p.label}</option>
@@ -227,25 +227,25 @@
       </div>
 
       <fieldset class="checklist">
-        <legend>Checkliste (alle Punkte bestaetigen)</legend>
+        <legend>Checkliste (alle Punkte bestätigen)</legend>
         <label class="check-item">
           <input type="checkbox" bind:checked={checklist.describedWhat} />
           Ich habe beschrieben, <strong>was</strong> die Funktion tun soll
         </label>
         <label class="check-item">
           <input type="checkbox" bind:checked={checklist.describedWhy} />
-          Ich habe erklaert, <strong>warum</strong> ich das brauche
+          Ich habe erklärt, <strong>warum</strong> ich das brauche
         </label>
         <label class="check-item">
           <input type="checkbox" bind:checked={checklist.checkedExisting} />
-          Ich habe geprueft, ob es die Funktion <strong>nicht schon gibt</strong>
+          Ich habe geprüft, ob es die Funktion <strong>nicht schon gibt</strong>
         </label>
       </fieldset>
 
       <div class="expectation-hint">
-        Vielen Dank fuer Ihre Idee! Alle Vorschlaege werden gesichtet.
-        Andere Nutzer koennen fuer Ihre Idee abstimmen — je mehr Stimmen,
-        desto hoeher die Wahrscheinlichkeit einer Umsetzung. Nicht jede Idee
+        Vielen Dank für Ihre Idee! Alle Vorschläge werden gesichtet.
+        Andere Nutzer können für Ihre Idee abstimmen — je mehr Stimmen,
+        desto höher die Wahrscheinlichkeit einer Umsetzung. Nicht jede Idee
         kann realisiert werden, aber jede wird gelesen und bewertet.
       </div>
 
@@ -270,7 +270,7 @@
           <span class="value">{categories.find(c => c.value === category)?.label}</span>
         </div>
         <div class="preview-row">
-          <span class="label">Prioritaet:</span>
+          <span class="label">Priorität:</span>
           <span class="value">{priorities.find(p => p.value === priority)?.label}</span>
         </div>
         <div class="preview-row full">
@@ -283,7 +283,7 @@
         </div>
         {#if howOften}
           <div class="preview-row">
-            <span class="label">Nutzungshaeufigkeit:</span>
+            <span class="label">Nutzungshäufigkeit:</span>
             <span class="value">{howOften}</span>
           </div>
         {/if}
@@ -300,7 +300,7 @@
       {/if}
 
       <div class="actions">
-        <button class="btn-secondary" onclick={handleBack}>Zurueck bearbeiten</button>
+        <button class="btn-secondary" onclick={handleBack}>Zurück bearbeiten</button>
         <button class="btn-primary" onclick={handleSubmit} disabled={submitting}>
           {submitting ? 'Wird gesendet...' : 'Absenden'}
         </button>
@@ -311,7 +311,7 @@
     <section class="success-section">
       <div class="result success">
         Idee <strong>{submitResult?.requestNumber}</strong> wurde eingereicht.
-        Andere Nutzer koennen jetzt dafuer abstimmen. Vielen Dank!
+        Andere Nutzer können jetzt dafür abstimmen. Vielen Dank!
       </div>
       <button class="btn-secondary" onclick={() => { step = 'form'; submitResult = null; }}>
         Weitere Idee einreichen

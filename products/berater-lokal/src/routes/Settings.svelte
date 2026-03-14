@@ -41,12 +41,12 @@
 
     <form onsubmit={handleSave}>
       <div class="field">
-        <label for="name">Buero / Firma</label>
+        <label for="name">Büro / Firma</label>
         <input id="name" bind:value={form.name} placeholder="z.B. Mustermann Finanzberatung" />
       </div>
       <div class="row">
         <div class="field">
-          <label for="strasse">Strasse</label>
+          <label for="strasse">Straße</label>
           <input id="strasse" bind:value={form.strasse} />
         </div>
         <div class="field small">

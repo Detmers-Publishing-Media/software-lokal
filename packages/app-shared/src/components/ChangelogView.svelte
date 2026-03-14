@@ -38,7 +38,7 @@
   {#if loading}
     <p class="muted">Wird geladen...</p>
   {:else if versions.length === 0}
-    <p class="muted">Noch keine Eintraege vorhanden.</p>
+    <p class="muted">Noch keine Einträge vorhanden.</p>
   {:else}
     {#each versions as ver}
       <section class="version-block">

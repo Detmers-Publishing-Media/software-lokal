@@ -120,10 +120,10 @@
   }
 
   const tabs = [
-    { id: 'persoenliches', label: 'Persoenliches' },
+    { id: 'persoenliches', label: 'Persönliches' },
     { id: 'einnahmen', label: 'Einnahmen & Ausgaben' },
     { id: 'versicherungen', label: 'Versicherungen' },
-    { id: 'vermoegen', label: 'Vermoegen & Schulden' },
+    { id: 'vermoegen', label: 'Vermögen & Schulden' },
     { id: 'altersvorsorge', label: 'Altersvorsorge' },
     { id: 'analyse', label: 'Analyse' },
   ];
@@ -151,11 +151,11 @@
   <div class="tab-content">
     {#if activeTab === 'persoenliches'}
       <fieldset>
-        <legend>Persoenliche Daten</legend>
+        <legend>Persönliche Daten</legend>
         <div class="form-grid">
           <label>Anrede
             <select bind:value={form.anrede}>
-              <option value="">-- Bitte waehlen --</option>
+              <option value="">-- Bitte wählen --</option>
               {#each ANREDE_OPTIONS as o}<option value={o.value}>{o.label}</option>{/each}
             </select>
           </label>
@@ -178,7 +178,7 @@
           <label class="checkbox-label">
             <input type="checkbox" bind:checked={form.raucher} /> Raucher
           </label>
-          <label>Groesse (cm)<input type="number" bind:value={form.groesse_cm} /></label>
+          <label>Größe (cm)<input type="number" bind:value={form.groesse_cm} /></label>
           <label>Gewicht (kg)<input type="number" step="0.1" bind:value={form.gewicht_kg} /></label>
         </div>
         <label class="full-width">Vorerkrankungen<textarea bind:value={form.vorerkrankungen} rows="2"></textarea></label>
@@ -188,7 +188,7 @@
 
       <fieldset>
         <legend>Kinder</legend>
-        <button class="btn btn-sm btn-secondary" onclick={addKind}>+ Kind hinzufuegen</button>
+        <button class="btn btn-sm btn-secondary" onclick={addKind}>+ Kind hinzufügen</button>
         {#each kinder as kind, i}
           <div class="inline-row">
             <input placeholder="Name" bind:value={kind.name} />
@@ -211,7 +211,7 @@
                 <td><select bind:value={e.typ}>{#each EINNAHMEN_TYPEN as o}<option value={o.value}>{o.label}</option>{/each}</select></td>
                 <td><input bind:value={e.bezeichnung} /></td>
                 <td><input type="number" step="0.01" bind:value={e.betrag} class="num-input" /></td>
-                <td><select bind:value={e.periode}><option value="monatlich">Monatlich</option><option value="jaehrlich">Jaehrlich</option></select></td>
+                <td><select bind:value={e.periode}><option value="monatlich">Monatlich</option><option value="jaehrlich">Jährlich</option></select></td>
                 <td><button class="btn btn-sm btn-danger" onclick={async () => { einnahmen = await removeItem(einnahmen, i, deleteEinnahme); }}>X</button></td>
               </tr>
             {/each}
@@ -230,7 +230,7 @@
                 <td><select bind:value={a.kategorie}>{#each AUSGABEN_KATEGORIEN as o}<option value={o.value}>{o.label}</option>{/each}</select></td>
                 <td><input bind:value={a.bezeichnung} /></td>
                 <td><input type="number" step="0.01" bind:value={a.betrag} class="num-input" /></td>
-                <td><select bind:value={a.periode}><option value="monatlich">Monatlich</option><option value="jaehrlich">Jaehrlich</option></select></td>
+                <td><select bind:value={a.periode}><option value="monatlich">Monatlich</option><option value="jaehrlich">Jährlich</option></select></td>
                 <td><button class="btn btn-sm btn-danger" onclick={async () => { ausgaben = await removeItem(ausgaben, i, deleteAusgabe); }}>X</button></td>
               </tr>
             {/each}
@@ -263,8 +263,8 @@
 
     {:else if activeTab === 'vermoegen'}
       <fieldset>
-        <legend>Vermoegenswerte</legend>
-        <button class="btn btn-sm btn-secondary" onclick={addVermoegen}>+ Vermoegenswert</button>
+        <legend>Vermögenswerte</legend>
+        <button class="btn btn-sm btn-secondary" onclick={addVermoegen}>+ Vermögenswert</button>
         <table>
           <thead><tr><th>Typ</th><th>Bezeichnung</th><th>Wert (EUR)</th><th>Sparrate/Monat</th><th>Rendite %</th><th></th></tr></thead>
           <tbody>
@@ -327,8 +327,8 @@
 
     {:else if activeTab === 'analyse'}
       <div class="analyse">
-        <h2>Lueckenanalyse</h2>
-        <p class="hint">Basierend auf den erfassten Daten. Bitte alle Tabs ausfuellen fuer eine vollstaendige Analyse.</p>
+        <h2>Lückenanalyse</h2>
+        <p class="hint">Basierend auf den erfassten Daten. Bitte alle Tabs ausfüllen für eine vollständige Analyse.</p>
         <table class="analyse-table">
           <thead><tr><th>Risiko</th><th>IST</th><th>SOLL</th><th>Status</th></tr></thead>
           <tbody>
@@ -339,15 +339,15 @@
                 <td>{e.soll}</td>
                 <td>
                   <span class="status-dot status-{e.status}"></span>
-                  {e.status === 'gruen' ? 'OK' : e.status === 'gelb' ? 'Pruefen' : 'Handlungsbedarf'}
+                  {e.status === 'gruen' ? 'OK' : e.status === 'gelb' ? 'Prüfen' : 'Handlungsbedarf'}
                   {#if e.luecke > 0}
-                    <span class="luecke-hint">Luecke: {new Intl.NumberFormat('de-DE').format(e.luecke)} EUR</span>
+                    <span class="luecke-hint">Lücke: {new Intl.NumberFormat('de-DE').format(e.luecke)} EUR</span>
                   {/if}
                 </td>
               </tr>
             {/each}
             {#if analyseErgebnisse.length === 0}
-              <tr><td colspan="4" class="empty-row">Noch keine Daten fuer die Analyse vorhanden.</td></tr>
+              <tr><td colspan="4" class="empty-row">Noch keine Daten für die Analyse vorhanden.</td></tr>
             {/if}
           </tbody>
         </table>

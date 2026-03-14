@@ -122,7 +122,7 @@
 
   function statusLabel(s) {
     const labels = {
-      open: 'Offen', analyzing: 'Wird analysiert', resolved: 'Geloest',
+      open: 'Offen', analyzing: 'Wird analysiert', resolved: 'Gelöst',
       escalated: 'Eskaliert', closed: 'Geschlossen',
     };
     return labels[s] || s;
@@ -150,10 +150,10 @@
         Problem melden
       </button>
       <button class="btn-secondary" onclick={handleDiagnose} disabled={diagRunning}>
-        {diagRunning ? 'Laeuft...' : 'Diagnose starten'}
+        {diagRunning ? 'Läuft...' : 'Diagnose starten'}
       </button>
       <button class="btn-secondary" onclick={handleBackup} disabled={backupRunning}>
-        {backupRunning ? 'Backup laeuft...' : 'Backup erstellen'}
+        {backupRunning ? 'Backup läuft...' : 'Backup erstellen'}
       </button>
       <button class="btn-secondary" onclick={handleCopyInfo}>
         {copyDone ? 'Kopiert!' : 'Technische Infos kopieren'}
@@ -218,11 +218,11 @@
 
     <!-- Ticket list -->
     <section class="tickets">
-      <h2>Meine Faelle</h2>
+      <h2>Meine Fälle</h2>
       {#if ticketsLoading}
-        <p class="muted">Lade Faelle...</p>
+        <p class="muted">Lade Fälle...</p>
       {:else if tickets.length === 0}
-        <p class="muted">Keine offenen Faelle.</p>
+        <p class="muted">Keine offenen Fälle.</p>
       {:else}
         <table>
           <thead>
@@ -247,10 +247,10 @@
     <div class="community-mode">
       <p class="muted">
         Sie nutzen den Community-Modus.
-        Alle Funktionen stehen Ihnen zur Verfuegung.
+        Alle Funktionen stehen Ihnen zur Verfügung.
       </p>
       <p class="muted">
-        Fuer persoenlichen Support, automatische Updates und weitere Services:
+        Für persönlichen Support, automatische Updates und weitere Services:
       </p>
       <div class="cta-buttons">
         <span class="link">Supportvertrag erwerben auf detmers-publish.de</span>
@@ -262,13 +262,13 @@
     <hr />
 
     <section class="self-help">
-      <h2>Selbsthilfe (immer verfuegbar)</h2>
+      <h2>Selbsthilfe (immer verfügbar)</h2>
       <div class="actions">
         <button class="btn-secondary" onclick={handleDiagnose} disabled={diagRunning}>
-          {diagRunning ? 'Laeuft...' : 'Diagnose starten'}
+          {diagRunning ? 'Läuft...' : 'Diagnose starten'}
         </button>
         <button class="btn-secondary" onclick={handleBackup} disabled={backupRunning}>
-        {backupRunning ? 'Backup laeuft...' : 'Backup erstellen'}
+        {backupRunning ? 'Backup läuft...' : 'Backup erstellen'}
       </button>
         <button class="btn-secondary" onclick={handleCopyInfo}>
         {copyDone ? 'Kopiert!' : 'Technische Infos kopieren'}

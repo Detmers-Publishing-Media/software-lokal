@@ -34,22 +34,22 @@
 </script>
 
 <div class="page">
-  <h1>Integritaetspruefung</h1>
+  <h1>Integritätsprüfung</h1>
   <p class="hint">
-    Berater Lokal fuehrt ein lueckenloses Aenderungsprotokoll mit HMAC-SHA256 Hash-Kette.
+    Berater Lokal führt ein lückenloses Änderungsprotokoll mit HMAC-SHA256 Hash-Kette.
     Jeder Eintrag ist kryptographisch mit dem vorherigen verkettet. Manipulation wird erkannt.
   </p>
 
   <div class="verify-box" class:valid={verifyResult?.valid} class:invalid={verifyResult && !verifyResult.valid}>
     {#if verifying}
-      <span>Pruefe Hash-Kette...</span>
+      <span>Prüfe Hash-Kette...</span>
     {:else if verifyResult}
       {#if verifyResult.valid}
         <span class="status-ok">Hash-Kette intakt</span>
-        <span class="detail">{verifyResult.checked} Eintraege geprueft, keine Manipulation erkannt.</span>
+        <span class="detail">{verifyResult.checked} Einträge geprüft, keine Manipulation erkannt.</span>
       {:else}
-        <span class="status-fail">Hash-Kette beschaedigt!</span>
-        <span class="detail">{verifyResult.errors.length} Fehler in {verifyResult.checked} Eintraegen.</span>
+        <span class="status-fail">Hash-Kette beschädigt!</span>
+        <span class="detail">{verifyResult.errors.length} Fehler in {verifyResult.checked} Einträgen.</span>
         <ul>
           {#each verifyResult.errors as err}
             <li>Event #{err.event_id}: {err.error}</li>
@@ -57,12 +57,12 @@
         </ul>
       {/if}
     {/if}
-    <button class="btn-secondary" onclick={runVerification} disabled={verifying}>Erneut pruefen</button>
+    <button class="btn-secondary" onclick={runVerification} disabled={verifying}>Erneut prüfen</button>
   </div>
 
-  <h2>Letzte Eintraege</h2>
+  <h2>Letzte Einträge</h2>
   {#if events.length === 0}
-    <p class="empty">Noch keine Eintraege im Protokoll.</p>
+    <p class="empty">Noch keine Einträge im Protokoll.</p>
   {:else}
     <table>
       <thead>

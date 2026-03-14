@@ -120,7 +120,7 @@
         </select>
       </label>
 
-      <button class="btn btn-secondary" onclick={selectFile}>Datei auswaehlen...</button>
+      <button class="btn btn-secondary" onclick={selectFile}>Datei auswählen...</button>
       {#if filePath}
         <span class="file-path">{filePath.split('/').pop()}</span>
       {/if}
@@ -169,7 +169,7 @@
     {/if}
 
     {#if result}
-      <div class="success-msg">{result.count} Eintraege erfolgreich importiert.</div>
+      <div class="success-msg">{result.count} Einträge erfolgreich importiert.</div>
     {/if}
     {#if error}
       <div class="error-msg">Fehler: {error}</div>
@@ -181,8 +181,8 @@
     <p class="hint">Die Vorlagen finden Sie im Ordner <code>templates/</code> des Installationsverzeichnisses:</p>
     <ul>
       <li><strong>kundenfragebogen.xlsx</strong> — Fragebogen zum Versand an Kunden vor dem Termin</li>
-      <li><strong>konditionen-versicherung.xlsx</strong> — Vorlage fuer Versicherungskonditionen</li>
-      <li><strong>konditionen-darlehen.xlsx</strong> — Vorlage fuer Darlehenskonditionen</li>
+      <li><strong>konditionen-versicherung.xlsx</strong> — Vorlage für Versicherungskonditionen</li>
+      <li><strong>konditionen-darlehen.xlsx</strong> — Vorlage für Darlehenskonditionen</li>
     </ul>
   </section>
 </div>

@@ -66,7 +66,7 @@
   }
 
   async function handleDelete() {
-    if (!confirm(`"${kunde.vorname} ${kunde.nachname}" wirklich loeschen? Alle zugehoerigen Daten werden entfernt.`)) return;
+    if (!confirm(`"${kunde.vorname} ${kunde.nachname}" wirklich löschen? Alle zugehörigen Daten werden entfernt.`)) return;
     await deleteKunde(kundeId);
     currentView.set('kunden');
   }
@@ -89,15 +89,15 @@
     <div class="actions">
       <button class="btn btn-accent" onclick={handlePdf}>PDF erstellen</button>
       <button class="btn btn-primary" onclick={() => currentView.set(`kunde-edit:${kundeId}`)}>Bearbeiten</button>
-      <button class="btn btn-danger" onclick={handleDelete}>Loeschen</button>
-      <button class="btn btn-secondary" onclick={() => currentView.set('kunden')}>Zurueck</button>
+      <button class="btn btn-danger" onclick={handleDelete}>Löschen</button>
+      <button class="btn btn-secondary" onclick={() => currentView.set('kunden')}>Zurück</button>
     </div>
   </div>
 
   <!-- Ampel-Zusammenfassung -->
   <div class="ampel-bar">
     <span class="ampel-item ampel-rot">{ampel.rot} Handlungsbedarf</span>
-    <span class="ampel-item ampel-gelb">{ampel.gelb} Pruefen</span>
+    <span class="ampel-item ampel-gelb">{ampel.gelb} Prüfen</span>
     <span class="ampel-item ampel-gruen">{ampel.gruen} OK</span>
   </div>
 
@@ -116,7 +116,7 @@
       <span class="card-value negative">{fmt(sumPolicen)} EUR</span>
     </div>
     <div class="card">
-      <span class="card-label">Frei verfuegbar</span>
+      <span class="card-label">Frei verfügbar</span>
       <span class="card-value" class:positive={freiVerfuegbar >= 0} class:negative={freiVerfuegbar < 0}>{fmt(freiVerfuegbar)} EUR</span>
     </div>
   </div>
@@ -124,7 +124,7 @@
   <!-- Lueckenanalyse -->
   {#if analyseErgebnisse.length > 0}
   <section>
-    <h2>Lueckenanalyse</h2>
+    <h2>Lückenanalyse</h2>
     <table class="analyse-table">
       <thead><tr><th>Risiko</th><th>IST</th><th>SOLL</th><th>Status</th></tr></thead>
       <tbody>
@@ -133,7 +133,7 @@
             <td>{e.risiko}</td>
             <td>{e.ist}</td>
             <td>{e.soll}</td>
-            <td><span class="dot dot-{e.status}"></span> {e.status === 'gruen' ? 'OK' : e.status === 'gelb' ? 'Pruefen' : 'Handlungsbedarf'}</td>
+            <td><span class="dot dot-{e.status}"></span> {e.status === 'gruen' ? 'OK' : e.status === 'gelb' ? 'Prüfen' : 'Handlungsbedarf'}</td>
           </tr>
         {/each}
       </tbody>

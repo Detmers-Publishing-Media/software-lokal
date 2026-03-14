@@ -3,9 +3,9 @@
   let { status, labels = {} } = $props();
 
   const defaultLabels = {
-    active: 'Aktiv', inactive: 'Inaktiv', deleted: 'Geloescht',
+    active: 'Aktiv', inactive: 'Inaktiv', deleted: 'Gelöscht',
     draft: 'Entwurf', sent: 'Versendet', paid: 'Bezahlt',
-    overdue: 'Ueberfaellig', cancelled: 'Storniert',
+    overdue: 'Überfällig', cancelled: 'Storniert',
     open: 'Offen', closed: 'Geschlossen',
     yes: 'Ja', no: 'Nein',
     aktiv: 'Aktiv', passiv: 'Passiv', ausgetreten: 'Ausgetreten', verstorben: 'Verstorben',
