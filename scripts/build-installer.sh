@@ -38,11 +38,18 @@ tar czf "$DIST_DIR/$TARBALL_NAME" \
     --exclude='dist' \
     --exclude='.git' \
     --exclude='node_modules' \
+    --exclude='release' \
+    --exclude='*-unpacked' \
+    --exclude='*.AppImage' \
+    --exclude='*.exe' \
+    --exclude='*.blockmap' \
+    --exclude='*.dmg' \
     --exclude='__pycache__' \
     --exclude='target' \
     --exclude='*.log' \
     --exclude='*.pid' \
     --exclude='*.zip' \
+    --exclude='*.tar.gz' \
     --exclude='.server-env' \
     --exclude='.tokens-env' \
     --exclude='.factory-passwords.env' \
@@ -69,8 +76,9 @@ chmod +x "$DIST_DIR/install.sh" "$DIST_DIR/control.sh"
 # Checksum und Build-Timestamp schreiben
 CHECKSUM=$(sha256sum "$DIST_DIR/$TARBALL_NAME" | cut -d' ' -f1)
 BUILD_TIME=$(date -u '+%Y-%m-%dT%H:%M:%SZ')
-echo "$CHECKSUM  $TARBALL_NAME  $BUILD_TIME" > "$DIST_DIR/CHECKSUM"
-echo "Checksum: ${CHECKSUM:0:16}... ($BUILD_TIME)"
+GIT_COMMIT=$(git -C "$PROJECT_DIR" rev-parse --short HEAD 2>/dev/null || echo "unknown")
+echo "$CHECKSUM  $TARBALL_NAME  $BUILD_TIME  $GIT_COMMIT" > "$DIST_DIR/CHECKSUM"
+echo "Checksum: ${CHECKSUM:0:16}... ($BUILD_TIME, git:$GIT_COMMIT)"
 
 echo ""
 echo "Fertig:"

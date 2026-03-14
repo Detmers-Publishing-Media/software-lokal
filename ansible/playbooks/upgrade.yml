@@ -125,6 +125,8 @@
 - name: "Phase 4: Smoke-Test"
   hosts: factory-prod
   gather_facts: false
+  vars:
+    server_ip: "{{ ansible_host }}"
   roles:
     - smoke-test
 

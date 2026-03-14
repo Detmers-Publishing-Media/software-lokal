@@ -10,9 +10,10 @@
   register: pg_check
   changed_when: false
 
-- name: "Smoke-Test: OpenClaw"
-  ansible.builtin.shell: docker exec factory-openclaw echo alive
-  register: openclaw_check
+- name: "Smoke-Test: Aider"
+  ansible.builtin.command:
+    cmd: /opt/aider-venv/bin/aider --version
+  register: aider_check
   changed_when: false
 
 - name: "Smoke-Test: Runner"
@@ -23,6 +24,11 @@
 - name: "Smoke-Test: Poller Timer"
   ansible.builtin.shell: systemctl is-active openclaw-poller.timer
   register: poller_check
+  changed_when: false
+
+- name: "Smoke-Test: AnythingLLM"
+  ansible.builtin.shell: docker inspect -f '{{ '{{' }}.State.Running{{ '}}' }}' factory-anythingllm
+  register: anythingllm_check
   changed_when: false
 
 - name: "Smoke-Test: Gateway /health"
@@ -51,7 +57,7 @@
   block:
     - name: "Deep-Smoke: Poller-Verarbeitung von STORY-000099 (nicht-blockierend)"
       ansible.builtin.shell: |
-        for i in $(seq 1 20); do
+        for i in $(seq 1 36); do
           STATE=$(docker exec factory-postgres psql -U forgejo -d forgejo -tAq -c \
             "SELECT stage FROM poller_state WHERE object_id='STORY-000099'" 2>/dev/null | tr -d '[:space:]')
           if [ "$STATE" = "pr_created" ] || [ "$STATE" = "done" ]; then
@@ -61,7 +67,13 @@
           echo "Warte... stage=$STATE ($(($i * 10))s)"
           sleep 10
         done
-        echo "DEEP_SMOKE_TIMEOUT: STORY-000099 did not complete in 200 seconds (stage=$STATE)"
+        echo "DEEP_SMOKE_TIMEOUT: STORY-000099 did not complete in 360 seconds (stage=$STATE)"
+        echo "--- Diagnostik ---"
+        echo "Poller Timer: $(systemctl is-active openclaw-poller.timer 2>/dev/null || echo 'FEHLER')"
+        echo "Poller Service: $(systemctl is-active openclaw-poller.service 2>/dev/null || echo 'inaktiv')"
+        echo "Aider: $(/opt/aider-venv/bin/aider --version 2>/dev/null || echo 'FEHLER')"
+        echo "Poller-Log (letzte 5 Zeilen):"
+        journalctl -u openclaw-poller.service --no-pager -n 5 2>/dev/null || echo "(kein Log)"
         exit 0
       register: smoke_result
       changed_when: false
@@ -72,7 +84,9 @@
 
     - name: "Deep-Smoke Warnung bei Timeout"
       ansible.builtin.debug:
-        msg: "WARNUNG: Poller/OpenClaw Pipeline hat STORY-000099 nicht verarbeitet. Bitte manuell pruefen."
+        msg: |
+          WARNUNG: Poller/Aider Pipeline hat STORY-000099 nicht verarbeitet.
+          {{ smoke_result.stdout_lines | select('search', '(Diagnostik|Poller|Aider|Log)') | join('\n') }}
       when: "'DEEP_SMOKE_TIMEOUT' in smoke_result.stdout"
 
 - name: "Deep-Smoke uebersprungen"
@@ -102,7 +116,7 @@
 
 - name: "Smoke-Test: Externer HTTPS-Zugriff Gateway"
   ansible.builtin.uri:
-    url: "https://gateway.{{ cloudflare_zone }}/health"
+    url: "https://{{ gateway_subdomain }}.{{ cloudflare_zone }}/health"
     status_code: 200
     validate_certs: false
   register: ext_gateway_check
@@ -131,7 +145,8 @@
       Smoke-Test Ergebnis:
         Forgejo:       ✅
         Postgres:      ✅
-        OpenClaw:      ✅
+        Aider:         ✅
+        AnythingLLM:   ✅
         Runner:        ✅
         Poller:        ✅
         Nightstop:     ✅

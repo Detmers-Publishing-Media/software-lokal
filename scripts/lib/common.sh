@@ -79,17 +79,9 @@ GITHUB_REPO="${GITHUB_REPO:-Detmers-Publishing-Media/software-lokal}"
 # Kopiert Env-Dateien aus /dev/shm nach ~/code-fabrik/,
 # damit sie nach dem Cleanup-Trap noch verfuegbar sind.
 persist_env_files() {
-    local target_dir
-    target_dir="$(cd "$SCRIPT_DIR/.." && pwd)"
-    local found=0
-    for f in .server-env .portal-env .tokens-env .factory-passwords.env .portal-passwords.env; do
-        if [ -f "$SHM_OUTPUT/$f" ]; then
-            cp "$SHM_OUTPUT/$f" "$target_dir/$f"
-            chmod 600 "$target_dir/$f"
-            found=1
-        fi
-    done
-    [ "$found" -eq 1 ] && echo "  Env-Dateien lokal persistiert."
+    # No-Op: Secrets liegen in KeePass, nicht auf der Festplatte.
+    # Lokale Env-Dateien werden nicht mehr persistiert (Fabrik im Koffer).
+    :
 }
 
 # --- GitHub Secrets aktualisieren ---
