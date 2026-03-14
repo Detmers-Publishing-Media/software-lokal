@@ -2,13 +2,17 @@
  * Event-Log with HMAC-SHA256 hash chain.
  * Append-only audit trail for all write operations.
  *
- * append/verifyChain/getEvents are delegated to tamper-evident-log
- * running in the Electron main process (via IPC).
+ * append/verifyChain/getEvents are delegated to the audit IPC bridge
+ * (tamper-evident-log running in the Electron main process).
+ * The bridge is injected as dependency or auto-detected from window.electronAPI.
  * replay remains here because it uses a custom handler-map pattern
  * with fromId/onProgress support.
  */
 
-export function createEventLog({ query }) {
+export function createEventLog({ query, audit }) {
+  // Auto-detect audit bridge from Electron preload if not injected
+  const auditBridge = audit || (typeof window !== 'undefined' && window.electronAPI?.audit);
+
   /**
    * The `version` field in events tracks the event DATA schema version.
    * It starts at 1 and increments when the data structure of an event type changes.
@@ -17,15 +21,18 @@ export function createEventLog({ query }) {
    */
 
   async function append(type, data, actor = 'app') {
-    return window.electronAPI.audit.append(type, data, actor);
+    if (!auditBridge) throw new Error('audit bridge not available');
+    return auditBridge.append(type, data, actor);
   }
 
   async function verifyChain(limit = 100) {
-    return window.electronAPI.audit.verify({ limit });
+    if (!auditBridge) throw new Error('audit bridge not available');
+    return auditBridge.verify({ limit });
   }
 
   async function getEvents(limit = 50, offset = 0) {
-    return window.electronAPI.audit.getEvents({ limit, offset, order: 'desc' });
+    if (!auditBridge) throw new Error('audit bridge not available');
+    return auditBridge.getEvents({ limit, offset, order: 'desc' });
   }
 
   /**

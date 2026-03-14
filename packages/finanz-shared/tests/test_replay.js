@@ -1,6 +1,6 @@
 import { describe, it, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { createTestDb, testHmac } from './helpers/test-db.js';
+import { createTestDb, createTestAudit } from './helpers/test-db.js';
 import { createSchema } from '../src/db/index.js';
 import { createEventLog } from '../src/models/index.js';
 
@@ -10,7 +10,7 @@ describe('Event replay (finanz-shared)', () => {
   beforeEach(async () => {
     db = await createTestDb();
     await createSchema(db.execute, {}, { product_id: 'test', app_version: '0.1.0' });
-    eventLog = createEventLog({ ...db, computeHmac: testHmac });
+    eventLog = createEventLog({ ...db, audit: createTestAudit(db) });
   });
 
   afterEach(() => db.close());

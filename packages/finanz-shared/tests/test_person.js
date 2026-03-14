@@ -1,6 +1,6 @@
 import { describe, it, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { createTestDb, testHmac } from './helpers/test-db.js';
+import { createTestDb, createTestAudit } from './helpers/test-db.js';
 import { createSchema } from '../src/db/index.js';
 import { createModels } from '../src/models/index.js';
 
@@ -10,7 +10,7 @@ describe('Person model', () => {
   beforeEach(async () => {
     db = await createTestDb();
     await createSchema(db.execute, { invoices: true }, { product_id: 'test', app_version: '0.1.0' });
-    models = createModels({ ...db, computeHmac: testHmac }, { invoices: true });
+    models = createModels({ ...db, audit: createTestAudit(db) }, { invoices: true });
   });
 
   afterEach(() => db.close());
