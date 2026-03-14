@@ -144,7 +144,13 @@
     </div>
   {/if}
 
-  {#if overdueItems.length === 0 && soonDueItems.length === 0}
+  {#if overdueItems.length === 0 && soonDueItems.length === 0 && stats.total === 0}
+    <div class="section section-tip">
+      <p class="tip-text">
+        <strong>Tipp:</strong> Ihre Berufsgenossenschaft stellt branchenspezifische Handlungshilfen bereit. Dort erfahren Sie, welche Prüfungen für Ihren Betrieb vorgeschrieben sind.
+      </p>
+    </div>
+  {:else if overdueItems.length === 0 && soonDueItems.length === 0}
     <div class="section section-ok">
       <p class="all-clear">Keine überfälligen oder bald fälligen Prüfungen. Alles im grünen Bereich.</p>
     </div>
@@ -223,6 +229,8 @@
   .section-urgent { border-color: #e53e3e; }
   .section-ok { padding: 1rem; background: #f0fff4; }
   .all-clear { color: #22543d; margin: 0; font-size: 0.875rem; }
+  .section-tip { background: #eff6ff; border-left: 3px solid #3b82f6; }
+  .tip-text { color: #1e40af; margin: 0; font-size: 0.875rem; line-height: 1.5; }
 
   .section-header {
     display: flex;

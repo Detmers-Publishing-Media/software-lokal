@@ -36,6 +36,9 @@
     <h1>Checklisten-Bibliothek</h1>
   {/if}
   <p class="description">Fertige Checklisten zum direkten Übernehmen. Die Checklisten können nach dem Import angepasst werden.</p>
+  <div class="info-box">
+    Diese Checklisten sind Ausgangspunkte, keine rechtsverbindlichen Prüfvorschriften. Passen Sie die Prüfpunkte an Ihren Betrieb an. Bei Unsicherheit: Fragen Sie Ihre Berufsgenossenschaft (BG) oder Ihre Fachkraft für Arbeitssicherheit (SiFa).
+  </div>
 
   <div class="library-grid">
     {#each templates as t}
@@ -84,6 +87,15 @@
 <style>
   .page { display: flex; flex-direction: column; gap: 1rem; }
   .description { color: var(--color-text-muted); font-size: 0.875rem; }
+  .info-box {
+    padding: 0.75rem 1rem;
+    background: #eff6ff;
+    border-left: 3px solid #3b82f6;
+    border-radius: 0.375rem;
+    font-size: 0.8125rem;
+    color: #1e40af;
+    line-height: 1.5;
+  }
   .library-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 1rem; }
   .library-card {
     padding: 1rem;

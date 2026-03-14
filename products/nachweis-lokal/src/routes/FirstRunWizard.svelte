@@ -115,6 +115,9 @@
       {:else if step === 2}
         <h2>Was prüfen Sie?</h2>
         <p class="hint">Wählen Sie die Checklisten, die zu Ihrer Organisation passen. Sie können später weitere hinzufügen oder eigene erstellen.</p>
+        <div class="info-box">
+          Welche Prüfungen für Ihren Betrieb vorgeschrieben sind, hängt von Ihrer Branche, Ihren Räumen und Ihren Geräten ab. Diese Checklisten decken häufige Fälle ab — sie ersetzen aber keine fachkundige Beratung. Ihre Berufsgenossenschaft oder Fachkraft für Arbeitssicherheit kann Ihnen sagen, welche Prüfungen Sie konkret benötigen.
+        </div>
         <div class="template-grid">
           {#each libraryData as t}
             <button
@@ -286,6 +289,17 @@
     color: var(--color-text-muted);
     font-size: 0.8125rem;
     margin: 0 0 1rem;
+  }
+
+  .info-box {
+    padding: 0.75rem 1rem;
+    background: #eff6ff;
+    border-left: 3px solid #3b82f6;
+    border-radius: 0.375rem;
+    font-size: 0.8125rem;
+    color: #1e40af;
+    line-height: 1.5;
+    margin-bottom: 1rem;
   }
 
   .welcome p { font-size: 0.9375rem; line-height: 1.5; margin: 0 0 1rem; }
