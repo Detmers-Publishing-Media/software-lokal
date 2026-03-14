@@ -7,6 +7,7 @@
     saveInspection, initInspectionResults, getTemplateItems, getOrgProfile
   } from '../lib/db.js';
   import { generateBlankFormPdf } from '../lib/pdf.js';
+  import Glossar from '../components/Glossar.svelte';
 
   let stats = $state({ total: 0, offen: 0, bestanden: 0, bemaengelt: 0 });
   let dueItems = $state([]);
@@ -147,12 +148,12 @@
   {#if overdueItems.length === 0 && soonDueItems.length === 0 && stats.total === 0}
     <div class="section section-tip">
       <p class="tip-text">
-        <strong>Tipp:</strong> Ihre Berufsgenossenschaft stellt branchenspezifische Handlungshilfen bereit. Dort erfahren Sie, welche Prüfungen für Ihren Betrieb vorgeschrieben sind.
+        <strong>Tipp:</strong> Welche Prüfungen müssen Sie machen? Das hängt von Ihrem Betrieb ab. Ihre <Glossar term="BG">Berufsgenossenschaft (BG)</Glossar> hilft Ihnen — die Beratung ist kostenlos. Die BG hat Listen für jede Branche.
       </p>
     </div>
   {:else if overdueItems.length === 0 && soonDueItems.length === 0}
     <div class="section section-ok">
-      <p class="all-clear">Keine überfälligen oder bald fälligen Prüfungen. Alles im grünen Bereich.</p>
+      <p class="all-clear">Ihre eingerichteten Prüfungen sind alle aktuell. Prüfen Sie unter „Checklisten", ob es weitere Prüfungen gibt, die für Ihren Betrieb wichtig sind.</p>
     </div>
   {/if}
 
@@ -171,7 +172,7 @@
     </div>
     <div class="stat-card">
       <div class="stat-value danger">{stats.bemaengelt}</div>
-      <div class="stat-label">Bemängelt</div>
+      <div class="stat-label">Mit Mängeln</div>
     </div>
   </div>
 
@@ -207,7 +208,7 @@
               {#if insp.object_name}<span class="recent-object">{insp.object_name}</span>{/if}
             </div>
             <div class="recent-meta">
-              <span class="badge badge-{insp.status === 'bestanden' ? 'success' : insp.status === 'bemaengelt' ? 'danger' : 'muted'}">{insp.status}</span>
+              <span class="badge badge-{insp.status === 'bestanden' ? 'success' : insp.status === 'bemaengelt' ? 'danger' : 'muted'}">{insp.status === 'bemaengelt' ? 'Mit Mängeln' : insp.status}</span>
               <span class="recent-date">{formatDate(insp.inspection_date)}</span>
             </div>
           </div>

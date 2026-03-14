@@ -80,7 +80,7 @@
       <option value="alle">Alle Status</option>
       <option value="offen">Offen</option>
       <option value="bestanden">Bestanden</option>
-      <option value="bemaengelt">Bemängelt</option>
+      <option value="bemaengelt">Mit Mängeln</option>
       <option value="abgebrochen">Abgebrochen</option>
     </select>
     <button class="btn-secondary" onclick={handleExportCSV}>CSV</button>
@@ -112,7 +112,7 @@
             <td>{insp.template_name ?? '-'}</td>
             <td>{insp.object_name ?? '-'}</td>
             <td>{insp.inspector}</td>
-            <td><span class="badge {statusClass(insp.status)}">{insp.status}</span></td>
+            <td><span class="badge {statusClass(insp.status)}">{insp.status === 'bemaengelt' ? 'Mit Mängeln' : insp.status}</span></td>
           </tr>
         {/each}
       </tbody>

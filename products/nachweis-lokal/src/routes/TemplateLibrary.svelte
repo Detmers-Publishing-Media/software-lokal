@@ -3,6 +3,7 @@
   import { currentView } from '../lib/stores/navigation.js';
   import { importLibraryTemplate, getTemplates } from '../lib/db.js';
   import libraryData from '../assets/template-library.json';
+  import Glossar from '../components/Glossar.svelte';
 
   let { embedded = false } = $props();
 
@@ -10,6 +11,25 @@
   let existingNames = $state([]);
   let importing = $state(null);
   let importedIds = $state(new Set());
+  let selectedBranch = $state('alle');
+
+  const branchLabels = [
+    { key: 'alle', label: 'Alle' },
+    { key: 'gastro', label: 'Gastronomie' },
+    { key: 'buero', label: 'Büro' },
+    { key: 'kita', label: 'Kita' },
+    { key: 'handwerk', label: 'Handwerk' },
+    { key: 'einzelhandel', label: 'Einzelhandel' },
+    { key: 'hausverwaltung', label: 'Hausverwaltung' },
+    { key: 'verein', label: 'Verein' },
+  ];
+
+  let filteredTemplates = $derived.by(() => {
+    if (selectedBranch === 'alle') return templates;
+    return templates.filter(t =>
+      t.branches && (t.branches.includes(selectedBranch) || t.branches.includes('alle'))
+    );
+  });
 
   onMount(async () => {
     templates = libraryData;
@@ -37,11 +57,21 @@
   {/if}
   <p class="description">Fertige Checklisten zum direkten Übernehmen. Die Checklisten können nach dem Import angepasst werden.</p>
   <div class="info-box">
-    Diese Checklisten sind Ausgangspunkte, keine rechtsverbindlichen Prüfvorschriften. Passen Sie die Prüfpunkte an Ihren Betrieb an. Bei Unsicherheit: Fragen Sie Ihre Berufsgenossenschaft (BG) oder Ihre Fachkraft für Arbeitssicherheit (SiFa).
+    Diese Checklisten sind ein guter Start — sie sind keine amtliche Vorschrift. Passen Sie die Punkte an Ihren Betrieb an. Wenn Sie unsicher sind: Fragen Sie Ihre <Glossar term="BG">Berufsgenossenschaft (BG)</Glossar>. Jeder Betrieb in Deutschland hat eine BG.
+  </div>
+
+  <div class="branch-filter">
+    {#each branchLabels as b}
+      <button
+        class="branch-btn"
+        class:active={selectedBranch === b.key}
+        onclick={() => selectedBranch = b.key}
+      >{b.label}</button>
+    {/each}
   </div>
 
   <div class="library-grid">
-    {#each templates as t}
+    {#each filteredTemplates as t}
       <div class="library-card">
         <div class="card-header">
           <h3>{t.name}</h3>
@@ -95,6 +125,22 @@
     font-size: 0.8125rem;
     color: #1e40af;
     line-height: 1.5;
+  }
+  .branch-filter { display: flex; flex-wrap: wrap; gap: 0.375rem; }
+  .branch-btn {
+    padding: 0.25rem 0.75rem;
+    border: 1px solid var(--color-border);
+    border-radius: 1rem;
+    background: none;
+    font-size: 0.8125rem;
+    cursor: pointer;
+    color: var(--color-text);
+  }
+  .branch-btn:hover { border-color: var(--color-primary); }
+  .branch-btn.active {
+    background: var(--color-primary);
+    color: white;
+    border-color: var(--color-primary);
   }
   .library-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 1rem; }
   .library-card {

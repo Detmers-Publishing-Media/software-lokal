@@ -5,6 +5,7 @@
     importLibraryTemplate, getTemplates
   } from '../lib/db.js';
   import libraryData from '../assets/template-library.json';
+  import Glossar from '../components/Glossar.svelte';
 
   let { oncomplete } = $props();
 
@@ -15,6 +16,25 @@
 
   // Step 2: Checklisten aus Bibliothek
   let selectedTemplates = $state(new Set());
+  let selectedBranch = $state('alle');
+
+  const branchLabels = [
+    { key: 'alle', label: 'Alle' },
+    { key: 'gastro', label: 'Gastronomie' },
+    { key: 'buero', label: 'Büro' },
+    { key: 'kita', label: 'Kita' },
+    { key: 'handwerk', label: 'Handwerk' },
+    { key: 'einzelhandel', label: 'Einzelhandel' },
+    { key: 'hausverwaltung', label: 'Hausverwaltung' },
+    { key: 'verein', label: 'Verein' },
+  ];
+
+  let filteredLibrary = $derived.by(() => {
+    if (selectedBranch === 'alle') return libraryData;
+    return libraryData.filter(t =>
+      t.branches && (t.branches.includes(selectedBranch) || t.branches.includes('alle'))
+    );
+  });
 
   // Step 3: Erstes Geraet / Raum
   let object = $state({ name: '', location: '', category: '' });
@@ -110,16 +130,28 @@
             </div>
           </div>
           <p class="welcome-hint">Das Dashboard erinnert Sie automatisch an fällige Prüfungen.</p>
+          <div class="info-box info-box-warning">
+            <strong>Warum ist das wichtig?</strong> Als Unternehmer müssen Sie bestimmte Dinge regelmäßig prüfen — zum Beispiel Feuerlöscher, elektrische Geräte oder Fluchtwege. Wenn etwas passiert und Sie keine Prüfung nachweisen können, haften Sie persönlich. Auch Ihre Versicherung kann die Zahlung verweigern.
+          </div>
         </div>
 
       {:else if step === 2}
         <h2>Was prüfen Sie?</h2>
         <p class="hint">Wählen Sie die Checklisten, die zu Ihrer Organisation passen. Sie können später weitere hinzufügen oder eigene erstellen.</p>
         <div class="info-box">
-          Welche Prüfungen für Ihren Betrieb vorgeschrieben sind, hängt von Ihrer Branche, Ihren Räumen und Ihren Geräten ab. Diese Checklisten decken häufige Fälle ab — sie ersetzen aber keine fachkundige Beratung. Ihre Berufsgenossenschaft oder Fachkraft für Arbeitssicherheit kann Ihnen sagen, welche Prüfungen Sie konkret benötigen.
+          Welche Prüfungen Sie machen müssen, ist bei jedem Betrieb anders. Diese Checklisten helfen Ihnen beim Start — sie sind aber keine vollständige Liste. Fragen Sie Ihre <Glossar term="BG">Berufsgenossenschaft (BG)</Glossar>. Die BG sagt Ihnen, welche Prüfungen Sie genau brauchen.
+        </div>
+        <div class="branch-filter">
+          {#each branchLabels as b}
+            <button
+              class="branch-btn"
+              class:active={selectedBranch === b.key}
+              onclick={() => selectedBranch = b.key}
+            >{b.label}</button>
+          {/each}
         </div>
         <div class="template-grid">
-          {#each libraryData as t}
+          {#each filteredLibrary as t}
             <button
               class="template-card"
               class:selected={selectedTemplates.has(t.id)}
@@ -302,6 +334,12 @@
     margin-bottom: 1rem;
   }
 
+  .info-box-warning {
+    background: #fffbeb;
+    border-left-color: #f59e0b;
+    color: #92400e;
+  }
+
   .welcome p { font-size: 0.9375rem; line-height: 1.5; margin: 0 0 1rem; }
   .welcome-steps { display: flex; flex-direction: column; gap: 0.75rem; margin: 1.25rem 0; }
   .welcome-step {
@@ -361,6 +399,23 @@
     outline: none;
     border-color: var(--color-primary);
     box-shadow: 0 0 0 2px rgba(43, 108, 176, 0.15);
+  }
+
+  .branch-filter { display: flex; flex-wrap: wrap; gap: 0.375rem; margin-bottom: 0.75rem; }
+  .branch-btn {
+    padding: 0.25rem 0.75rem;
+    border: 1px solid var(--color-border);
+    border-radius: 1rem;
+    background: none;
+    font-size: 0.75rem;
+    cursor: pointer;
+    color: var(--color-text);
+  }
+  .branch-btn:hover { border-color: var(--color-primary); }
+  .branch-btn.active {
+    background: var(--color-primary);
+    color: white;
+    border-color: var(--color-primary);
   }
 
   .template-grid {

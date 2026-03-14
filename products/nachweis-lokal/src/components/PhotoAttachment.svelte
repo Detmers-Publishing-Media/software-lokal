@@ -49,7 +49,7 @@
   }
 
   async function handleDelete(attachment) {
-    if (!confirm(`Foto "${attachment.file_name}" loeschen?`)) return;
+    if (!confirm(`Foto "${attachment.file_name}" löschen?`)) return;
     const deleted = await deleteAttachment(attachment.id);
     if (deleted?.file_path && window.electronAPI?.fs?.unlink) {
       try { await window.electronAPI.fs.unlink(deleted.file_path); } catch { /* ignore */ }
@@ -66,7 +66,7 @@
           <img src="file://{a.file_path}" alt={a.file_name} loading="lazy" />
           <span class="thumb-name">{a.file_name}</span>
           {#if !readonly}
-            <button class="thumb-delete" onclick={() => handleDelete(a)} title="Loeschen">&times;</button>
+            <button class="thumb-delete" onclick={() => handleDelete(a)} title="Löschen">&times;</button>
           {/if}
         </div>
       {/each}
@@ -74,7 +74,7 @@
   {/if}
   {#if !readonly}
     <button class="btn-photo" onclick={handleAddPhoto} disabled={loading}>
-      {loading ? 'Wird geladen...' : 'Foto hinzufuegen'}
+      {loading ? 'Wird geladen...' : 'Foto hinzufügen'}
     </button>
   {/if}
 </div>

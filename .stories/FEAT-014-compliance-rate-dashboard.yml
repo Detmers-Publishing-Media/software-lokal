@@ -1,0 +1,41 @@
+# Compliance-Rate auf dem Dashboard
+
+id: "FEAT-014"
+title: "Compliance-Rate und Monatsübersicht auf dem Dashboard"
+epic: "NACHWEIS-UX"
+status: "inbox"
+priority: 2
+
+story_type: "product-fast"
+lane: "fast"
+platform_impact: "none"
+founder_gate_required: false
+force_approve_allowed: true
+auto_merge_allowed: true
+
+description: |
+  Das Dashboard zeigt aktuell nur absolute Zahlen (Gesamt, Offen,
+  Bestanden, Mit Mängeln). Es fehlt eine relative Kennzahl die
+  dem Nutzer zeigt, wie gut er seine Prüfpflichten erfüllt.
+
+  Umsetzung:
+  - Compliance-Rate als Prozent-Kreis oder großer Wert
+  - "X von Y Prüfungen diesen Monat durchgeführt"
+  - Optional: Trend (besser/schlechter als letzter Monat)
+  - Optional: Streak ("3 Monate in Folge alle pünktlich")
+
+  Motivation: Stärkster Motivator für regelmäßige Nutzung.
+  Positive Verstärkung statt nur Warnungen.
+
+acceptance_criteria:
+  - "Compliance-Rate als Prozentwert auf dem Dashboard sichtbar"
+  - "Monatsübersicht zeigt durchgeführte vs. fällige Prüfungen"
+  - "Rate berücksichtigt nur Prüfungen mit Intervall (wiederkehrende)"
+  - "100% wird grün hervorgehoben"
+
+affected_files:
+  - "products/nachweis-lokal/src/routes/Dashboard.svelte"
+  - "products/nachweis-lokal/src/lib/db.js"
+
+depends_on: []
+estimated_effort: "M"

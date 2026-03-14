@@ -4,6 +4,7 @@
     "name": "Brandschutz-Begehung",
     "description": "Jährliche Brandschutz-Begehung nach ASR A2.2",
     "category": "Sicherheit",
+    "branches": ["alle"],
     "interval_days": 365,
     "items": [
       { "label": "Flucht- und Rettungswege frei und gekennzeichnet?", "hint": "Breite mind. 1,20 m, keine Versperrungen", "required": true },
@@ -21,6 +22,7 @@
     "name": "DGUV Vorschrift 3 Elektroprüfung",
     "description": "Prüfung ortsveränderlicher elektrischer Betriebsmittel nach DGUV V3",
     "category": "Elektro",
+    "branches": ["alle"],
     "interval_days": 180,
     "items": [
       { "label": "Sichtprüfung Anschlussleitung (Beschädigung, Knickstellen)?", "required": true },
@@ -38,6 +40,7 @@
     "name": "Spielgeräteprüfung",
     "description": "Visuell-taktile Inspektion von Spielgeräten nach DIN EN 1176",
     "category": "Spielplatz",
+    "branches": ["kita", "verein", "hausverwaltung"],
     "interval_days": 90,
     "items": [
       { "label": "Fundamente und Verankerungen stabil?", "hint": "Keine Auswaschungen, fester Sitz", "required": true },
@@ -56,6 +59,7 @@
     "name": "Prüfung Leitern und Tritte",
     "description": "Wiederkehrende Prüfung von Leitern und Tritten nach BetrSichV",
     "category": "Arbeitsmittel",
+    "branches": ["handwerk", "hausverwaltung", "alle"],
     "interval_days": 365,
     "items": [
       { "label": "Typenschild vorhanden und lesbar?", "required": true },
@@ -72,6 +76,7 @@
     "name": "Erste-Hilfe-Ausstattung",
     "description": "Prüfung der Erste-Hilfe-Materialien nach ASR A4.3",
     "category": "Sicherheit",
+    "branches": ["alle"],
     "interval_days": 90,
     "items": [
       { "label": "Verbandkasten vorhanden und zugänglich?", "hint": "Standort gekennzeichnet (weisses Kreuz auf grünem Grund)", "required": true },
@@ -88,6 +93,7 @@
     "name": "Regalprüfung",
     "description": "Jährliche Prüfung von Lagerregalen nach DIN EN 15635 / DGUV Regel 108-007",
     "category": "Lager",
+    "branches": ["einzelhandel", "handwerk"],
     "interval_days": 365,
     "items": [
       { "label": "Standsicherheit gegeben (lotrecht, kein Kippen)?", "hint": "Sichtprüfung und ggf. Wasserwaage", "required": true },
@@ -106,6 +112,7 @@
     "name": "UVV Fahrzeugprüfung",
     "description": "Jährliche Unfallverhütungsvorschrift-Prüfung für Dienstfahrzeuge nach DGUV V70",
     "category": "Fahrzeuge",
+    "branches": ["handwerk"],
     "interval_days": 365,
     "items": [
       { "label": "Beleuchtung vollständig und funktionsfähig?", "hint": "Abblendlicht, Fernlicht, Blinker, Bremslicht, Rückfahrlicht", "required": true },
@@ -125,6 +132,7 @@
     "name": "PSA-Prüfung",
     "description": "Prüfung der Persönlichen Schutzausrüstung nach PSA-Benutzungsverordnung",
     "category": "Arbeitsschutz",
+    "branches": ["handwerk"],
     "interval_days": 365,
     "items": [
       { "label": "Schutzhelm unbeschädigt, Alterung im Rahmen?", "hint": "Thermoplaste max. 4 Jahre, Duroplaste max. 8 Jahre", "required": true },
@@ -142,6 +150,7 @@
     "name": "Hygiene-Kontrolle Küche",
     "description": "Regelmäßige Hygienekontrolle für Küchen und Gemeinschaftsverpflegung nach HACCP",
     "category": "Hygiene",
+    "branches": ["gastro", "kita"],
     "interval_days": 30,
     "items": [
       { "label": "Arbeitsflächen sauber und desinfiziert?", "required": true },
@@ -161,6 +170,7 @@
     "name": "Gefährdungsbeurteilung Büroarbeitsplatz",
     "description": "Beurteilung der Arbeitsbedingungen an Bildschirmarbeitsplätzen nach ArbStättV",
     "category": "Arbeitsschutz",
+    "branches": ["buero"],
     "interval_days": 365,
     "items": [
       { "label": "Bildschirm flimmerfrei und ausreichend groß?", "hint": "Mind. 22 Zoll, obere Bildschirmkante auf Augenhöhe", "required": true },
@@ -179,6 +189,7 @@
     "name": "Sicherheitsunterweisung",
     "description": "Jährliche Sicherheitsunterweisung nach ArbSchG §12 und DGUV Vorschrift 1",
     "category": "Arbeitsschutz",
+    "branches": ["alle"],
     "interval_days": 365,
     "items": [
       { "label": "Allgemeine Gefahren am Arbeitsplatz besprochen?", "required": true },
@@ -197,6 +208,7 @@
     "name": "IT-Serverraum Kontrolle",
     "description": "Regelmäßige Kontrolle des Serverraums (physische Sicherheit und Umgebung)",
     "category": "IT",
+    "branches": ["buero"],
     "interval_days": 90,
     "items": [
       { "label": "Zutrittskontrolle funktionsfähig?", "hint": "Schloss, Kartenleser oder Code", "required": true },
@@ -215,6 +227,7 @@
     "name": "Aufzugsprüfung",
     "description": "Wiederkehrende Prüfung von Aufzugsanlagen nach BetrSichV (Zwischenprüfung)",
     "category": "Aufzug",
+    "branches": ["hausverwaltung"],
     "interval_days": 730,
     "items": [
       { "label": "Türen schließen und verriegeln korrekt?", "hint": "Automatik- und Handbetrieb prüfen", "required": true },
@@ -234,6 +247,7 @@
     "name": "Legionellenprüfung",
     "description": "Prüfung der Trinkwasseranlage auf Legionellen nach TrinkwV §14b",
     "category": "Hygiene",
+    "branches": ["hausverwaltung"],
     "interval_days": 365,
     "items": [
       { "label": "Warmwassertemperatur am Austritt >= 60 Grad?", "hint": "Am Boiler/Speicher messen", "required": true },
@@ -251,6 +265,7 @@
     "name": "Fluchtweg- und Notausgang-Prüfung",
     "description": "Halbjährliche Prüfung der Flucht- und Rettungswege nach ASR A2.3",
     "category": "Sicherheit",
+    "branches": ["alle"],
     "interval_days": 180,
     "items": [
       { "label": "Fluchttüren öffnen in Fluchtrichtung und ohne Schlüssel?", "hint": "Panikschloss/Paniktür prüfen", "required": true },
@@ -268,6 +283,7 @@
     "name": "Kraftbetätigte Türen und Tore",
     "description": "Jährliche Prüfung kraftbetätigter Fenster, Türen und Tore nach ASR A1.7",
     "category": "Gebäude",
+    "branches": ["handwerk", "einzelhandel", "hausverwaltung"],
     "interval_days": 365,
     "items": [
       { "label": "Schließkraft im Toleranzbereich (max. 150 N)?", "hint": "Kraftmessgerät verwenden", "required": true },
@@ -285,6 +301,7 @@
     "name": "Werkzeugmaschinen-Prüfung",
     "description": "Wiederkehrende Prüfung von Werkzeugmaschinen nach BetrSichV",
     "category": "Arbeitsmittel",
+    "branches": ["handwerk"],
     "interval_days": 365,
     "items": [
       { "label": "Schutzeinrichtungen (Verdeckungen, Hauben) vorhanden und intakt?", "required": true },
@@ -303,6 +320,7 @@
     "name": "Druckbehälter / Kompressor",
     "description": "Wiederkehrende Prüfung von Druckbehältern und Kompressoren nach BetrSichV",
     "category": "Arbeitsmittel",
+    "branches": ["handwerk"],
     "interval_days": 730,
     "items": [
       { "label": "Sicherheitsventil vorhanden und funktionsfähig?", "hint": "Ansprechdruck prüfen", "required": true },
@@ -320,6 +338,7 @@
     "name": "Kita-Sicherheitscheck Innenräume",
     "description": "Regelmäßige Sicherheitsprüfung der Innenräume in Kindertagesstätten nach GUV-SI 8017",
     "category": "Kita",
+    "branches": ["kita"],
     "interval_days": 90,
     "items": [
       { "label": "Steckdosen mit Kindersicherung versehen?", "required": true },
@@ -338,6 +357,7 @@
     "name": "Kita-Sicherheitscheck Außengelände",
     "description": "Regelmäßige Sicherheitsprüfung des Außengeländes in Kindertagesstätten nach DIN EN 1176",
     "category": "Kita",
+    "branches": ["kita"],
     "interval_days": 30,
     "items": [
       { "label": "Zaun/Einfriedung intakt und kindersicher (mind. 1 m)?", "required": true },
@@ -355,6 +375,7 @@
     "name": "Turngeräte / Sporthalle",
     "description": "Jährliche Prüfung von Turngeräten und Sporthallenausstattung nach DIN EN 913",
     "category": "Sport",
+    "branches": ["verein", "kita"],
     "interval_days": 365,
     "items": [
       { "label": "Wandbefestigungen von Sprossenwänden, Ringen etc. fest?", "required": true },
@@ -373,6 +394,7 @@
     "name": "Werkraum / Labor (Schule)",
     "description": "Prüfung von Werkräumen und Laboren in Schulen nach GUV-SR 2001",
     "category": "Schule",
+    "branches": ["kita"],
     "interval_days": 365,
     "items": [
       { "label": "Not-Aus-Schalter für alle Maschinen funktionsfähig?", "required": true },
@@ -390,6 +412,7 @@
     "name": "Gaststätten-Hygiene (HACCP)",
     "description": "Hygienekontrolle für Gastronomie und Gemeinschaftsverpflegung nach IfSG/HACCP",
     "category": "Hygiene",
+    "branches": ["gastro"],
     "interval_days": 30,
     "items": [
       { "label": "Personalschulung nach IfSG §43 dokumentiert?", "hint": "Erstbelehrung Gesundheitsamt + jährliche Folgebelehrung", "required": true },
@@ -407,6 +430,7 @@
     "name": "Fettabscheider-Prüfung",
     "description": "Wartung und Kontrolle von Fettabscheidern nach DIN 4040-100",
     "category": "Gebäude",
+    "branches": ["gastro"],
     "interval_days": 30,
     "items": [
       { "label": "Fettschichtdicke gemessen und dokumentiert?", "hint": "Entleerung bei > 80% Füllstand", "required": true },
@@ -423,6 +447,7 @@
     "name": "Klima- und Lüftungsanlage",
     "description": "Prüfung raumlufttechnischer Anlagen nach VDI 6022",
     "category": "Gebäude",
+    "branches": ["buero", "gastro", "hausverwaltung"],
     "interval_days": 365,
     "items": [
       { "label": "Luftfilter sauber oder gewechselt?", "hint": "Differenzdruck prüfen", "required": true },
@@ -440,6 +465,7 @@
     "name": "Rauchmelder-Prüfung (Wohngebäude)",
     "description": "Jährliche Prüfung der Rauchmelder nach DIN 14676 und Landesbauordnung",
     "category": "Gebäude",
+    "branches": ["hausverwaltung"],
     "interval_days": 365,
     "items": [
       { "label": "Rauchmelder in allen Schlafräumen vorhanden?", "required": true },
@@ -457,6 +483,7 @@
     "name": "Absturzsicherung / Dachflächen",
     "description": "Prüfung von Absturzsicherungen auf Dachflächen nach DGUV Regel 112-198",
     "category": "Gebäude",
+    "branches": ["hausverwaltung", "handwerk"],
     "interval_days": 365,
     "items": [
       { "label": "Anschlagpunkte / Sekuranten fest und korrosionsfrei?", "hint": "Drehmoment-Prüfung lt. Herstellerangabe", "required": true },
@@ -474,6 +501,7 @@
     "name": "Hebezeuge und Krane",
     "description": "Wiederkehrende Prüfung von Hebezeugen nach BetrSichV und DGUV Vorschrift 52",
     "category": "Arbeitsmittel",
+    "branches": ["handwerk"],
     "interval_days": 365,
     "items": [
       { "label": "Tragmittel (Seile, Ketten, Gurte) ohne Verschleiß?", "hint": "Ablegereife nach Herstellerangabe prüfen", "required": true },
@@ -491,6 +519,7 @@
     "name": "Notstromanlage / NEA",
     "description": "Prüfung der Netzersatzanlage nach DIN 6280 und VDE 0100-710",
     "category": "Elektro",
+    "branches": ["hausverwaltung", "buero"],
     "interval_days": 90,
     "items": [
       { "label": "Probelauf durchgeführt (mind. 15 Min. unter Last)?", "required": true },
@@ -508,6 +537,7 @@
     "name": "Gefahrstofflager-Kontrolle",
     "description": "Prüfung der Gefahrstofflagerung nach GefStoffV und TRGS 510",
     "category": "Arbeitsschutz",
+    "branches": ["handwerk"],
     "interval_days": 90,
     "items": [
       { "label": "Gefahrstoffe in zugelassenen Behältern gelagert?", "required": true },
@@ -526,6 +556,7 @@
     "name": "Minigolf-Anlage",
     "description": "Prüfung der Minigolf-Bahnen, Hindernisse und Ausstattung (Verkehrssicherungspflicht / DIN EN 13899)",
     "category": "Freizeit",
+    "branches": ["gastro", "verein"],
     "interval_days": 90,
     "items": [
       { "label": "Bahnen-Belag eben und rissfrei (keine Stolperkanten)?", "required": true },
@@ -547,6 +578,7 @@
     "name": "Schank- und Zapfanlage",
     "description": "Hygiene- und Sicherheitsprüfung der Schankanlage nach DIN 6650 und Lebensmittelhygiene",
     "category": "Gastro",
+    "branches": ["gastro"],
     "interval_days": 7,
     "items": [
       { "label": "Leitungsreinigung durchgeführt?", "hint": "Alle 7 Tage Pflicht — Reinigungsdatum dokumentieren", "required": true },
@@ -565,6 +597,7 @@
     "name": "Außenbereich / Terrasse / Biergarten",
     "description": "Sicherheits- und Sauberkeitskontrolle des Außenbereichs (Verkehrssicherungspflicht)",
     "category": "Gastro",
+    "branches": ["gastro"],
     "interval_days": 7,
     "items": [
       { "label": "Mobiliar stabil und sauber (Stühle, Tische, Bänke)?", "hint": "Wackelnde Beine, Splitter, Verschmutzung", "required": true },
@@ -584,6 +617,7 @@
     "name": "Saisonstart-Checkliste",
     "description": "Inbetriebnahme nach Winterpause für Saisonbetriebe (Gastro, Freizeit, Freibad)",
     "category": "Saisonbetrieb",
+    "branches": ["gastro", "verein"],
     "interval_days": 365,
     "items": [
       { "label": "Wasserleitungen gespült (mind. 5 Min. alle Entnahmestellen)?", "hint": "Legionellen-Risiko nach Stagnation > 72h — Warmwasser auf 60 Grad", "required": true },
@@ -604,6 +638,7 @@
     "name": "Kassenprüfung / TSE",
     "description": "Prüfung der Registrierkasse und des technischen Sicherheitsmoduls nach KassenSichV / GoBD",
     "category": "Verwaltung",
+    "branches": ["gastro", "einzelhandel"],
     "interval_days": 30,
     "items": [
       { "label": "TSE-Modul aktiv und funktionsfähig?", "hint": "Status in Kassensoftware prüfen — darf nicht im Ausfallmodus sein", "required": true },

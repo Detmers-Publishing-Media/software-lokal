@@ -1,0 +1,40 @@
+# Bestätigungsmeldung nach Prüfungsabschluss
+
+id: "FEAT-015"
+title: "Erfolgsmeldung nach abgeschlossener Prüfung"
+epic: "NACHWEIS-UX"
+status: "inbox"
+priority: 2
+
+story_type: "product-fast"
+lane: "fast"
+platform_impact: "none"
+founder_gate_required: false
+force_approve_allowed: true
+auto_merge_allowed: true
+
+description: |
+  Nach dem Abschließen einer Prüfung wird der Nutzer kommentarlos
+  zur Detailansicht weitergeleitet. Es fehlt eine positive
+  Bestätigung dass die Prüfung gespeichert wurde.
+
+  Umsetzung:
+  - Nach Klick auf "Abschließen": kurze Erfolgsmeldung anzeigen
+  - "Prüfung abgeschlossen und gespeichert!"
+  - Wenn wiederkehrend: "Nächste Prüfung in X Tagen angelegt."
+  - Nach 3 Sekunden automatisch zur Detailansicht
+
+  Motivation: Positive Verstärkung. Der Nutzer fühlt sich
+  bestätigt dass er etwas Gutes getan hat.
+
+acceptance_criteria:
+  - "Grüne Erfolgsmeldung nach Prüfungsabschluss sichtbar"
+  - "Meldung zeigt ob Folgetermin angelegt wurde"
+  - "Automatische Weiterleitung nach 3 Sekunden"
+  - "Meldung ist auch bei manueller Navigation sichtbar"
+
+affected_files:
+  - "products/nachweis-lokal/src/routes/InspectionExecute.svelte"
+
+depends_on: []
+estimated_effort: "S"

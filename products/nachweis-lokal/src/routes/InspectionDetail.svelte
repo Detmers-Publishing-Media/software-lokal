@@ -34,7 +34,7 @@
   }
 
   function resultLabel(result) {
-    const labels = { offen: 'Offen', ok: 'OK', maengel: 'Mängel', nicht_anwendbar: 'N/A' };
+    const labels = { offen: 'Offen', ok: 'OK', maengel: 'Mängel', nicht_anwendbar: 'Entfällt' };
     return labels[result] ?? result;
   }
 
@@ -96,7 +96,7 @@
     <div class="header">
       <div>
         <h1>{inspection.title}</h1>
-        <span class="badge {statusClass(inspection.status)}">{inspection.status}</span>
+        <span class="badge {statusClass(inspection.status)}">{inspection.status === 'bemaengelt' ? 'Mit Mängeln' : inspection.status}</span>
       </div>
       <div class="actions">
         {#if inspection.status === 'offen'}

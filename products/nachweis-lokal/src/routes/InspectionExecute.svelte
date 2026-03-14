@@ -94,11 +94,11 @@
           <div class="check-buttons">
             <button class="result-btn {r.result === 'ok' ? 'active-ok' : ''}" onclick={() => setResult(i, 'ok')}>OK</button>
             <button class="result-btn {r.result === 'maengel' ? 'active-fail' : ''}" onclick={() => setResult(i, 'maengel')}>Mängel</button>
-            <button class="result-btn {r.result === 'nicht_anwendbar' ? 'active-na' : ''}" onclick={() => setResult(i, 'nicht_anwendbar')}>N/A</button>
+            <button class="result-btn {r.result === 'nicht_anwendbar' ? 'active-na' : ''}" onclick={() => setResult(i, 'nicht_anwendbar')}>Entfällt</button>
           </div>
           {#if r.result === 'maengel'}
             <textarea
-              placeholder="Mangelbeschreibung..."
+              placeholder="Was ist das Problem?"
               value={r.remark ?? ''}
               oninput={(e) => setRemark(i, e.target.value)}
               rows="2"

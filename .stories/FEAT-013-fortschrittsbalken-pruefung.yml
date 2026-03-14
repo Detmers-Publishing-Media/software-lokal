@@ -1,0 +1,39 @@
+# Fortschrittsbalken bei Prüfungsdurchführung
+
+id: "FEAT-013"
+title: "Fortschrittsbalken und Zähler bei Prüfungsdurchführung"
+epic: "NACHWEIS-UX"
+status: "inbox"
+priority: 2
+
+story_type: "product-fast"
+lane: "fast"
+platform_impact: "none"
+founder_gate_required: false
+force_approve_allowed: true
+auto_merge_allowed: true
+
+description: |
+  Bei der Prüfungsdurchführung (InspectionExecute) fehlt ein
+  Fortschrittsbalken. Der Nutzer weiß bei langen Checklisten (12+
+  Prüfpunkte) nicht, wie weit er ist und wie viel noch kommt.
+
+  Umsetzung:
+  - Fortschrittsbalken oben: visueller Balken mit Prozent
+  - Zähler: "4 von 12 Punkten bearbeitet"
+  - Optional: Scroll-to-next (nächsten unbearbeiteten Punkt anspringen)
+
+  Motivation: Reduziert den gefühlten Aufwand pro Prüfung und
+  verhindert Abbrüche bei längeren Checklisten.
+
+acceptance_criteria:
+  - "Fortschrittsbalken zeigt bearbeitete vs. offene Prüfpunkte"
+  - "Zähler zeigt 'X von Y Punkten bearbeitet'"
+  - "Balken aktualisiert sich sofort bei OK/Mängel/Entfällt-Klick"
+  - "Funktioniert bei 1 bis 50+ Prüfpunkten"
+
+affected_files:
+  - "products/nachweis-lokal/src/routes/InspectionExecute.svelte"
+
+depends_on: []
+estimated_effort: "S"
