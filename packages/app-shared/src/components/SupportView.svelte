@@ -10,6 +10,10 @@
   let submitting = $state(false);
   let submitResult = $state(null);
 
+  // Backup
+  let backupRunning = $state(false);
+  let backupResult = $state(null);
+
   // Diagnostics
   let diagRunning = $state(false);
   let diagResult = $state(null);
@@ -77,19 +81,34 @@
     }
   }
 
+  let copyDone = $state(false);
+
   async function handleCopyInfo() {
     await handleCompactInfo();
     if (compactInfo) {
       try {
         await navigator.clipboard.writeText(compactInfo);
+        copyDone = true;
+        setTimeout(() => copyDone = false, 3000);
       } catch (_) {}
     }
   }
 
   async function handleBackup() {
+    backupRunning = true;
+    backupResult = null;
     try {
-      await window.electronAPI.backup.create();
-    } catch (_) {}
+      const result = await window.electronAPI.backup.create();
+      if (result.ok) {
+        backupResult = { ok: true };
+        setTimeout(() => backupResult = null, 5000);
+      } else {
+        backupResult = { ok: false, error: result.error || 'Unbekannter Fehler' };
+      }
+    } catch (err) {
+      backupResult = { ok: false, error: err.message };
+    }
+    backupRunning = false;
   }
 
   function formatDate(iso) {
@@ -133,9 +152,23 @@
       <button class="btn-secondary" onclick={handleDiagnose} disabled={diagRunning}>
         {diagRunning ? 'Laeuft...' : 'Diagnose starten'}
       </button>
-      <button class="btn-secondary" onclick={handleBackup}>Backup erstellen</button>
-      <button class="btn-secondary" onclick={handleCopyInfo}>Technische Infos kopieren</button>
+      <button class="btn-secondary" onclick={handleBackup} disabled={backupRunning}>
+        {backupRunning ? 'Backup laeuft...' : 'Backup erstellen'}
+      </button>
+      <button class="btn-secondary" onclick={handleCopyInfo}>
+        {copyDone ? 'Kopiert!' : 'Technische Infos kopieren'}
+      </button>
     </section>
+
+    {#if backupResult}
+      <div class="result" class:success={backupResult.ok} class:error={!backupResult.ok}>
+        {#if backupResult.ok}
+          Backup erfolgreich erstellt.
+        {:else}
+          Backup fehlgeschlagen: {backupResult.error}
+        {/if}
+      </div>
+    {/if}
 
     {#if showSubmitForm}
       <section class="submit-form">
@@ -234,10 +267,24 @@
         <button class="btn-secondary" onclick={handleDiagnose} disabled={diagRunning}>
           {diagRunning ? 'Laeuft...' : 'Diagnose starten'}
         </button>
-        <button class="btn-secondary" onclick={handleBackup}>Backup erstellen</button>
-        <button class="btn-secondary" onclick={handleCopyInfo}>Technische Infos kopieren</button>
+        <button class="btn-secondary" onclick={handleBackup} disabled={backupRunning}>
+        {backupRunning ? 'Backup laeuft...' : 'Backup erstellen'}
+      </button>
+        <button class="btn-secondary" onclick={handleCopyInfo}>
+        {copyDone ? 'Kopiert!' : 'Technische Infos kopieren'}
+      </button>
       </div>
     </section>
+
+    {#if backupResult}
+      <div class="result" class:success={backupResult.ok} class:error={!backupResult.ok}>
+        {#if backupResult.ok}
+          Backup erfolgreich erstellt.
+        {:else}
+          Backup fehlgeschlagen: {backupResult.error}
+        {/if}
+      </div>
+    {/if}
 
     {#if diagResult && !diagResult.error}
       <section class="diag-result">
