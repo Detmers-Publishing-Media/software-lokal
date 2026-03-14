@@ -1,7 +1,7 @@
 <script>
   import { onMount } from 'svelte';
   import { currentView } from './lib/stores/navigation.js';
-  import { initDb } from './lib/db.js';
+  import { initDb, getModels } from './lib/db.js';
   import InvoiceList from './routes/InvoiceList.svelte';
   import InvoiceForm from './routes/InvoiceForm.svelte';
   import InvoiceDetail from './routes/InvoiceDetail.svelte';
@@ -11,16 +11,24 @@
   import EuerOverview from './routes/EuerOverview.svelte';
   import TransactionList from './routes/TransactionList.svelte';
   import TransactionForm from './routes/TransactionForm.svelte';
-  import ProfileSettings from './routes/ProfileSettings.svelte';
-  import { SupportView, FeatureRequestView, ChangelogView } from '@codefabrik/app-shared/components';
+  import Settings from './routes/Settings.svelte';
+  import SupportHub from './routes/SupportHub.svelte';
+  import FirstRunWizard from './routes/FirstRunWizard.svelte';
 
   let dbReady = $state(false);
   let dbError = $state(null);
+  let showWizard = $state(false);
 
   onMount(async () => {
     try {
       await initDb();
       dbReady = true;
+      // First-Run-Erkennung: kein Profil
+      const { profile } = getModels();
+      const p = await profile.get();
+      if (!p?.name) {
+        showWizard = true;
+      }
       window.electronAPI?.app?.rendererReady?.();
     } catch (err) {
       dbError = err.message;
@@ -28,18 +36,36 @@
     }
   });
 
-  const navItems = [
-    { id: 'invoices', label: 'Rechnungen' },
-    { id: 'customers', label: 'Kunden' },
-    { id: 'transactions', label: 'Buchungen' },
-    { id: 'euer', label: 'EÜR' },
-    { id: 'profile', label: 'Profil' },
-    { id: 'feature-request', label: 'Ideen' },
-    { id: 'changelog', label: 'Was ist neu?' },
-    { id: 'support', label: 'Support' },
+  const navGroups = [
+    { items: [
+      { id: 'invoices', label: 'Rechnungen' },
+    ]},
+    { header: 'VORBEREITEN', items: [
+      { id: 'customers', label: 'Kunden' },
+    ]},
+    { header: 'FAKTURIEREN', items: [
+      { id: 'transactions', label: 'Buchungen' },
+    ]},
+    { header: 'AUSWERTEN', items: [
+      { id: 'euer', label: 'EÜR' },
+    ]},
+    { separator: true, items: [
+      { id: 'settings', label: 'Einstellungen' },
+      { id: 'support', label: 'Support' },
+    ]},
   ];
 
-  // Parse view for routing
+  function isActive(itemId) {
+    const v = $currentView;
+    if (itemId === 'invoices') return v === 'invoices' || v.startsWith('invoice');
+    if (itemId === 'customers') return v === 'customers' || v.startsWith('customer');
+    if (itemId === 'transactions') return v === 'transactions' || v === 'transaction:new';
+    if (itemId === 'euer') return v === 'euer';
+    if (itemId === 'settings') return v === 'settings' || v === 'profile';
+    if (itemId === 'support') return v === 'support' || v === 'feature-request' || v === 'changelog';
+    return v === itemId;
+  }
+
   let route = $derived.by(() => {
     const v = $currentView;
     if (v.startsWith('invoice:edit:')) return { page: 'invoice-edit', id: parseInt(v.split(':')[2]) };
@@ -50,9 +76,15 @@
     if (v.startsWith('customer:')) return { page: 'customer-detail', id: parseInt(v.split(':')[1]) };
     if (v === 'transaction:new') return { page: 'transaction-new' };
     if (v === 'transactions') return { page: 'transactions' };
+    if (v === 'profile') return { page: 'settings' };
+    if (v === 'feature-request' || v === 'changelog') return { page: 'support' };
     return { page: v };
   });
 </script>
+
+{#if showWizard}
+  <FirstRunWizard oncomplete={() => { showWizard = false; currentView.set('invoices'); }} />
+{/if}
 
 <div class="app-layout">
   <nav class="sidebar">
@@ -60,24 +92,25 @@
       <h2>Rechnung Lokal</h2>
     </div>
     <ul>
-      {#each navItems as item}
-        <li>
-          <button
-            class:active={$currentView.startsWith(item.id)}
-            onclick={() => currentView.set(item.id)}
-          >
-            {item.label}
-          </button>
-        </li>
+      {#each navGroups as group}
+        {#if group.separator}
+          <li class="separator"></li>
+        {/if}
+        {#if group.header}
+          <li class="group-header">{group.header}</li>
+        {/if}
+        {#each group.items as item}
+          <li>
+            <button
+              class:active={isActive(item.id)}
+              onclick={() => currentView.set(item.id)}
+            >
+              {item.label}
+            </button>
+          </li>
+        {/each}
       {/each}
     </ul>
-    {#if $currentView === 'euer' || $currentView === 'transactions'}
-      <div class="sub-actions">
-        <button class="small" onclick={() => currentView.set('transaction:new')}>
-          + Buchung
-        </button>
-      </div>
-    {/if}
   </nav>
 
   <main>
@@ -112,14 +145,10 @@
       <EuerOverview />
     {:else if route.page === 'transaction-new'}
       <TransactionForm />
-    {:else if route.page === 'profile'}
-      <ProfileSettings />
-    {:else if route.page === 'feature-request'}
-      <FeatureRequestView />
-    {:else if route.page === 'changelog'}
-      <ChangelogView />
+    {:else if route.page === 'settings'}
+      <Settings />
     {:else if route.page === 'support'}
-      <SupportView />
+      <SupportHub />
     {/if}
   </main>
 </div>
@@ -147,8 +176,22 @@
   .sidebar ul {
     list-style: none;
     padding: 0;
-    margin: 1rem 0;
+    margin: 0.5rem 0;
   }
+
+  .group-header {
+    padding: 0.75rem 1rem 0.25rem;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    color: #666;
+    letter-spacing: 0.05em;
+  }
+
+  .separator {
+    border-top: 1px solid #333;
+    margin: 0.5rem 0;
+  }
+
   .sidebar button {
     display: block;
     width: 100%;
@@ -162,8 +205,7 @@
   }
   .sidebar button:hover { color: white; background: #2a2a4e; }
   .sidebar button.active { color: white; background: #3a3a6e; border-left: 3px solid #6366f1; }
-  .sub-actions { padding: 0.5rem 1rem; }
-  .sub-actions .small { font-size: 0.85rem; padding: 0.3rem 0.8rem; }
+
   main {
     flex: 1;
     overflow-y: auto;

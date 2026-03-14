@@ -3,6 +3,8 @@
   import { getModels } from '../lib/db.js';
   import { PageHeader, FormSection, FormRow } from '@codefabrik/ui-shared/components';
 
+  let { embedded = false } = $props();
+
   let name = $state('');
   let street = $state('');
   let zip = $state('');
@@ -67,7 +69,9 @@
 </script>
 
 <div class="content">
-  <PageHeader title="Geschäftsprofil" />
+  {#if !embedded}
+    <PageHeader title="Geschäftsprofil" />
+  {/if}
   <p class="hint">Diese Daten erscheinen auf Ihren Rechnungen.</p>
 
   <form onsubmit={e => { e.preventDefault(); save(); }}>
