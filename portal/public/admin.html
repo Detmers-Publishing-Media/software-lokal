@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin — Detmers Publishing &amp; Media</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .admin-container { max-width: 1100px; margin: 0 auto; padding: 1rem; }
+    .login-box { max-width: 400px; margin: 4rem auto; }
+    .tab-bar { display: flex; gap: 0; border-bottom: 2px solid #e5e7eb; margin-bottom: 1.5rem; }
+    .tab-btn { padding: 0.6rem 1.2rem; background: none; border: none; border-bottom: 2px solid transparent; margin-bottom: -2px; font-size: 0.9rem; font-weight: 600; color: #6b7280; cursor: pointer; }
+    .tab-btn.active { color: #2563eb; border-bottom-color: #2563eb; }
+    .tab-btn:hover { color: #1a1a2e; }
+    .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+    .stat-card { background: #fff; border-radius: 8px; padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.08); text-align: center; }
+    .stat-card .num { font-size: 2rem; font-weight: 700; color: #2563eb; }
+    .stat-card .lbl { font-size: 0.8rem; color: #6b7280; }
+    table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+    th { background: #f9fafb; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: #6b7280; text-align: left; padding: 0.6rem 0.8rem; }
+    td { padding: 0.6rem 0.8rem; border-top: 1px solid #f3f4f6; font-size: 0.875rem; vertical-align: top; }
+    tr:hover td { background: #f9fafb; }
+    .mono { font-family: monospace; font-size: 0.8rem; }
+    .badge-open { background: #fee2e2; color: #991b1b; }
+    .badge-analyzing { background: #fef9c3; color: #854d0e; }
+    .badge-resolved { background: #dcfce7; color: #166534; }
+    .badge-closed { background: #f3f4f6; color: #374151; }
+    .badge-submitted { background: #dbeafe; color: #1e40af; }
+    .badge-planned { background: #e0e7ff; color: #3730a3; }
+    .badge-released { background: #dcfce7; color: #166534; }
+    .badge-declined { background: #f3f4f6; color: #64748b; }
+    .badge-in_progress { background: #fef9c3; color: #854d0e; }
+    .badge-active { background: #dcfce7; color: #166534; }
+    .badge-expired { background: #fee2e2; color: #991b1b; }
+    .badge-trial { background: #e0e7ff; color: #3730a3; }
+    .badge-digistore { background: #dcfce7; color: #166534; }
+    .detail-panel { background: #fff; border-radius: 8px; padding: 1.5rem; margin-bottom: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+    .detail-panel h3 { margin-bottom: 1rem; }
+    .detail-row { display: flex; gap: 1rem; margin-bottom: 0.5rem; font-size: 0.875rem; }
+    .detail-row .dlabel { font-weight: 600; min-width: 140px; color: #6b7280; }
+    .detail-row .dvalue { flex: 1; }
+    .ki-bundle { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 1rem; font-family: monospace; font-size: 0.8rem; max-height: 300px; overflow-y: auto; white-space: pre-wrap; }
+    .action-bar { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 1rem; }
+    .action-bar select, .action-bar input { padding: 0.4rem 0.6rem; border: 1px solid #ddd; border-radius: 6px; font-size: 0.85rem; }
+    .action-bar .btn { padding: 0.4rem 1rem; font-size: 0.85rem; }
+    .btn-sm { padding: 0.25rem 0.75rem; font-size: 0.8rem; border-radius: 4px; }
+    .btn-danger { background: #dc2626; }
+    .btn-danger:hover { background: #b91c1c; }
+    .filter-bar { display: flex; gap: 0.75rem; margin-bottom: 1rem; align-items: center; flex-wrap: wrap; }
+    .filter-bar select, .filter-bar input { padding: 0.4rem 0.6rem; border: 1px solid #ddd; border-radius: 6px; font-size: 0.85rem; }
+    .filter-bar label { font-size: 0.8rem; font-weight: 600; color: #6b7280; }
+    .desc-preview { max-width: 300px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .empty { color: #9ca3af; font-style: italic; padding: 2rem; text-align: center; }
+    .back-link { font-size: 0.85rem; margin-bottom: 1rem; display: inline-block; cursor: pointer; color: #2563eb; }
+    .back-link:hover { text-decoration: underline; }
+    .instances-list { margin-top: 0.5rem; }
+    .instances-list table { font-size: 0.8rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container" style="max-width:1100px">
+      <h1><a href="/">Detmers Publishing &amp; Media</a></h1>
+      <nav>
+        <a href="/admin">Admin</a>
+        <a href="/status">Status</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Login -->
+  <div id="login-view" class="login-box" style="display:none">
+    <div class="card">
+      <h2>Admin-Zugang</h2>
+      <p style="color:#6b7280;font-size:0.9rem;margin-bottom:1rem">Token aus KeePass eingeben</p>
+      <form onsubmit="handleLogin(event)">
+        <label for="token">Admin-Token</label>
+        <input id="token" type="password" placeholder="Token einfuegen" autocomplete="off" />
+        <button type="submit" class="btn">Anmelden</button>
+      </form>
+      <div id="login-error" class="error" style="display:none;margin-top:1rem"></div>
+    </div>
+  </div>
+
+  <!-- Dashboard -->
+  <div id="dashboard-view" class="admin-container" style="display:none">
+    <div id="stats-area"></div>
+
+    <div class="tab-bar">
+      <button class="tab-btn active" onclick="switchTab('tickets')">Stoerungen</button>
+      <button class="tab-btn" onclick="switchTab('requests')">Ideen</button>
+      <button class="tab-btn" onclick="switchTab('licenses')">Lizenzen</button>
+    </div>
+
+    <div id="tab-content"></div>
+  </div>
+
+  <footer>Detmers Publishing &amp; Media — Admin</footer>
+
+  <script>
+    let TOKEN = sessionStorage.getItem('admin_token') || '';
+    let currentTab = 'tickets';
+    let ticketDetailId = null;
+    let requestDetailId = null;
+
+    function esc(s) { if (!s) return ''; const d = document.createElement('div'); d.textContent = String(s); return d.innerHTML; }
+    function fmtDate(iso) { if (!iso) return '—'; try { return new Date(iso).toLocaleDateString('de-DE', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' }); } catch(_) { return iso; } }
+    function badgeHtml(text, cls) { return '<span class="badge badge-' + esc(cls || text) + '">' + esc(text) + '</span>'; }
+
+    async function api(path, opts) {
+      const res = await fetch(path, {
+        ...opts,
+        headers: { 'Authorization': 'Bearer ' + TOKEN, 'Content-Type': 'application/json', ...(opts?.headers || {}) },
+      });
+      if (res.status === 401) { sessionStorage.removeItem('admin_token'); TOKEN = ''; showLogin(); throw new Error('Unauthorized'); }
+      return res;
+    }
+
+    // --- Auth ---
+    async function handleLogin(e) {
+      e.preventDefault();
+      TOKEN = document.getElementById('token').value.trim();
+      try {
+        const res = await api('/api/admin/stats');
+        if (!res.ok) throw new Error('Ungueltig');
+        sessionStorage.setItem('admin_token', TOKEN);
+        showDashboard();
+      } catch (_) {
+        document.getElementById('login-error').style.display = 'block';
+        document.getElementById('login-error').textContent = 'Token ungueltig oder Server nicht erreichbar';
+      }
+    }
+
+    function showLogin() {
+      document.getElementById('login-view').style.display = 'block';
+      document.getElementById('dashboard-view').style.display = 'none';
+    }
+
+    async function showDashboard() {
+      document.getElementById('login-view').style.display = 'none';
+      document.getElementById('dashboard-view').style.display = 'block';
+      await loadStats();
+      switchTab(currentTab);
+    }
+
+    // --- Stats ---
+    async function loadStats() {
+      try {
+        const res = await api('/api/admin/stats');
+        const d = await res.json();
+        document.getElementById('stats-area').innerHTML = `
+          <div class="stat-grid">
+            <div class="stat-card"><div class="num">${d.tickets.open || 0}</div><div class="lbl">Offene Stoerungen</div></div>
+            <div class="stat-card"><div class="num">${d.tickets.analyzing || 0}</div><div class="lbl">In Analyse</div></div>
+            <div class="stat-card"><div class="num">${d.requests.submitted || 0}</div><div class="lbl">Neue Ideen</div></div>
+            <div class="stat-card"><div class="num">${d.requests.planned || 0}</div><div class="lbl">Geplante Ideen</div></div>
+            <div class="stat-card"><div class="num">${d.licenses.active || 0}</div><div class="lbl">Aktive Lizenzen</div></div>
+            <div class="stat-card"><div class="num">${d.licenses.trial || 0}</div><div class="lbl">Trial-Keys</div></div>
+          </div>`;
+      } catch (_) {}
+    }
+
+    // --- Tab switching ---
+    function switchTab(tab) {
+      currentTab = tab;
+      ticketDetailId = null;
+      requestDetailId = null;
+      document.querySelectorAll('.tab-btn').forEach((b, i) => {
+        b.classList.toggle('active', ['tickets','requests','licenses'][i] === tab);
+      });
+      if (tab === 'tickets') loadTickets();
+      else if (tab === 'requests') loadRequests();
+      else if (tab === 'licenses') loadLicenses();
+    }
+
+    // --- Tickets ---
+    async function loadTickets() {
+      const area = document.getElementById('tab-content');
+      try {
+        const res = await api('/api/admin/tickets');
+        const tickets = await res.json();
+
+        if (!tickets.length) { area.innerHTML = '<div class="empty">Keine Stoerungen vorhanden.</div>'; return; }
+
+        area.innerHTML = `
+          <div class="filter-bar">
+            <label>Status:</label>
+            <select onchange="filterTickets(this.value)">
+              <option value="">Alle</option>
+              <option value="open">Offen</option>
+              <option value="analyzing">In Analyse</option>
+              <option value="resolved">Geloest</option>
+              <option value="closed">Geschlossen</option>
+            </select>
+          </div>
+          <table>
+            <thead><tr><th>Ref</th><th>Produkt</th><th>Status</th><th>Beschreibung</th><th>Erstellt</th><th></th></tr></thead>
+            <tbody>${tickets.map(t => `
+              <tr>
+                <td class="mono">${esc(t.ticket_ref)}</td>
+                <td>${esc(t.product_id)}</td>
+                <td>${badgeHtml(t.status)}</td>
+                <td class="desc-preview">${esc(t.user_description || '—')}</td>
+                <td>${fmtDate(t.created_at)}</td>
+                <td><button class="btn btn-sm" onclick="showTicketDetail(${t.id})">Details</button></td>
+              </tr>
+            `).join('')}</tbody>
+          </table>`;
+      } catch (err) { area.innerHTML = '<div class="error">' + esc(err.message) + '</div>'; }
+    }
+
+    async function filterTickets(status) {
+      const area = document.getElementById('tab-content');
+      try {
+        const url = status ? '/api/admin/tickets?status=' + status : '/api/admin/tickets';
+        const res = await api(url);
+        const tickets = await res.json();
+        const tbody = area.querySelector('tbody');
+        if (!tbody) return;
+        tbody.innerHTML = tickets.map(t => `
+          <tr>
+            <td class="mono">${esc(t.ticket_ref)}</td>
+            <td>${esc(t.product_id)}</td>
+            <td>${badgeHtml(t.status)}</td>
+            <td class="desc-preview">${esc(t.user_description || '—')}</td>
+            <td>${fmtDate(t.created_at)}</td>
+            <td><button class="btn btn-sm" onclick="showTicketDetail(${t.id})">Details</button></td>
+          </tr>
+        `).join('');
+      } catch (_) {}
+    }
+
+    async function showTicketDetail(id) {
+      const area = document.getElementById('tab-content');
+      try {
+        const res = await api('/api/admin/tickets/' + id);
+        const t = await res.json();
+
+        let bundleHtml = '';
+        if (t.ki_bundle) {
+          try {
+            const bundle = typeof t.ki_bundle === 'string' ? JSON.parse(t.ki_bundle) : t.ki_bundle;
+            bundleHtml = '<div class="ki-bundle">' + esc(JSON.stringify(bundle, null, 2)) + '</div>';
+          } catch (_) {
+            bundleHtml = '<div class="ki-bundle">' + esc(String(t.ki_bundle)) + '</div>';
+          }
+        }
+
+        area.innerHTML = `
+          <span class="back-link" onclick="loadTickets()">&larr; Zurueck zur Liste</span>
+          <div class="detail-panel">
+            <h3>${esc(t.ticket_ref)} ${badgeHtml(t.status)}</h3>
+            <div class="detail-row"><span class="dlabel">Produkt</span><span class="dvalue">${esc(t.product_id)}</span></div>
+            <div class="detail-row"><span class="dlabel">Erstellt</span><span class="dvalue">${fmtDate(t.created_at)}</span></div>
+            <div class="detail-row"><span class="dlabel">Geloest</span><span class="dvalue">${fmtDate(t.resolved_at)}</span></div>
+            <div class="detail-row"><span class="dlabel">Eskaliert</span><span class="dvalue">${t.escalated ? 'Ja' : 'Nein'}</span></div>
+            <div class="detail-row"><span class="dlabel">Beschreibung</span><span class="dvalue">${esc(t.user_description || '—')}</span></div>
+            ${bundleHtml ? '<h4 style="margin:1rem 0 0.5rem">Diagnose-Bundle (Klasse C)</h4>' + bundleHtml : ''}
+            ${t.ki_response ? '<div class="detail-row" style="margin-top:1rem"><span class="dlabel">KI-Antwort</span><span class="dvalue">' + esc(t.ki_response) + '</span></div>' : ''}
+            <div class="action-bar">
+              <select id="ticket-status">
+                <option value="open" ${t.status==='open'?'selected':''}>Offen</option>
+                <option value="analyzing" ${t.status==='analyzing'?'selected':''}>In Analyse</option>
+                <option value="escalated" ${t.status==='escalated'?'selected':''}>Eskaliert</option>
+                <option value="resolved" ${t.status==='resolved'?'selected':''}>Geloest</option>
+                <option value="closed" ${t.status==='closed'?'selected':''}>Geschlossen</option>
+              </select>
+              <button class="btn btn-sm" onclick="updateTicket(${t.id})">Status aendern</button>
+            </div>
+          </div>`;
+      } catch (err) { area.innerHTML = '<div class="error">' + esc(err.message) + '</div>'; }
+    }
+
+    async function updateTicket(id) {
+      const status = document.getElementById('ticket-status').value;
+      try {
+        await api('/api/admin/tickets/' + id, { method: 'PATCH', body: JSON.stringify({ status }) });
+        loadStats();
+        showTicketDetail(id);
+      } catch (_) {}
+    }
+
+    // --- Requests (Ideen) ---
+    async function loadRequests() {
+      const area = document.getElementById('tab-content');
+      try {
+        const res = await api('/api/admin/requests');
+        const reqs = await res.json();
+
+        if (!reqs.length) { area.innerHTML = '<div class="empty">Keine Ideen vorhanden.</div>'; return; }
+
+        area.innerHTML = `
+          <div class="filter-bar">
+            <label>Status:</label>
+            <select onchange="filterRequests(this.value)">
+              <option value="">Alle</option>
+              <option value="submitted">Neu</option>
+              <option value="planned">Geplant</option>
+              <option value="in_progress">In Arbeit</option>
+              <option value="released">Umgesetzt</option>
+              <option value="declined">Zurueckgestellt</option>
+            </select>
+          </div>
+          <table>
+            <thead><tr><th>Nr.</th><th>Produkt</th><th>Titel</th><th>Stimmen</th><th>Status</th><th>Version</th><th>Erstellt</th><th></th></tr></thead>
+            <tbody>${reqs.map(r => `
+              <tr>
+                <td class="mono">${esc(r.request_number)}</td>
+                <td>${esc(r.product_id)}</td>
+                <td class="desc-preview">${esc(r.title)}</td>
+                <td style="text-align:center;font-weight:600">${r.votes || 0}</td>
+                <td>${badgeHtml(r.status)}</td>
+                <td>${esc(r.target_version || '—')}</td>
+                <td>${fmtDate(r.created_at)}</td>
+                <td><button class="btn btn-sm" onclick="showRequestDetail(${r.id})">Details</button></td>
+              </tr>
+            `).join('')}</tbody>
+          </table>`;
+      } catch (err) { area.innerHTML = '<div class="error">' + esc(err.message) + '</div>'; }
+    }
+
+    async function filterRequests(status) {
+      const area = document.getElementById('tab-content');
+      try {
+        const url = status ? '/api/admin/requests?status=' + status : '/api/admin/requests';
+        const res = await api(url);
+        const reqs = await res.json();
+        const tbody = area.querySelector('tbody');
+        if (!tbody) return;
+        tbody.innerHTML = reqs.map(r => `
+          <tr>
+            <td class="mono">${esc(r.request_number)}</td>
+            <td>${esc(r.product_id)}</td>
+            <td class="desc-preview">${esc(r.title)}</td>
+            <td style="text-align:center;font-weight:600">${r.votes || 0}</td>
+            <td>${badgeHtml(r.status)}</td>
+            <td>${esc(r.target_version || '—')}</td>
+            <td>${fmtDate(r.created_at)}</td>
+            <td><button class="btn btn-sm" onclick="showRequestDetail(${r.id})">Details</button></td>
+          </tr>
+        `).join('');
+      } catch (_) {}
+    }
+
+    async function showRequestDetail(id) {
+      const area = document.getElementById('tab-content');
+      try {
+        const res = await api('/api/admin/requests');
+        const reqs = await res.json();
+        const r = reqs.find(x => x.id === id);
+        if (!r) { area.innerHTML = '<div class="error">Nicht gefunden</div>'; return; }
+
+        area.innerHTML = `
+          <span class="back-link" onclick="loadRequests()">&larr; Zurueck zur Liste</span>
+          <div class="detail-panel">
+            <h3>${esc(r.request_number)} — ${esc(r.title)} ${badgeHtml(r.status)}</h3>
+            <div class="detail-row"><span class="dlabel">Produkt</span><span class="dvalue">${esc(r.product_id)}</span></div>
+            <div class="detail-row"><span class="dlabel">Prioritaet</span><span class="dvalue">${esc(r.priority)}</span></div>
+            <div class="detail-row"><span class="dlabel">Stimmen</span><span class="dvalue" style="font-weight:700">${r.votes || 0}</span></div>
+            <div class="detail-row"><span class="dlabel">Erstellt</span><span class="dvalue">${fmtDate(r.created_at)}</span></div>
+            <div class="detail-row"><span class="dlabel">Zielversion</span><span class="dvalue">${esc(r.target_version || '—')}</span></div>
+            <div class="detail-row"><span class="dlabel">Beschreibung</span><span class="dvalue" style="white-space:pre-wrap">${esc(r.description)}</span></div>
+            ${r.decline_reason ? '<div class="detail-row"><span class="dlabel">Begruendung</span><span class="dvalue">' + esc(r.decline_reason) + '</span></div>' : ''}
+
+            <div class="action-bar">
+              <select id="req-status">
+                <option value="submitted" ${r.status==='submitted'?'selected':''}>Neu</option>
+                <option value="triaged" ${r.status==='triaged'?'selected':''}>Gesichtet</option>
+                <option value="planned" ${r.status==='planned'?'selected':''}>Geplant</option>
+                <option value="in_progress" ${r.status==='in_progress'?'selected':''}>In Arbeit</option>
+                <option value="released" ${r.status==='released'?'selected':''}>Umgesetzt</option>
+                <option value="declined" ${r.status==='declined'?'selected':''}>Zurueckgestellt</option>
+              </select>
+              <input id="req-version" type="text" placeholder="Zielversion (z.B. v0.3.0)" value="${esc(r.target_version || '')}" style="width:150px" />
+              <button class="btn btn-sm" onclick="updateRequest(${r.id})">Speichern</button>
+            </div>
+            <div class="action-bar" style="margin-top:0.5rem">
+              <input id="req-decline" type="text" placeholder="Begruendung (bei Zurueckstellung)" value="${esc(r.decline_reason || '')}" style="flex:1" />
+            </div>
+          </div>`;
+      } catch (err) { area.innerHTML = '<div class="error">' + esc(err.message) + '</div>'; }
+    }
+
+    async function updateRequest(id) {
+      const status = document.getElementById('req-status').value;
+      const target_version = document.getElementById('req-version').value.trim() || null;
+      const decline_reason = document.getElementById('req-decline').value.trim() || null;
+      try {
+        await api('/api/admin/requests/' + id, {
+          method: 'PATCH',
+          body: JSON.stringify({ status, target_version, decline_reason }),
+        });
+        loadStats();
+        showRequestDetail(id);
+      } catch (_) {}
+    }
+
+    // --- Licenses ---
+    async function loadLicenses() {
+      const area = document.getElementById('tab-content');
+      try {
+        const res = await api('/api/admin/licenses');
+        const lics = await res.json();
+
+        if (!lics.length) { area.innerHTML = '<div class="empty">Keine Lizenzen vorhanden.</div>'; return; }
+
+        area.innerHTML = `
+          <div class="filter-bar">
+            <label>Quelle:</label>
+            <select onchange="filterLicenses(this.value)">
+              <option value="">Alle</option>
+              <option value="auto-trial">Auto-Trial</option>
+              <option value="manual">Manuell</option>
+              <option value="digistore">Digistore24</option>
+            </select>
+          </div>
+          <table>
+            <thead><tr><th>Key</th><th>Produkt</th><th>Quelle</th><th>Status</th><th>Instanzen</th><th>Gueltig bis</th><th>Letzte Validierung</th><th>Notiz</th></tr></thead>
+            <tbody>${lics.map(l => `
+              <tr>
+                <td class="mono" style="font-size:0.75rem">${esc(l.license_key)}</td>
+                <td>${esc(l.product_name)}</td>
+                <td>${badgeHtml(l.source, l.source === 'digistore' ? 'digistore' : 'trial')}</td>
+                <td>${badgeHtml(l.status)}</td>
+                <td style="text-align:center">${l.instance_count || 0} / 3</td>
+                <td>${fmtDate(l.expires_at)}</td>
+                <td>${fmtDate(l.last_validated_at)}</td>
+                <td style="font-size:0.8rem">${esc(l.note || '')}</td>
+              </tr>
+            `).join('')}</tbody>
+          </table>`;
+      } catch (err) { area.innerHTML = '<div class="error">' + esc(err.message) + '</div>'; }
+    }
+
+    async function filterLicenses(source) {
+      const area = document.getElementById('tab-content');
+      try {
+        const url = source ? '/api/admin/licenses?source=' + source : '/api/admin/licenses';
+        const res = await api(url);
+        const lics = await res.json();
+        const tbody = area.querySelector('tbody');
+        if (!tbody) return;
+        tbody.innerHTML = lics.map(l => `
+          <tr>
+            <td class="mono" style="font-size:0.75rem">${esc(l.license_key)}</td>
+            <td>${esc(l.product_name)}</td>
+            <td>${badgeHtml(l.source, l.source === 'digistore' ? 'digistore' : 'trial')}</td>
+            <td>${badgeHtml(l.status)}</td>
+            <td style="text-align:center">${l.instance_count || 0} / 3</td>
+            <td>${fmtDate(l.expires_at)}</td>
+            <td>${fmtDate(l.last_validated_at)}</td>
+            <td style="font-size:0.8rem">${esc(l.note || '')}</td>
+          </tr>
+        `).join('');
+      } catch (_) {}
+    }
+
+    // --- Init ---
+    if (TOKEN) {
+      showDashboard();
+    } else {
+      showLogin();
+    }
+  </script>
+</body>
+</html>

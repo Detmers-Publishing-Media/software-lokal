@@ -243,4 +243,75 @@ describe('license-service', () => {
     const params = mockPool._calls[0].params;
     assert.ok(params[0].startsWith('CFTR-'), `Trial key should start with CFTR: ${params[0]}`);
   });
+
+  it('23: createAutoTrialLicense — source ist auto-trial', async () => {
+    mockPool.mockResult({ rows: [{ license_key: 'CFTM-AUTO-TEST-ABCD-EF12' }], rowCount: 1 });
+    await license.createAutoTrialLicense('mitglieder-lokal');
+    const sql = mockPool._calls[0].sql;
+    assert.ok(sql.includes("'auto-trial'"));
+    assert.ok(sql.includes('30 days'));
+  });
+
+  it('24: createAutoTrialLicense — berater-lokal bekommt CFTB', async () => {
+    mockPool.mockResult({ rows: [{}], rowCount: 1 });
+    await license.createAutoTrialLicense('berater-lokal');
+    const params = mockPool._calls[0].params;
+    assert.ok(params[0].startsWith('CFTB-'), `Trial key should start with CFTB: ${params[0]}`);
+  });
+
+  it('25: validateForApp — with instanceId tracks instance', async () => {
+    mockPool.mockResults([
+      // SELECT license
+      { rows: [{ id: 42, product_id: 'mitglieder-lokal', status: 'active', expires_at: new Date(Date.now() + 86400000).toISOString() }], rowCount: 1 },
+      // DELETE stale instances
+      { rows: [], rowCount: 0 },
+      // INSERT instance (upsert)
+      { rows: [], rowCount: 1 },
+      // COUNT instances
+      { rows: [{ cnt: '1' }], rowCount: 1 },
+      // UPDATE validation tracking
+      { rows: [], rowCount: 1 },
+    ]);
+    const result = await license.validateForApp('CFML-ABCD-EFGH-JKMN-PQRS', 'mitglieder-lokal', 'test-uuid-1234');
+    assert.equal(result.valid, true);
+    // Should have DELETE stale + INSERT + COUNT + UPDATE
+    assert.ok(mockPool._calls.length >= 4);
+  });
+
+  it('26: validateForApp — instance_limit_exceeded when count > 3', async () => {
+    mockPool.mockResults([
+      // SELECT license
+      { rows: [{ id: 42, product_id: 'mitglieder-lokal', status: 'active', expires_at: new Date(Date.now() + 86400000).toISOString() }], rowCount: 1 },
+      // DELETE stale instances
+      { rows: [], rowCount: 0 },
+      // INSERT instance (upsert)
+      { rows: [], rowCount: 1 },
+      // COUNT instances — 4 (over limit)
+      { rows: [{ cnt: '4' }], rowCount: 1 },
+      // DELETE the newly inserted instance
+      { rows: [], rowCount: 1 },
+    ]);
+    const result = await license.validateForApp('CFML-ABCD-EFGH-JKMN-PQRS', 'mitglieder-lokal', 'test-uuid-new');
+    assert.equal(result.valid, false);
+    assert.equal(result.reason, 'instance_limit_exceeded');
+  });
+
+  it('27: validateForApp — without instanceId skips tracking', async () => {
+    mockPool.mockResults([
+      { rows: [{ id: 42, product_id: 'mitglieder-lokal', status: 'active', expires_at: new Date(Date.now() + 86400000).toISOString() }], rowCount: 1 },
+      { rows: [], rowCount: 1 },
+    ]);
+    const result = await license.validateForApp('CFML-ABCD-EFGH-JKMN-PQRS', 'mitglieder-lokal');
+    assert.equal(result.valid, true);
+    // Only SELECT + UPDATE, no instance tracking
+    assert.equal(mockPool._calls.length, 2);
+  });
+
+  it('28: INSTANCE_LIMIT is 3', () => {
+    assert.equal(license.INSTANCE_LIMIT, 3);
+  });
+
+  it('29: INSTANCE_STALE_DAYS is 90', () => {
+    assert.equal(license.INSTANCE_STALE_DAYS, 90);
+  });
 });

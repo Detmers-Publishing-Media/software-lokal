@@ -43,6 +43,7 @@ describe('api-license', () => {
 
   beforeEach(() => {
     mockPool.reset();
+    if (licenseRoute._resetTrialRate) licenseRoute._resetTrialRate();
   });
 
   describe('POST /api/license/validate', () => {
@@ -291,6 +292,115 @@ describe('api-license', () => {
       assert.equal(res.status, 201);
       const data = await res.json();
       assert.equal(data.productId, 'finanz-rechner');
+    });
+  });
+
+  describe('POST /api/license/validate with instanceId', () => {
+    it('passes instanceId to validateForApp', async () => {
+      mockPool.mockResults([
+        { rows: [{ id: 1, license_key: 'CFML-ABCD-EFGH-JKMN-PQRS', product_id: 'mitglieder-lokal', status: 'active', expires_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString() }], rowCount: 1 },
+        { rows: [], rowCount: 0 }, // DELETE stale
+        { rows: [], rowCount: 1 }, // INSERT instance
+        { rows: [{ cnt: '1' }], rowCount: 1 }, // COUNT
+        { rows: [], rowCount: 1 }, // UPDATE tracking
+      ]);
+
+      const res = await fetch(`${baseUrl}/api/license/validate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          licenseKey: 'CFML-ABCD-EFGH-JKMN-PQRS',
+          productId: 'mitglieder-lokal',
+          instanceId: 'test-instance-uuid',
+        }),
+      });
+      const data = await res.json();
+      assert.equal(data.valid, true);
+    });
+
+    it('returns instance_limit_exceeded', async () => {
+      mockPool.mockResults([
+        { rows: [{ id: 1, license_key: 'CFML-ABCD-EFGH-JKMN-PQRS', product_id: 'mitglieder-lokal', status: 'active', expires_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString() }], rowCount: 1 },
+        { rows: [], rowCount: 0 }, // DELETE stale
+        { rows: [], rowCount: 1 }, // INSERT instance
+        { rows: [{ cnt: '4' }], rowCount: 1 }, // COUNT > 3
+        { rows: [], rowCount: 1 }, // DELETE newly inserted
+      ]);
+
+      const res = await fetch(`${baseUrl}/api/license/validate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          licenseKey: 'CFML-ABCD-EFGH-JKMN-PQRS',
+          instanceId: 'fourth-instance',
+        }),
+      });
+      const data = await res.json();
+      assert.equal(data.valid, false);
+      assert.equal(data.reason, 'instance_limit_exceeded');
+    });
+  });
+
+  describe('POST /api/license/trial', () => {
+    it('returns 400 for missing productId', async () => {
+      const res = await fetch(`${baseUrl}/api/license/trial`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+      assert.equal(res.status, 400);
+    });
+
+    it('returns 400 for invalid product', async () => {
+      const res = await fetch(`${baseUrl}/api/license/trial`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productId: 'unknown' }),
+      });
+      assert.equal(res.status, 400);
+    });
+
+    it('creates trial key for valid product', async () => {
+      const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+      mockPool.mockResult({
+        rows: [{
+          license_key: 'CFTM-AUTO-TEST-ABCD-EF12',
+          product_id: 'mitglieder-lokal',
+          expires_at: expiresAt,
+        }],
+        rowCount: 1,
+      });
+
+      const res = await fetch(`${baseUrl}/api/license/trial`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productId: 'mitglieder-lokal' }),
+      });
+      assert.equal(res.status, 201);
+      const data = await res.json();
+      assert.ok(data.licenseKey);
+      assert.equal(data.productId, 'mitglieder-lokal');
+      assert.ok(data.expiresAt);
+    });
+
+    it('creates trial key for berater-lokal', async () => {
+      mockPool.mockResult({
+        rows: [{
+          license_key: 'CFTB-AUTO-TEST-ABCD-EF12',
+          product_id: 'berater-lokal',
+          expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        }],
+        rowCount: 1,
+      });
+
+      const res = await fetch(`${baseUrl}/api/license/trial`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productId: 'berater-lokal' }),
+      });
+      assert.equal(res.status, 201);
+      const data = await res.json();
+      assert.equal(data.productId, 'berater-lokal');
     });
   });
 
