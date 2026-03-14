@@ -4,8 +4,9 @@
   import {
     getDueInspections, getInspectionStats, getOpenDefectCount,
     getRecentInspections, getOpenDefects, getTemplates, getObjects,
-    saveInspection, initInspectionResults
+    saveInspection, initInspectionResults, getTemplateItems, getOrgProfile
   } from '../lib/db.js';
+  import { generateBlankFormPdf } from '../lib/pdf.js';
 
   let stats = $state({ total: 0, offen: 0, bestanden: 0, bemaengelt: 0 });
   let dueItems = $state([]);
@@ -48,6 +49,16 @@
     return `in ${days} Tagen`;
   }
 
+  async function handlePrintForm(item) {
+    const templateItems = await getTemplateItems(item.template_id);
+    const profile = await getOrgProfile();
+    await generateBlankFormPdf(
+      { name: item.template_name, description: '', category: '' },
+      templateItems,
+      profile
+    );
+  }
+
   async function handleQuickStart(item) {
     startingInspection = item.template_id;
     const today = new Date().toISOString().split('T')[0];
@@ -82,13 +93,19 @@
               {#if item.object_name}<span class="action-object">{item.object_name}</span>{/if}
               <span class="action-days">{daysLabel(item.next_due)}</span>
             </div>
-            <button
-              class="btn-action"
-              onclick={() => handleQuickStart(item)}
-              disabled={startingInspection === item.template_id}
-            >
-              {startingInspection === item.template_id ? '...' : 'Jetzt prüfen →'}
-            </button>
+            <div class="action-buttons">
+              <button
+                class="btn-print"
+                onclick={() => handlePrintForm(item)}
+              >Drucken</button>
+              <button
+                class="btn-action"
+                onclick={() => handleQuickStart(item)}
+                disabled={startingInspection === item.template_id}
+              >
+                {startingInspection === item.template_id ? '...' : 'Jetzt prüfen →'}
+              </button>
+            </div>
           </div>
         {/each}
       </div>
@@ -108,13 +125,19 @@
               {#if item.object_name}<span class="action-object">{item.object_name}</span>{/if}
               <span class="action-days">{daysLabel(item.next_due)}</span>
             </div>
-            <button
-              class="btn-action btn-action-secondary"
-              onclick={() => handleQuickStart(item)}
-              disabled={startingInspection === item.template_id}
-            >
-              {startingInspection === item.template_id ? '...' : 'Prüfen →'}
-            </button>
+            <div class="action-buttons">
+              <button
+                class="btn-print"
+                onclick={() => handlePrintForm(item)}
+              >Drucken</button>
+              <button
+                class="btn-action btn-action-secondary"
+                onclick={() => handleQuickStart(item)}
+                disabled={startingInspection === item.template_id}
+              >
+                {startingInspection === item.template_id ? '...' : 'Prüfen →'}
+              </button>
+            </div>
           </div>
         {/each}
       </div>
@@ -248,6 +271,19 @@
   .btn-action:disabled { opacity: 0.5; cursor: not-allowed; }
   .btn-action-secondary { background: #ecc94b; color: #744210; }
   .btn-action-secondary:hover { background: #d69e2e; }
+
+  .action-buttons { display: flex; gap: 0.5rem; align-items: center; }
+  .btn-print {
+    padding: 0.375rem 0.75rem;
+    background: none;
+    color: var(--color-text-muted);
+    border: 1px solid var(--color-border);
+    border-radius: 0.375rem;
+    font-size: 0.75rem;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .btn-print:hover { background: var(--color-surface); color: var(--color-text); }
 
   .stats { display: flex; gap: 1rem; }
   .stat-card {

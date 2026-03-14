@@ -9,6 +9,7 @@
   let form = $state({ name: '', street: '', zip: '', city: '', contact_email: '', contact_phone: '', responsible: '' });
   let saving = $state(false);
   let saved = $state(false);
+  let showAdvanced = $state(false);
 
   // Inspector management
   let inspectorList = $state([]);
@@ -31,12 +32,19 @@
     inspectorList = await getInspectors();
 
     // Wenn von aussen auf Integritaet navigiert wurde
-    if ($currentView === 'integrity') activeTab = 'integrity';
+    if ($currentView === 'integrity') {
+      activeTab = 'profile';
+      showAdvanced = true;
+    }
   });
 
   $effect(() => {
-    if ($currentView === 'integrity') activeTab = 'integrity';
-    else if ($currentView === 'settings') activeTab = 'profile';
+    if ($currentView === 'integrity') {
+      activeTab = 'profile';
+      showAdvanced = true;
+    } else if ($currentView === 'settings') {
+      activeTab = 'profile';
+    }
   });
 
   async function handleSave(e) {
@@ -71,19 +79,10 @@
 <div class="page">
   <h1>Einstellungen</h1>
 
-  <div class="tabs">
-    <button class="tab" class:active={activeTab === 'profile'} onclick={() => activeTab = 'profile'}>
-      Profil & Pruefer
-    </button>
-    <button class="tab" class:active={activeTab === 'integrity'} onclick={() => activeTab = 'integrity'}>
-      Integritaet
-    </button>
-  </div>
-
   {#if activeTab === 'profile'}
     <section>
       <h2>Organisationsprofil</h2>
-      <p class="hint">Wird als Briefkopf auf Pruefprotokollen und Listen angezeigt.</p>
+      <p class="hint">Wird als Briefkopf auf Prüfprotokollen und Listen angezeigt.</p>
 
       <form onsubmit={handleSave}>
         <div class="field">
@@ -92,7 +91,7 @@
         </div>
         <div class="row">
           <div class="field">
-            <label for="street">Strasse</label>
+            <label for="street">Straße</label>
             <input id="street" bind:value={form.street} />
           </div>
           <div class="field small">
@@ -131,8 +130,8 @@
     </section>
 
     <section>
-      <h2>Pruefer verwalten</h2>
-      <p class="hint">Bekannte Pruefer erscheinen als Vorschlaege beim Anlegen neuer Pruefungen.</p>
+      <h2>Prüfer verwalten</h2>
+      <p class="hint">Bekannte Prüfer erscheinen als Vorschläge beim Anlegen neuer Prüfungen.</p>
 
       {#if inspectorList.length > 0}
         <table>
@@ -153,14 +152,14 @@
           </tbody>
         </table>
       {:else}
-        <p class="empty">Noch keine Pruefer angelegt. Pruefer werden auch automatisch aus vorhandenen Pruefungen uebernommen.</p>
+        <p class="empty">Noch keine Prüfer angelegt. Prüfer werden auch automatisch aus vorhandenen Prüfungen übernommen.</p>
       {/if}
 
       <form class="inline-form" onsubmit={handleAddInspector}>
         <input bind:value={newInspector.name} placeholder="Name *" required />
         <input bind:value={newInspector.role} placeholder="Rolle (optional)" />
         <input bind:value={newInspector.qualification} placeholder="Qualifikation (optional)" />
-        <button type="submit" class="btn-primary" disabled={savingInspector}>Hinzufuegen</button>
+        <button type="submit" class="btn-primary" disabled={savingInspector}>Hinzufügen</button>
       </form>
     </section>
 
@@ -168,37 +167,40 @@
       <h2>Supportvertrag</h2>
       <LicenseSection />
     </section>
-  {:else if activeTab === 'integrity'}
-    <Integrity embedded={true} />
+
+    <section>
+      <button class="advanced-toggle" onclick={() => showAdvanced = !showAdvanced}>
+        <span class="toggle-arrow">{showAdvanced ? '▾' : '▸'}</span>
+        Erweitert
+      </button>
+      {#if showAdvanced}
+        <div class="advanced-content">
+          <p class="hint">Änderungshistorie — Technisches Protokoll aller Datenbankänderungen.</p>
+          <Integrity embedded={true} />
+        </div>
+      {/if}
+    </section>
   {/if}
 </div>
 
 <style>
   .page { max-width: 700px; display: flex; flex-direction: column; gap: 1.5rem; }
 
-  .tabs {
+  .advanced-toggle {
     display: flex;
-    gap: 0;
-    border-bottom: 2px solid var(--color-border);
-  }
-
-  .tab {
-    padding: 0.5rem 1rem;
+    align-items: center;
+    gap: 0.5rem;
     background: none;
     border: none;
-    border-bottom: 2px solid transparent;
-    margin-bottom: -2px;
-    color: var(--color-text-muted);
-    font-size: 0.875rem;
-    cursor: pointer;
-  }
-
-  .tab:hover { color: var(--color-text); }
-  .tab.active {
-    color: var(--color-primary);
-    border-bottom-color: var(--color-primary);
+    font-size: 0.9375rem;
     font-weight: 600;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    padding: 0;
   }
+  .advanced-toggle:hover { color: var(--color-text); }
+  .toggle-arrow { font-size: 0.75rem; }
+  .advanced-content { margin-top: 0.75rem; }
 
   section { display: flex; flex-direction: column; gap: 0.75rem; }
   .hint { color: var(--color-text-muted); font-size: 0.8125rem; }

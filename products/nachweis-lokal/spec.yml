@@ -12,10 +12,10 @@ platforms: ["linux", "windows", "macos"]
 description:
   short: "Desktop-App fuer Pruefprotokolle, Checklisten und Nachweise"
   long: |
-    Nachweis Lokal dokumentiert wiederkehrende Pruefungen und Kontrollen
-    lokal auf Ihrem Rechner. Vorlagen definieren, Pruefungen durchfuehren,
-    Ergebnisse protokollieren, PDF-Nachweise erzeugen.
-    Keine Cloud, keine monatlichen Kosten, revisionssicher durch Hash-Kette.
+    Nachweis Lokal organisiert Ihre wiederkehrenden Pruefungen —
+    ob Sie digital arbeiten oder Formulare ausdrucken und im Ordner abheften.
+    Checklisten verwalten, Fristen im Blick behalten, Formulare drucken.
+    Keine Cloud, keine monatlichen Kosten, alle Daten lokal auf Ihrem Rechner.
   benefits:
     - "Alle Daten lokal — keine Cloud"
     - "Pruefvorlagen mit beliebig vielen Pruefpunkten"
@@ -24,8 +24,8 @@ description:
     - "PDF-Pruefprotokolle und Maengelberichte"
     - "Faelligkeits-Dashboard mit Ampellogik"
     - "CSV-Import/Export fuer Vorlagen und Pruefungen"
-    - "Revisionssicheres Aenderungsprotokoll (HMAC-SHA256 Hash-Kette)"
-    - "Integritaetspruefung im Dashboard sichtbar"
+    - "Druckbare Leerformulare fuer den Einsatz vor Ort"
+    - "Aenderungshistorie fuer eigene Nachvollziehbarkeit"
     - "Laeuft auf Windows und Linux"
   target_audience: "Kleine Organisationen, Vereine, Dienstleister mit Dokumentationspflichten"
 
@@ -210,8 +210,8 @@ faq:
     answer: "Fertige Installationsdateien, Zugang zum Download-Portal, Update-Benachrichtigungen, branchenspezifische Vorlagen-Pakete und ein Ticketsystem fuer technische Probleme. Kein Telefon-Support, keine Schulung, keine individuelle Einrichtung."
   - question: "Wo werden meine Daten gespeichert?"
     answer: "Lokal auf Ihrem Computer in einer SQLite-Datenbank. Keine Cloud, kein Tracking, kein Account."
-  - question: "Was bedeutet die HMAC-SHA256 Hash-Kette?"
-    answer: "Jeder Eintrag im Aenderungsprotokoll ist kryptographisch mit dem vorherigen verkettet. Nachtraegliche Manipulation wird automatisch erkannt."
+  - question: "Kann ich die Formulare auch ausdrucken und handschriftlich ausfuellen?"
+    answer: "Ja. Sie koennen jede Checkliste als Leerformular mit Checkboxen ausdrucken, vor Ort mit Stift ausfuellen und im Ordner abheften. Die App erinnert Sie trotzdem an den naechsten Prueftermin."
   - question: "Fuer welche Pruefungen eignet sich das Tool?"
     answer: "Fuer alle wiederkehrenden Pruefungen: Geraetepruefungen, Sicherheitsunterweisungen, Wartungsprotokolle, Spielplatzkontrollen, Brandschutz-Checks und aehnliche Dokumentationspflichten."
   - question: "Gibt es Telefon-Support?"

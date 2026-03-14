@@ -103,7 +103,7 @@ tests/
 - CSV-Export + CSV-Import (Checklisten)
 - Organisationsprofil (Briefkopf)
 - Event-Log mit HMAC-SHA256 Hash-Kette
-- Integritaetspruefung (sichtbar im UI)
+- Aenderungshistorie (unter Einstellungen → Erweitert)
 - Probe-Lizenz (10 Checklisten Limit)
 - Support-Integration + Feature-Requests
 - Checklisten-Bibliothek (35 fertige Checklisten)

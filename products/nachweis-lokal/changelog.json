@@ -9,7 +9,8 @@
       "Einrichtungsassistent neu: Willkommen → Checklisten → Geraet/Raum → Organisation (optional), Pruefer-Schritt entfernt",
       "Checklisten-Bibliothek auf 35 erweitert (neu: Tueren/Tore, Werkzeugmaschinen, Druckbehaelter, Kita-Innen/Aussen, Turngeraete, Werkraum, Gastro-HACCP, Fettabscheider, Klima/Lueftung, Rauchmelder, Absturzsicherung, Hebezeuge, Notstrom, Gefahrstofflager, Minigolf, Schankanlage, Terrasse/Biergarten, Saisonstart, Kasse/TSE)",
       "Leerformular drucken: Checkliste als leeres Formular mit Checkboxen zum Ausdrucken und Vor-Ort-Abhaken",
-      "System-Benachrichtigungen: OS-Notification bei ueberfaelligen Pruefungen beim App-Start"
+      "System-Benachrichtigungen: OS-Notification bei ueberfaelligen Pruefungen beim App-Start",
+      "Papier-Workflow: Leerformulare direkt vom Dashboard drucken, gleichwertig zum digitalen Workflow"
     ]
   },
   {
