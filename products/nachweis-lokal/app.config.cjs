@@ -16,4 +16,36 @@ module.exports = {
   portalUrl: 'https://portal.detmers-publish.de',
   autoUpdate: false,
   updateUrl: null,
+
+  registerIpcHandlers: ({ ipcMain, app, getDb }) => {
+    const { startServer, stopServer, getStatus, setInspection } = require('./electron/mobile-server.cjs');
+    const { generateQR } = require('./electron/mobile-qr.cjs');
+    const mobilePath = path.join(__dirname, 'mobile');
+
+    ipcMain.handle('mobile:start', async (_event, inspectionId) => {
+      const result = await startServer({
+        getDb,
+        mobilePath,
+        onResultUpdate: (data) => {
+          try {
+            const { BrowserWindow } = require('electron');
+            const windows = BrowserWindow.getAllWindows();
+            if (windows[0]) windows[0].webContents.send('mobile:resultUpdated', data);
+          } catch (_) {}
+        },
+      });
+      setInspection(inspectionId);
+      const qr = generateQR(result.url + '/inspect/' + inspectionId + '?token=' + result.token);
+      return { ...result, qrMatrix: qr.matrix, inspectionId };
+    });
+
+    ipcMain.handle('mobile:stop', async () => {
+      stopServer();
+      return { ok: true };
+    });
+
+    ipcMain.handle('mobile:getStatus', () => {
+      return getStatus();
+    });
+  },
 };

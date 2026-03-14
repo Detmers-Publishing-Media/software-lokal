@@ -1,0 +1,102 @@
+# Mobile Prüfungsdurchführung über lokales WLAN
+
+id: "FEAT-016"
+title: "Mobile Prüfung — Handy als Prüfgerät über lokales WLAN"
+epic: "NACHWEIS-MOBILE"
+status: "inbox"
+priority: 1
+
+story_type: "platform-core"
+lane: "slow"
+platform_impact: "high"
+founder_gate_required: true
+force_approve_allowed: false
+auto_merge_allowed: false
+
+platform_rationale: |
+  Prüfungen finden vor Ort statt (Keller, Küche, Dach, Hof),
+  nicht am Schreibtisch. Ein Mobilgerät ist das natürliche
+  Werkzeug für Vor-Ort-Prüfungen. Diese Funktion erweitert
+  electron-platform um einen lokalen Webserver und eine mobile
+  Web-Oberfläche. Kein Cloud-Sync, kein App-Store, kein Account.
+
+reused_by_products: ["nachweis-lokal"]
+
+non_goals:
+  - "Keine native Mobile App (kein App-Store)"
+  - "Keine Cloud-Synchronisation"
+  - "Keine Offline-Fähigkeit auf dem Handy (WLAN-Verbindung nötig)"
+  - "Kein Multi-User (ein Prüfer gleichzeitig)"
+
+description: |
+  Workflow:
+  1. Nutzer klickt auf dem PC "Prüfung starten" oder "Am Handy prüfen"
+  2. PC zeigt QR-Code mit lokaler URL (http://192.168.x.x:8080/inspect/ID)
+  3. Nutzer scannt QR-Code mit dem Handy (gleiches WLAN)
+  4. Handy zeigt mobile Checkliste im Browser (responsive, touch-optimiert)
+  5. Nutzer hakt Punkte ab, macht Fotos, notiert Mängel
+  6. Ergebnisse werden live an den PC übertragen (WebSocket oder Polling)
+  7. Nutzer klickt "Abschließen" auf dem Handy
+  8. PC zeigt abgeschlossene Prüfung, PDF kann erstellt werden
+
+  Technische Umsetzung:
+
+  Phase 1 — Lokaler Webserver (electron-platform):
+  - Express.js Mini-Server im Main-Prozess
+  - Startet auf freiem Port (z.B. 8080)
+  - Nur im lokalen Netzwerk erreichbar (bind 0.0.0.0)
+  - Automatische Erkennung der lokalen IP-Adresse
+  - Session-Token pro Prüfung (kein Login, aber nicht ohne Token erreichbar)
+
+  Phase 2 — Mobile Web-Oberfläche:
+  - Statische HTML/CSS/JS Seite (kein Framework nötig, oder Svelte SSR)
+  - Responsive Design, touch-optimiert
+  - Große Buttons (OK / Mängel / Entfällt)
+  - Kamera-Integration für Fotos (HTML5 getUserMedia)
+  - Fortschrittsbalken
+  - "Zwischenspeichern" sendet Ergebnis an PC
+
+  Phase 3 — PC-Integration:
+  - "Am Handy prüfen" Button in InspectionDetail/InspectionExecute
+  - QR-Code-Anzeige mit lokaler URL
+  - Live-Status: "Handy verbunden", "3 von 12 Punkte bearbeitet"
+  - Ergebnisse werden in die SQLite-DB geschrieben
+  - Fotos werden über HTTP POST an den PC übertragen
+
+  Sicherheit:
+  - Nur im lokalen Netzwerk (kein Port-Forwarding, kein Internet)
+  - Session-Token als URL-Parameter (z.B. ?token=abc123)
+  - Token ist einmalig pro Prüfung, verfällt nach Abschluss
+  - Kein Zugriff auf andere Prüfungen oder Einstellungen
+
+acceptance_criteria:
+  - "PC zeigt QR-Code mit lokaler URL für die aktive Prüfung"
+  - "Handy öffnet mobile Checkliste im Browser (Chrome, Safari)"
+  - "OK/Mängel/Entfällt Buttons funktionieren touch-optimiert"
+  - "Fotos vom Handy werden an den PC übertragen und gespeichert"
+  - "Ergebnisse sind sofort auf dem PC sichtbar"
+  - "Prüfung kann auf dem Handy abgeschlossen werden"
+  - "Session-Token verhindert unbefugten Zugriff"
+  - "Funktioniert ohne Internet (nur lokales WLAN)"
+  - "PDF-Erstellung auf dem PC nach Abschluss möglich"
+
+affected_files:
+  - "packages/electron-platform/lib/mobile-server.js (neu)"
+  - "packages/electron-platform/ipc/mobile.js (neu)"
+  - "packages/electron-platform/preload.cjs"
+  - "packages/electron-platform/main.cjs"
+  - "products/nachweis-lokal/src/routes/InspectionDetail.svelte"
+  - "products/nachweis-lokal/src/routes/InspectionExecute.svelte"
+  - "products/nachweis-lokal/mobile/ (neu — statische Web-Oberfläche)"
+
+depends_on: []
+
+manual_steps:
+  - step: "PO testet mit echtem Mobilgerät im WLAN"
+    owner: "PO"
+  - step: "PO testet mit verschiedenen Browsern (Chrome Android, Safari iOS)"
+    owner: "PO"
+  - step: "PO gibt Founder Gate frei"
+    owner: "PO"
+
+estimated_effort: "XL"

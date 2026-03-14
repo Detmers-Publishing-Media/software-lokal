@@ -58,6 +58,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
     verify: (options) => ipcRenderer.invoke('audit:verify', options),
     getEvents: (options) => ipcRenderer.invoke('audit:getEvents', options),
   },
+  mobile: {
+    start: (inspectionId) => ipcRenderer.invoke('mobile:start', inspectionId),
+    stop: () => ipcRenderer.invoke('mobile:stop'),
+    getStatus: () => ipcRenderer.invoke('mobile:getStatus'),
+    onResultUpdate: (callback) => ipcRenderer.on('mobile:resultUpdated', (_event, data) => callback(data)),
+    removeResultListener: () => ipcRenderer.removeAllListeners('mobile:resultUpdated'),
+  },
   app: {
     rendererReady: () => ipcRenderer.invoke('app:rendererReady'),
     isSafeMode: () => ipcRenderer.invoke('app:isSafeMode'),

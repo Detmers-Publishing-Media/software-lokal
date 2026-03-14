@@ -3,7 +3,7 @@
 id: "FEAT-011"
 title: "Deutsche Umlaute in allen UI-Texten (Nachweis + Berater)"
 epic: "UX-POLISH"
-status: "inbox"
+status: "done"
 priority: 2
 
 story_type: "product-fast"

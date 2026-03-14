@@ -3,7 +3,7 @@
 id: "FEAT-012"
 title: "Hash-Chain-Logik deduplizieren und durch tamper-evident-log ersetzen"
 epic: "PLATFORM-DOGFOODING"
-status: "inbox"
+status: "done"
 priority: 1
 
 story_type: "shared-pattern"
