@@ -1,20 +1,29 @@
-// Placeholder QR code generator
-// TODO: implement proper QR encoding or use qrcode-generator package
+/**
+ * QR Code generator for mobile inspection URLs.
+ * Uses qrcode-generator (MIT, zero dependencies).
+ */
+const qrcode = require('qrcode-generator');
+
+/**
+ * Generate a QR code matrix from a text string.
+ * @param {string} text - URL or text to encode
+ * @returns {{ matrix: boolean[][], size: number, text: string }}
+ */
 function generateQR(text) {
-  const size = 21; // Version 1 QR
-  const matrix = Array.from({ length: size }, () => Array(size).fill(false));
-  // Simple pattern for testing — draw finder patterns in corners
-  for (let i = 0; i < 7; i++) {
-    for (let j = 0; j < 7; j++) {
-      const isBorder = i === 0 || i === 6 || j === 0 || j === 6;
-      const isInner = i >= 2 && i <= 4 && j >= 2 && j <= 4;
-      if (isBorder || isInner) {
-        matrix[i][j] = true; // top-left
-        matrix[i][size - 1 - j] = true; // top-right
-        matrix[size - 1 - i][j] = true; // bottom-left
-      }
+  const qr = qrcode(0, 'M'); // type 0 = auto version, error correction M
+  qr.addData(text);
+  qr.make();
+
+  const size = qr.getModuleCount();
+  const matrix = [];
+  for (let row = 0; row < size; row++) {
+    const line = [];
+    for (let col = 0; col < size; col++) {
+      line.push(qr.isDark(row, col));
     }
+    matrix.push(line);
   }
+
   return { matrix, size, text };
 }
 
