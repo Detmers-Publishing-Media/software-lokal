@@ -7,6 +7,7 @@
   "description": "Shared finance kernel for Code-Fabrik desktop products (schema, models, EUeR, events)",
   "exports": {
     "./db": "./src/db/index.js",
+    "./db/migrate": "./src/db/migrate.js",
     "./models": "./src/models/index.js",
     "./euer": "./src/euer/index.js"
   },
