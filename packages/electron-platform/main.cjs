@@ -11,6 +11,7 @@ const { registerSupportHandlers } = require('./ipc/support.js');
 const { getOrCreateDbKey } = require('./lib/keystore.js');
 const { needsBackup, createBackup, rotateBackups } = require('./lib/backup-core.js');
 const { registerLicenseHandlers } = require('./ipc/license.js');
+const { registerAuditHandlers } = require('./ipc/audit.js');
 
 /**
  * Creates and starts the Electron app with product-specific configuration.
@@ -389,6 +390,7 @@ function createApp(config) {
 
     if (hasDb) {
       registerDbHandlers();
+      registerAuditHandlers({ ipcMain, getDb });
     }
 
     // Register backup handlers (DB products only)

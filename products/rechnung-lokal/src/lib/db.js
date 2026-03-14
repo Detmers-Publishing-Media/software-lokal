@@ -3,7 +3,6 @@
  * Uses finanz-shared for schema and models, app-shared/db for IPC.
  */
 import { query, execute } from '@codefabrik/app-shared/db';
-import { computeHmac } from '@codefabrik/shared/crypto';
 import { createSchema } from '@codefabrik/finanz-shared/db';
 import { createModels } from '@codefabrik/finanz-shared/models';
 import { seedCategories } from '@codefabrik/finanz-shared/euer';
@@ -19,7 +18,7 @@ export async function initDb() {
 
   await seedCategories(execute, query);
 
-  models = createModels({ query, execute, computeHmac }, productConfig.features);
+  models = createModels({ query, execute }, productConfig.features);
 
   await models.eventLog.append('AppGestartet', {
     product: productConfig.product,

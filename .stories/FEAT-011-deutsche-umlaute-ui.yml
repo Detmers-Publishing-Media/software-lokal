@@ -1,0 +1,57 @@
+# Deutsche Umlaute in UI-Texten — Nachweis Lokal + Berater Lokal
+
+id: "FEAT-011"
+title: "Deutsche Umlaute in allen UI-Texten (Nachweis + Berater)"
+epic: "UX-POLISH"
+status: "inbox"
+priority: 2
+
+story_type: "product-fast"
+lane: "fast"
+platform_impact: "none"
+founder_gate_required: false
+force_approve_allowed: true
+auto_merge_allowed: true
+
+description: |
+  Alle UI-Texte in Nachweis Lokal und Berater Lokal verwenden aktuell
+  ae/oe/ue/ss statt echte Umlaute (ae→ä, oe→ö, ue→ü, ss→ß).
+  Das betrifft Labels, Buttons, Hinweistexte, Platzhalter, Fehlermeldungen,
+  Sidebar-Eintraege und Gruppenheader.
+
+  Code (Variablen, Funktionen, Kommentare) bleibt bei ae/oe/ue (Convention).
+  Nur sichtbare UI-Strings werden umgestellt.
+
+  Soll zusammen mit dem naechsten Feature-Release pro Produkt umgesetzt
+  werden, nicht als eigenes Release.
+
+  Betrifft:
+  - Nachweis Lokal: alle .svelte-Dateien (Routes, Components, App)
+  - Berater Lokal: alle .svelte-Dateien (Routes, App)
+  - Shared Components (app-shared, ui-shared): pruefen ob Labels betroffen
+
+acceptance_criteria:
+  - "Alle sichtbaren UI-Texte verwenden echte Umlaute (ä, ö, ü, ß)"
+  - "Code bleibt bei ASCII (ae/oe/ue) — nur Strings in Anfuehrungszeichen aendern"
+  - "PDF-Ausgabe verwendet ebenfalls echte Umlaute"
+  - "Template-Library JSON verwendet echte Umlaute"
+  - "Keine Encoding-Probleme in Electron (UTF-8 sichergestellt)"
+  - "Shared Components pruefen und ggf. anpassen"
+
+affected_files:
+  - "products/nachweis-lokal/src/routes/*.svelte"
+  - "products/nachweis-lokal/src/App.svelte"
+  - "products/nachweis-lokal/src/assets/template-library.json"
+  - "products/nachweis-lokal/src/lib/pdf.js"
+  - "products/berater-lokal/src/routes/*.svelte"
+  - "products/berater-lokal/src/App.svelte"
+  - "products/berater-lokal/src/lib/pdf.js"
+  - "products/berater-lokal/src/lib/types.js"
+  - "packages/app-shared/src/components/*.svelte"
+  - "packages/ui-shared/src/components/*.svelte"
+
+depends_on: []
+
+manual_steps: []
+
+estimated_effort: "M"

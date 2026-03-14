@@ -1,0 +1,99 @@
+# Integration tamper-evident-log in alle DB-Produkte
+
+id: "FEAT-012"
+title: "Hash-Chain-Logik deduplizieren und durch tamper-evident-log ersetzen"
+epic: "PLATFORM-DOGFOODING"
+status: "inbox"
+priority: 1
+
+story_type: "shared-pattern"
+lane: "slow"
+platform_impact: "high"
+founder_gate_required: true
+force_approve_allowed: false
+auto_merge_allowed: false
+
+platform_rationale: |
+  Aktuell existieren 4 Kopien der Hash-Chain-Logik:
+  - nachweis-lokal/src/lib/db.js (eigene Implementierung)
+  - berater-lokal/src/lib/db.js (eigene Implementierung)
+  - mitglieder-lokal/src/lib/db.js (eigene Implementierung)
+  - finanz-shared/src/models/events.js (genutzt von rechnung-lokal)
+
+  Alle werden durch eine einzige Implementierung ersetzt, die auf dem
+  oeffentlichen npm-Package tamper-evident-log basiert. Das schafft:
+  - Einen echten Production-Referenz-Case fuer das Package
+  - Code-Deduplizierung (4 Kopien → 1 Shared-Implementierung)
+  - Einheitliche Integritaetslogik ueber alle Produkte
+
+reused_by_products: ["nachweis-lokal", "berater-lokal", "mitglieder-lokal", "rechnung-lokal"]
+
+non_goals:
+  - "Kein Umbau der DB-Schemas (events-Tabelle bleibt)"
+  - "Kein Breaking Change fuer bestehende Datenbanken"
+  - "Keine neuen Features, nur Refactoring der Hash-Chain-Logik"
+
+description: |
+  Phase 1 — SQLite Storage Adapter:
+  - SQLite Storage Adapter fuer tamper-evident-log erstellen
+  - Implementiert AuditStore Interface gegen bestehende events-Tabelle
+  - Als Export in electron-platform oder als eigenes Package
+
+  Phase 2 — Shared Event-Log Modul:
+  - In electron-platform (oder app-shared) ein Modul erstellen das
+    tamper-evident-log + SQLite-Adapter zusammenfuehrt
+  - API: createEventLog(db, secret) → { append, verify, getEvents }
+  - Muss identisches Hash-Format wie bestehende Implementierungen haben
+
+  Phase 3 — Migration pro Produkt:
+  - finanz-shared/src/models/events.js auf Shared-Modul umstellen
+  - nachweis-lokal/src/lib/db.js: eigene appendEvent/verifyChain entfernen
+  - berater-lokal/src/lib/db.js: eigene appendEvent/verifyChain entfernen
+  - mitglieder-lokal/src/lib/db.js: eigene appendEvent/verifyChain entfernen
+  - Alle importieren aus dem Shared-Modul
+
+  Phase 4 — Aufraeumen:
+  - packages/shared/src/crypto HMAC-Code entfernen (falls nur fuer Events)
+  - Duplizierte Event-Logik aus allen db.js entfernen
+  - README von tamper-evident-log um Production-Referenz ergaenzen
+
+  KRITISCH — Rueckwaertskompatibilitaet:
+  - Hash-Format pruefen: tamper-evident-log berechnet
+    HMAC(type|timestamp|JSON(data)|prev_hash, secret)
+  - Muss identisch sein mit bestehendem Format in allen 4 Implementierungen
+  - Bestehende DB-Fixtures muessen weiterhin verifizierbar sein
+  - Falls Formate abweichen: Adapter-Schicht oder tamper-evident-log
+    custom hmac-Option nutzen
+
+acceptance_criteria:
+  - "tamper-evident-log als Dependency in electron-platform oder app-shared"
+  - "SQLite Storage Adapter implementiert (AuditStore Interface)"
+  - "Ein Shared-Modul fuer alle Produkte (statt 4 eigene Implementierungen)"
+  - "Alle Produkte nutzen das Shared-Modul fuer append/verify/getEvents"
+  - "Bestehende Hash-Ketten bleiben gueltig (Rueckwaertskompatibilitaet)"
+  - "Alle Tests gruen (Unit, Integration, Migration, Ketten, Replay, Integritaet, Smoke)"
+  - "README von tamper-evident-log erwaehnt Production Use Case"
+  - "Duplizierter Event-Log-Code aus allen db.js entfernt"
+
+affected_files:
+  - "packages/electron-platform/lib/event-log.js (neu)"
+  - "packages/electron-platform/lib/sqlite-store.js (neu)"
+  - "packages/electron-platform/package.json"
+  - "packages/finanz-shared/src/models/events.js"
+  - "products/nachweis-lokal/src/lib/db.js"
+  - "products/berater-lokal/src/lib/db.js"
+  - "products/mitglieder-lokal/src/lib/db.js"
+  - "products/mitglieder-lokal/src/lib/crypto.js"
+  - "packages/shared/src/crypto/index.js"
+
+depends_on: []
+
+manual_steps:
+  - step: "Hash-Format-Vergleich: tamper-evident-log vs. bestehende Implementierungen"
+    owner: "PO"
+  - step: "PO testet mit bestehenden Produktions-DBs"
+    owner: "PO"
+  - step: "PO gibt Founder Gate frei (platform_impact: high)"
+    owner: "PO"
+
+estimated_effort: "XL"

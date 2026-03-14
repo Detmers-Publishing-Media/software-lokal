@@ -31,6 +31,9 @@ importers:
       electron:
         specifier: ^33.0.0
         version: 33.4.11
+      tamper-evident-log:
+        specifier: ^0.1.0
+        version: 0.1.1
 
   packages/finanz-shared:
     dependencies:
@@ -2478,6 +2481,10 @@ packages:
 
   svelte@5.53.7:
     resolution: {integrity: sha512-uxck1KI7JWtlfP3H6HOWi/94soAl23jsGJkBzN2BAWcQng0+lTrRNhxActFqORgnO9BHVd1hKJhG+ljRuIUWfQ==}
+    engines: {node: '>=18'}
+
+  tamper-evident-log@0.1.1:
+    resolution: {integrity: sha512-4UKByZ1y+gA6jYoko5xGr4aRkip8/AwgwQfutKhVuA/YcGzbdf8oszMiGtAcDm/iRYfYPL3wht2GYvbYI+Al6g==}
     engines: {node: '>=18'}
 
   tar-fs@2.1.4:
@@ -5086,6 +5093,8 @@ snapshots:
       locate-character: 3.0.0
       magic-string: 0.30.21
       zimmerframe: 1.1.4
+
+  tamper-evident-log@0.1.1: {}
 
   tar-fs@2.1.4:
     dependencies:

@@ -9,7 +9,7 @@ export { createEventLog, createProfileModel, createPersonModel, createInvoiceMod
 
 /**
  * Create all models with shared dependencies.
- * @param {Object} deps — { query, execute, computeHmac }
+ * @param {Object} deps — { query, execute }
  * @param {Object} features — feature flags from product.config.js
  * @returns {Object} — all active models
  */

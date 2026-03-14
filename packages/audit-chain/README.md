@@ -26,7 +26,7 @@ without cloud dependencies or heavy infrastructure.
 ## Quick Start
 
 ```js
-import { createAuditLog, InMemoryStore } from 'audit-chain';
+import { createAuditLog, InMemoryStore } from 'tamper-evident-log';
 
 const store = new InMemoryStore();
 const log = createAuditLog({ store, secret: process.env.AUDIT_SECRET });
@@ -51,7 +51,7 @@ const users = await log.replay((state, event) => {
 ## Installation
 
 ```bash
-npm install audit-chain
+npm install tamper-evident-log
 ```
 
 ## API

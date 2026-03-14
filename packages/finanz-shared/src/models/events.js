@@ -1,49 +1,31 @@
 /**
  * Event-Log with HMAC-SHA256 hash chain.
  * Append-only audit trail for all write operations.
+ *
+ * append/verifyChain/getEvents are delegated to tamper-evident-log
+ * running in the Electron main process (via IPC).
+ * replay remains here because it uses a custom handler-map pattern
+ * with fromId/onProgress support.
  */
 
-export function createEventLog({ query, execute, computeHmac }) {
+export function createEventLog({ query }) {
   /**
    * The `version` field in events tracks the event DATA schema version.
    * It starts at 1 and increments when the data structure of an event type changes.
    * Replay handlers MUST support all historic versions.
    * Adding a new field: version stays the same. Renaming/removing: version MUST increment.
    */
-  async function append(type, data, actor = 'app') {
-    const prev = await query('SELECT id, hash FROM events ORDER BY id DESC LIMIT 1');
-    const prevHash = prev[0]?.hash ?? '0';
-    const timestamp = new Date().toISOString();
-    const dataJson = JSON.stringify(data);
-    const message = `${type}|${timestamp}|${dataJson}|${prevHash}`;
-    const hash = await computeHmac(message);
 
-    await execute(
-      'INSERT INTO events (type, timestamp, actor, version, data, hash, prev_hash) VALUES (?, ?, ?, 1, ?, ?, ?)',
-      [type, timestamp, actor, dataJson, hash, prevHash]
-    );
+  async function append(type, data, actor = 'app') {
+    return window.electronAPI.audit.append(type, data, actor);
   }
 
   async function verifyChain(limit = 100) {
-    const events = await query('SELECT * FROM events ORDER BY id DESC LIMIT ?', [limit]);
-    events.reverse();
-    const errors = [];
-    for (let i = 0; i < events.length; i++) {
-      const e = events[i];
-      if (i > 0 && e.prev_hash !== events[i - 1].hash) {
-        errors.push({ event_id: e.id, error: 'prev_hash mismatch' });
-      }
-      const message = `${e.type}|${e.timestamp}|${e.data}|${e.prev_hash}`;
-      const expectedHash = await computeHmac(message);
-      if (e.hash !== expectedHash) {
-        errors.push({ event_id: e.id, error: 'hash mismatch' });
-      }
-    }
-    return { valid: errors.length === 0, errors, checked: events.length };
+    return window.electronAPI.audit.verify({ limit });
   }
 
   async function getEvents(limit = 50, offset = 0) {
-    return query('SELECT * FROM events ORDER BY id DESC LIMIT ? OFFSET ?', [limit, offset]);
+    return window.electronAPI.audit.getEvents({ limit, offset, order: 'desc' });
   }
 
   /**

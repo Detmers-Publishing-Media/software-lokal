@@ -53,6 +53,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
   changelog: {
     list: () => ipcRenderer.invoke('changelog:list'),
   },
+  audit: {
+    append: (type, data, actor) => ipcRenderer.invoke('audit:append', type, data, actor),
+    verify: (options) => ipcRenderer.invoke('audit:verify', options),
+    getEvents: (options) => ipcRenderer.invoke('audit:getEvents', options),
+  },
   app: {
     rendererReady: () => ipcRenderer.invoke('app:rendererReady'),
     isSafeMode: () => ipcRenderer.invoke('app:isSafeMode'),

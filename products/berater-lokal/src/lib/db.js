@@ -1,5 +1,4 @@
 import { query, execute } from '@codefabrik/app-shared/db';
-import { computeHmac } from '@codefabrik/shared/crypto';
 
 // --- Schema v1 ---
 
@@ -590,41 +589,16 @@ export async function getDashboardStats() {
   };
 }
 
-// --- Event-Log ---
+// --- Event-Log (via tamper-evident-log im Main-Prozess) ---
 
 export async function appendEvent(type, data, actor = 'app') {
-  const prev = await query('SELECT id, hash FROM events ORDER BY id DESC LIMIT 1');
-  const prevHash = prev[0]?.hash ?? '0';
-  const timestamp = new Date().toISOString();
-  const dataJson = JSON.stringify(data);
-  const message = `${type}|${timestamp}|${dataJson}|${prevHash}`;
-  const hash = await computeHmac(message);
-
-  await execute(
-    'INSERT INTO events (type, timestamp, actor, version, data, hash, prev_hash) VALUES (?, ?, ?, 1, ?, ?, ?)',
-    [type, timestamp, actor, dataJson, hash, prevHash]
-  );
+  return window.electronAPI.audit.append(type, data, actor);
 }
 
 export async function verifyChain(limit = 100) {
-  const events = await query('SELECT * FROM events ORDER BY id DESC LIMIT ?', [limit]);
-  events.reverse();
-  const errors = [];
-  for (let i = 0; i < events.length; i++) {
-    const e = events[i];
-    const expectedPrev = i === 0 ? e.prev_hash : events[i - 1].hash;
-    if (i > 0 && e.prev_hash !== expectedPrev) {
-      errors.push({ event_id: e.id, error: 'prev_hash mismatch' });
-    }
-    const message = `${e.type}|${e.timestamp}|${e.data}|${e.prev_hash}`;
-    const expectedHash = await computeHmac(message);
-    if (e.hash !== expectedHash) {
-      errors.push({ event_id: e.id, error: 'hash mismatch' });
-    }
-  }
-  return { valid: errors.length === 0, errors, checked: events.length };
+  return window.electronAPI.audit.verify({ limit });
 }
 
 export async function getEvents(limit = 50) {
-  return query('SELECT * FROM events ORDER BY id DESC LIMIT ?', [limit]);
+  return window.electronAPI.audit.getEvents({ limit, order: 'desc' });
 }
