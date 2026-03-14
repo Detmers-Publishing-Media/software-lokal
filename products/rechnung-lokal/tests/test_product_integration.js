@@ -4,7 +4,7 @@
  */
 import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { createTestDb, testHmac } from '../../../packages/finanz-shared/tests/helpers/test-db.js';
+import { createTestDb, createTestAudit } from '../../../packages/finanz-shared/tests/helpers/test-db.js';
 import { createSchema } from '../../../packages/finanz-shared/src/db/schema.js';
 import { createModels } from '../../../packages/finanz-shared/src/models/index.js';
 import { seedCategories } from '../../../packages/finanz-shared/src/euer/categories.js';
@@ -22,7 +22,7 @@ describe('Rechnung Lokal — Product Integration', () => {
     });
     await seedCategories(db.execute, db.query);
     models = createModels(
-      { query: db.query, execute: db.execute, computeHmac: testHmac },
+      { query: db.query, execute: db.execute, audit: createTestAudit(db) },
       productConfig.features,
     );
   });
@@ -86,7 +86,7 @@ describe('Rechnung Lokal — Invoice Workflow', () => {
     });
     await seedCategories(db.execute, db.query);
     models = createModels(
-      { query: db.query, execute: db.execute, computeHmac: testHmac },
+      { query: db.query, execute: db.execute, audit: createTestAudit(db) },
       productConfig.features,
     );
   });
@@ -222,7 +222,7 @@ describe('Rechnung Lokal — EUeR Integration', () => {
     });
     await seedCategories(db.execute, db.query);
     models = createModels(
-      { query: db.query, execute: db.execute, computeHmac: testHmac },
+      { query: db.query, execute: db.execute, audit: createTestAudit(db) },
       productConfig.features,
     );
 
@@ -297,7 +297,7 @@ describe('Rechnung Lokal — Transaction Workflow', () => {
     });
     await seedCategories(db.execute, db.query);
     models = createModels(
-      { query: db.query, execute: db.execute, computeHmac: testHmac },
+      { query: db.query, execute: db.execute, audit: createTestAudit(db) },
       productConfig.features,
     );
   });
@@ -393,7 +393,7 @@ describe('Rechnung Lokal — Customer Workflow', () => {
     });
     await seedCategories(db.execute, db.query);
     models = createModels(
-      { query: db.query, execute: db.execute, computeHmac: testHmac },
+      { query: db.query, execute: db.execute, audit: createTestAudit(db) },
       productConfig.features,
     );
   });
@@ -484,7 +484,7 @@ describe('Rechnung Lokal — Invoice Number Generation', () => {
     });
     await seedCategories(db.execute, db.query);
     models = createModels(
-      { query: db.query, execute: db.execute, computeHmac: testHmac },
+      { query: db.query, execute: db.execute, audit: createTestAudit(db) },
       productConfig.features,
     );
   });
