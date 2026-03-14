@@ -1,9 +1,12 @@
 <script>
   let step = $state('form'); // 'form' | 'preview' | 'submitted'
   let requests = $state([]);
+  let publicRequests = $state([]);
   let requestsLoading = $state(false);
+  let publicLoading = $state(false);
   let submitting = $state(false);
   let submitResult = $state(null);
+  let activeTab = $state('mine'); // 'mine' | 'public'
 
   // Form fields
   let title = $state('');
@@ -115,10 +118,29 @@
     requestsLoading = false;
   }
 
+  async function loadPublicRequests() {
+    publicLoading = true;
+    try {
+      publicRequests = await window.electronAPI.featureRequest.listPublic();
+    } catch (_) {
+      publicRequests = [];
+    }
+    publicLoading = false;
+  }
+
+  async function handleVote(requestNumber) {
+    try {
+      const result = await window.electronAPI.featureRequest.vote(requestNumber);
+      if (result.ok) {
+        loadPublicRequests();
+      }
+    } catch (_) {}
+  }
+
   function statusLabel(s) {
     const labels = {
-      new: 'Neu', triaged: 'Gesichtet', planned: 'Eingeplant',
-      in_progress: 'In Arbeit', released: 'Umgesetzt', declined: 'Abgelehnt',
+      new: 'Neu', triaged: 'Gesichtet', planned: 'Vorgemerkt',
+      in_progress: 'In Arbeit', released: 'Umgesetzt', declined: 'Zurueckgestellt',
     };
     return labels[s] || s;
   }
@@ -132,17 +154,21 @@
     } catch (_) { return iso; }
   }
 
-  $effect(() => { loadRequests(); });
+  $effect(() => {
+    loadRequests();
+    loadPublicRequests();
+  });
 </script>
 
 <div class="feature-request-page">
-  <h1>Funktionswunsch</h1>
+  <h1>Ideen &amp; Vorschlaege</h1>
 
   {#if step === 'form'}
     <section class="form-section">
       <p class="intro">
-        Beschreiben Sie Ihren Wunsch moeglichst genau.
-        Je besser wir verstehen was Sie brauchen, desto schneller koennen wir es umsetzen.
+        Sie haben eine Idee, wie wir dieses Produkt verbessern koennen?
+        Beschreiben Sie Ihren Vorschlag — andere Nutzer koennen dafuer abstimmen.
+        Wir konzentrieren uns auf die Ideen mit den meisten Stimmen.
       </p>
 
       <div class="field">
@@ -216,6 +242,13 @@
         </label>
       </fieldset>
 
+      <div class="expectation-hint">
+        Vielen Dank fuer Ihre Idee! Alle Vorschlaege werden gesichtet.
+        Andere Nutzer koennen fuer Ihre Idee abstimmen — je mehr Stimmen,
+        desto hoeher die Wahrscheinlichkeit einer Umsetzung. Nicht jede Idee
+        kann realisiert werden, aber jede wird gelesen und bewertet.
+      </div>
+
       <div class="actions">
         <button class="btn-primary" onclick={handlePreview} disabled={!formValid}>
           Vorschau anzeigen
@@ -277,38 +310,85 @@
   {:else if step === 'submitted'}
     <section class="success-section">
       <div class="result success">
-        Funktionswunsch <strong>{submitResult?.requestNumber}</strong> wurde eingereicht.
-        Wir sichten Ihren Wunsch und melden uns bei Rueckfragen.
+        Idee <strong>{submitResult?.requestNumber}</strong> wurde eingereicht.
+        Andere Nutzer koennen jetzt dafuer abstimmen. Vielen Dank!
       </div>
       <button class="btn-secondary" onclick={() => { step = 'form'; submitResult = null; }}>
-        Weiteren Wunsch einreichen
+        Weitere Idee einreichen
       </button>
     </section>
   {/if}
 
-  <!-- Existing requests -->
+  <!-- Tab navigation for request lists -->
   <section class="requests-list">
-    <h2>Meine Funktionswuensche</h2>
-    {#if requestsLoading}
-      <p class="muted">Wird geladen...</p>
-    {:else if requests.length === 0}
-      <p class="muted">Keine Funktionswuensche eingereicht.</p>
+    <div class="tab-bar">
+      <button class="tab-btn" class:active={activeTab === 'mine'} onclick={() => activeTab = 'mine'}>
+        Meine Ideen
+      </button>
+      <button class="tab-btn" class:active={activeTab === 'public'} onclick={() => activeTab = 'public'}>
+        Alle Ideen
+      </button>
+    </div>
+
+    {#if activeTab === 'mine'}
+      {#if requestsLoading}
+        <p class="muted">Wird geladen...</p>
+      {:else if requests.length === 0}
+        <p class="muted">Sie haben noch keine Ideen eingereicht.</p>
+      {:else}
+        <table>
+          <thead>
+            <tr><th>Nr.</th><th>Titel</th><th>Status</th><th>Datum</th></tr>
+          </thead>
+          <tbody>
+            {#each requests as r}
+              <tr>
+                <td class="mono">{r.request_number}</td>
+                <td>
+                  {r.title}
+                  {#if r.status === 'declined' && r.decline_reason}
+                    <div class="decline-reason">{r.decline_reason}</div>
+                  {/if}
+                </td>
+                <td><span class="badge" class:planned={r.status === 'planned'} class:released={r.status === 'released'} class:declined={r.status === 'declined'}>{statusLabel(r.status)}</span></td>
+                <td>{formatDate(r.created_at)}</td>
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+      {/if}
+
     {:else}
-      <table>
-        <thead>
-          <tr><th>Nr.</th><th>Titel</th><th>Status</th><th>Datum</th></tr>
-        </thead>
-        <tbody>
-          {#each requests as r}
-            <tr>
-              <td class="mono">{r.request_number}</td>
-              <td>{r.title}</td>
-              <td><span class="badge" class:planned={r.status === 'planned'} class:released={r.status === 'released'}>{statusLabel(r.status)}</span></td>
-              <td>{formatDate(r.created_at)}</td>
-            </tr>
-          {/each}
-        </tbody>
-      </table>
+      {#if publicLoading}
+        <p class="muted">Wird geladen...</p>
+      {:else if publicRequests.length === 0}
+        <p class="muted">Noch keine Ideen vorhanden. Seien Sie der Erste!</p>
+      {:else}
+        <table>
+          <thead>
+            <tr><th>Titel</th><th>Status</th><th class="center">Stimmen</th><th></th></tr>
+          </thead>
+          <tbody>
+            {#each publicRequests as r}
+              <tr>
+                <td>
+                  {r.title}
+                  {#if r.is_own}
+                    <span class="own-badge">Von Ihnen</span>
+                  {/if}
+                </td>
+                <td><span class="badge" class:planned={r.status === 'planned'} class:released={r.status === 'released'} class:declined={r.status === 'declined'}>{statusLabel(r.status)}</span></td>
+                <td class="center">{r.votes || 0}</td>
+                <td>
+                  <button class="btn-vote" onclick={() => handleVote(r.request_number)} disabled={r.has_voted}>
+                    {r.has_voted ? 'Abgestimmt' : 'Finde ich auch wichtig'}
+                  </button>
+                </td>
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+      {/if}
     {/if}
   </section>
 </div>
@@ -338,6 +418,11 @@
     font-size: 0.875rem; padding: 0.375rem 0; cursor: pointer;
   }
   .check-item input[type="checkbox"] { width: 1rem; height: 1rem; }
+  .expectation-hint {
+    background: #eef2ff; border: 1px solid #c7d2fe; border-radius: 0.375rem;
+    padding: 0.75rem 1rem; font-size: 0.8rem; color: #4b5563; line-height: 1.5;
+    margin-bottom: 1rem;
+  }
   .actions { display: flex; gap: 0.75rem; justify-content: flex-end; }
   .btn-primary {
     padding: 0.5rem 1.25rem; background: var(--color-primary); color: white;
@@ -361,9 +446,18 @@
   .result.success { background: #c6f6d5; color: #22543d; }
   .result.error { background: #fed7d7; color: #822727; }
   .muted { color: var(--color-text-muted); font-size: 0.875rem; }
+  .tab-bar { display: flex; gap: 0; margin-bottom: 1rem; border-bottom: 2px solid var(--color-border); }
+  .tab-btn {
+    padding: 0.5rem 1rem; background: none; border: none; border-bottom: 2px solid transparent;
+    margin-bottom: -2px; font-size: 0.875rem; font-weight: 600; color: var(--color-text-muted);
+    cursor: pointer;
+  }
+  .tab-btn.active { color: var(--color-primary, #4f46e5); border-bottom-color: var(--color-primary, #4f46e5); }
+  .tab-btn:hover { color: var(--color-text); }
   table { width: 100%; border-collapse: collapse; }
   th, td { padding: 0.5rem; border-bottom: 1px solid var(--color-border); text-align: left; font-size: 0.875rem; }
   th { font-weight: 600; }
+  .center { text-align: center; }
   .mono { font-family: monospace; font-size: 0.8rem; }
   .badge {
     display: inline-block; padding: 0.15rem 0.5rem; border-radius: 1rem;
@@ -371,4 +465,16 @@
   }
   .badge.planned { background: #bee3f8; color: #2a4365; }
   .badge.released { background: #c6f6d5; color: #22543d; }
+  .badge.declined { background: #e2e8f0; color: #64748b; }
+  .decline-reason { font-size: 0.8rem; color: var(--color-text-muted); font-style: italic; margin-top: 0.25rem; }
+  .own-badge {
+    display: inline-block; font-size: 0.7rem; background: #dbeafe; color: #1e40af;
+    padding: 0.1rem 0.4rem; border-radius: 0.25rem; margin-left: 0.5rem;
+  }
+  .btn-vote {
+    padding: 0.25rem 0.75rem; background: none; border: 1px solid var(--color-border);
+    border-radius: 0.375rem; font-size: 0.75rem; cursor: pointer; white-space: nowrap;
+  }
+  .btn-vote:hover:not(:disabled) { background: #f0fdf4; border-color: #86efac; }
+  .btn-vote:disabled { opacity: 0.5; cursor: not-allowed; }
 </style>
