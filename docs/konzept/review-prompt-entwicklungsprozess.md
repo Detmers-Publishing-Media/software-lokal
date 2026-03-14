@@ -262,8 +262,8 @@ code-fabrik/
       mehrbenutzerbetrieb.md             Multi-User-Betriebsmodell
       lizenzen-mehrsitz.md               Multi-Site-Lizenzierung
       finanz-rechner-mvp.md              FinanzRechner-Spezifikation
-      produktidee-nachweis-simple.md     Produktidee: NachweisSimple
-      produktidee-teilnehmer-simple.md   Produktidee: TeilnehmerSimple
+      produktidee-nachweis-lokal.md      Produktidee: Nachweis Lokal
+      produktidee-teilnehmer-lokal.md    Produktidee: Teilnehmer Lokal
     runbooks/
       installation.md                    Install-Runbook (KeePass, Tarball, Ansible)
       digistore24-test.md                Digistore24 IPN-Testprozedur

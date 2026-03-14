@@ -25,15 +25,15 @@ description:
   target_audience: "Nebenberufler, Kleinunternehmer, Freelancer"
 
 pricing:
-  model: "support-abo"
+  model: "servicepaket"
   price_cents: 3900
   interval: "jaehrlich"
   includes:
     - "Fertige Installer (Windows, Linux, macOS)"
+    - "Zugang zum Download-Portal mit stabilen Releases"
     - "Automatische Update-Benachrichtigung"
-    - "Support-Ticket-System (Antwort in 48h)"
-    - "Feature-Request mit Voting-Recht"
-    - "Zugang zum Download-Portal"
+    - "Feature-Request mit Stimmrecht"
+    - "Technische Hilfe bei Problemen (Ticket, 48h)"
 
 features:
   - id: "invoice-crud"

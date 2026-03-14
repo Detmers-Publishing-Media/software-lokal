@@ -162,12 +162,12 @@ Basiert auf `@codefabrik/finanz-shared` Kern mit Feature-Flags.
 **Stores:** navigation.js (String-basiert: 'invoices', 'customers', 'euer', 'profile', 'support', 'invoice:ID', 'invoice:edit:ID', 'customer:new', etc.)
 **Tests:** (in Aufbau)
 
-### Nachweis Lokal (v0.2.0)
+### Nachweis Lokal (v0.3.0)
 
 Pruefprotokolle, Checklisten und Nachweise. Bundle: `B-08-nachweis`. Hat eigene `CLAUDE.md`.
 
 **Routes:** Dashboard, TemplateList/Form/Detail, TemplateLibrary, ObjectList/Form/Detail, InspectionList/Form/Execute/Detail, DefectList, DefectDetail, ImportTemplates, Integrity, Settings
-**Libs:** db.js (CRUD + Events + Hash-Kette + Attachments + Defects + Recurring), license.js (Probe-Limit 10 Vorlagen), pdf.js (Protokoll/Maengelbericht/Liste)
+**Libs:** db.js (CRUD + Events + Hash-Kette + Attachments + Defects + Recurring + Inspectors + Template-Duplikation), license.js (Probe-Limit 10 Vorlagen), pdf.js (Protokoll/Maengelbericht/Liste/Sammel-PDF + Foto-Einbettung + QR-Code)
 **Components:** PhotoAttachment.svelte (Foto-Picker + Thumbnails)
 **Stores:** navigation.js, inspections.js (String-basiert: 'dashboard', 'templates', 'objects', 'defects', 'inspections', 'templates:library', 'template:ID', 'object:ID', 'inspection:ID', 'defect:ID', 'inspection:execute:ID')
 **Tests:** 98+ Tests in 12 Kategorien (Unit, Schema, Events, Integritaet, Replay, CSV, Smoke, Library, Recurring, Attachments, Defects, Migration)
@@ -366,6 +366,38 @@ Git-User: "Factory Junior" (junior@factory.local)
 - **Detailgrad**: Plaene muessen ohne Rueckfragen umsetzbar sein
 - **Kleine Arbeitspakete**: 5 kleine Schleifen > 1 grosses Paket
 - **Test-Gate**: Kein Arbeitspaket fertig ohne gruene Tests
+
+### Agent Teams (Planungsphase)
+
+Fuer Features die mehrere Schichten betreffen (Portal + IPC + App), kann die Planungsphase
+mit Agent Teams parallelisiert werden.
+
+**Voraussetzung:** `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`
+
+**Agent-Definitionen:** `.claude/agents/` (4 Agents)
+
+| Agent | Rolle | Modell | Schreibzugriff |
+|-------|-------|--------|----------------|
+| `planner` | Orchestrator, synthetisiert Plan | Opus | Nur `docs/plans/` |
+| `backend-scout` | Portal-API, DB, Migrations-Recherche | Sonnet | Read-only |
+| `frontend-scout` | Svelte, IPC, Preload-Recherche | Sonnet | Read-only |
+| `arch-scout` | Governance, Import-Grenzen, Tests | Sonnet | Read-only |
+
+**Ablauf:**
+1. PO gibt Feature-Beschreibung an `planner`
+2. Planner spawnt 3 Scouts parallel (Read-only-Recherche)
+3. Scouts liefern strukturierte Findings zurueck
+4. Planner synthetisiert zu Plan-Dokument in `docs/plans/<feature>.md`
+5. Plan wird an Aider uebergeben (normaler Pipeline-Flow)
+
+**Wann Agent Teams nutzen:**
+- Feature betrifft 3+ Schichten (DB + API + IPC + App)
+- Bestehender Code muss vorher verstanden werden
+- Plan braucht Governance-Pruefung (Founder Gate, Import-Grenzen)
+
+**Wann NICHT:**
+- Kleine Bugfixes, Einzeiler, reine UI-Aenderungen
+- Features die nur eine Datei betreffen
 
 ## Governance (Prozessmodell v2)
 

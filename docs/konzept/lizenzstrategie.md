@@ -1,8 +1,8 @@
-# Code-Fabrik — Lizenzstrategie GPL 3.0 + Support-Abo
+# Code-Fabrik — Lizenzstrategie GPL 3.0 + Servicepaket
 
-*Stand: 2026-03-07*
+*Stand: 2026-03-12*
 *Dieses Dokument ersetzt die bisherige MIT-Lizenz-Strategie und "Delayed Open Source".*
-*Aktualisiert: Einmalkauf entfernt — nur noch Support-Abos (PO-Entscheidung 2026-03-07)*
+*Aktualisiert: "Support-Abo" → "Servicepaket" (Reframing: Bequemlichkeit + Inhalte als Hauptwert, Support als Sicherheitsnetz)*
 
 ---
 
@@ -59,27 +59,30 @@ COMMUNITY-MODUS (ohne Key):
   DSGVO-Funktionen komplett
 ```
 
-### 3.2 Support-Abo-Modus (mit Key)
+### 3.2 Servicepaket-Modus (mit Key)
 
 Der Key schaltet **Service-Features** frei — Dinge die eine Verbindung zum
 Code-Fabrik-Portal erfordern:
 
 ```
-SUPPORT-ABO-MODUS (mit Key):
+SERVICEPAKET-MODUS (mit Key):
   Alles aus Community-Modus PLUS:
-  Update-Checker (prueft Portal auf neue Versionen)
   Fertige Installer (EXE/DMG/AppImage Download)
-  Support-Tickets (48h Reaktionszeit)
-  Feature-Requests + Voting (exklusiv fuer Abo-Kunden)
-  Vorlagen-Bibliothek (Satzungsvorlagen, DSGVO-Texte, Briefvorlagen)
-  Gebrandete PDFs (Vereinslogo im Footer statt "Code-Fabrik")
+  Zugang zum Download-Portal mit stabilen Releases
+  Update-Checker (prueft Portal auf neue Versionen)
+  Branchenspezifische Vorlagen-Pakete
+  Feature-Requests + Stimmrecht (exklusiv fuer Servicepaket-Kunden)
+  Gebrandete PDFs (eigenes Logo im Footer statt "Code-Fabrik")
   Cloud-Backup (verschluesselt, optional)
-  Benachrichtigungen (neue Features, wichtige Updates)
+  Technische Hilfe bei Problemen (Ticket, 48h)
 ```
+
+**Reihenfolge bewusst:** Bequemlichkeit und Inhalte stehen vorn.
+Technische Hilfe ist der letzte Punkt — das Sicherheitsnetz, nicht das Produkt.
 
 ### 3.3 Technische Umsetzung des Keys in der App
 
-Die App fragt beim Start: "Haben Sie einen Support-Schluessel?"
+Die App fragt beim Start: "Haben Sie einen Servicepaket-Schluessel?"
 
 ```
 App-Start:
@@ -89,8 +92,8 @@ App-Start:
         → Kein Unterschied in lokalen Features
     Nein → Alle lokalen Features verfuegbar
          → Service-Features ausgegraut mit Hinweis:
-           "Diese Funktion ist Teil des Support-Abos.
-            Mehr erfahren: codefabrik.de/support"
+           "Diese Funktion ist Teil des Servicepakets.
+            Mehr erfahren: detmers-publish.de/servicepaket"
          → Kein Nag-Screen, kein Popup, kein Timer
 ```
 
@@ -113,24 +116,25 @@ Der Key ist ein Service-Zugang, kein Produktschluessel.
 - SEPA-XML Export (ab Stufe 3)
 - Alle Stufen (1-5) voll funktionsfaehig — keine Feature-Gates
 
-### Support-Abo-Modus (mit Key)
+### Servicepaket-Modus (mit Key)
 
+- **Fertige Installer:** EXE/DMG/AppImage — Download, installieren, fertig
 - **Update-Checker:** "Version 1.3.0 verfuegbar — Changelog anzeigen?"
 - **Vorlagen:** Satzungsvorlagen, DSGVO-Texte, Datenschutzerklaerung-Muster
 - **Gebrandete PDFs:** Vereinslogo im Footer statt "Erstellt mit Code-Fabrik"
-- **Support:** Ticket ueber Portal, 48h Antwort
-- **Cloud-Backup:** Verschluesselte Sicherung auf Code-Fabrik-Server (optional)
-- **Feature-Requests + Voting:** Neue Funktionen und Tools vorschlagen und abstimmen (nur mit Key)
+- **Cloud-Backup:** Verschluesselte Sicherung (optional)
+- **Feature-Requests + Stimmrecht:** Neue Funktionen vorschlagen und abstimmen
+- **Technische Hilfe:** Ticket ueber Portal, 48h Antwort
 
-### Preismodell MitgliederSimple
+### Preismodell Mitglieder Lokal
 
 ```
 Community:     0 EUR — alle Features, selbst kompilieren oder von GitHub Release
-Support-Abo:  29 EUR/Jahr — fertige Installer + Support + Vorlagen + Updates
+Servicepaket: 39 EUR/Jahr — fertige Installer + Updates + Vorlagen + technische Hilfe
 ```
 
 Keine Staffelung nach Mitgliederzahl. Keine Staffelung nach Stufe.
-Ein Preis, ein Abo, alles drin. Bestandskunden behalten ihren Preis.
+Ein Preis, ein Paket, alles drin. Bestandskunden behalten ihren Preis.
 
 ---
 
@@ -148,24 +152,24 @@ Jeder einzelne Rechner ist als eigenstaendiges Tool auf GitHub verfuegbar:
 Jedes Tool funktioniert vollstaendig: Berechnung, PDF-Export, Transparenz-Box.
 Kein Wasserzeichen, keine Einschraenkung, kein "nur Bildschirm-Anzeige".
 
-### Support-Abo-Modus (mit Key): Finanz-Rechner-Toolbox
+### Servicepaket-Modus (mit Key): Finanz-Rechner-Toolbox
 
 - **Alle Rechner in einer App:** Statt 5 einzelne Tools eine integrierte Toolbox
 - **Fertige EXE/DMG:** Download, installieren, fertig
 - **Update-Checker:** Neue Rechner automatisch verfuegbar
 - **Vorlagen:** Branchenspezifische Report-Vorlagen
 - **Gebrandete PDFs:** Makler-Logo statt "Code-Fabrik"
-- **Support:** Ticket ueber Portal, 48h Antwort
-- **Feature-Requests + Voting:** Neue Rechner und Funktionen vorschlagen und abstimmen (nur mit Key)
+- **Feature-Requests + Stimmrecht:** Neue Rechner und Funktionen vorschlagen und abstimmen
+- **Technische Hilfe:** Ticket ueber Portal, 48h Antwort
 
 ### Preismodell Finanz-Rechner
 
 ```
 Community:     0 EUR — einzelne Rechner von GitHub, selbst kompilieren
-Support-Abo:  29 EUR/Jahr — alle Rechner als App + Support + Updates + Vorlagen
+Servicepaket: 39 EUR/Jahr — alle Rechner als App + Updates + Vorlagen + technische Hilfe
 ```
 
-Kein Einmalkauf. Die Software ist Open Source — es gibt nur Support-Abos.
+Kein Einmalkauf. Die Software ist Open Source — es gibt nur Servicepakete.
 
 ---
 

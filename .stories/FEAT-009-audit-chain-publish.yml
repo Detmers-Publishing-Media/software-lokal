@@ -1,0 +1,79 @@
+id: "FEAT-009"
+title: "audit-chain — Publish & Cleanup (manuelle Schritte)"
+epic: "OPEN-SOURCE"
+status: "ready"
+
+story_type: "product-fast"
+lane: "fast"
+platform_impact: "none"
+founder_gate_required: false
+force_approve_allowed: true
+auto_merge_allowed: true
+
+platform_rationale: ""
+reused_by_products: []
+non_goals:
+  - "Neue Features im Core (gehoert zu FEAT-008)"
+  - "Pro-Features oder Monetarisierung"
+
+description: |
+  Manuelle Schritte zum Veroeffentlichen von audit-chain v0.1.0.
+
+  Die Implementierung ist abgeschlossen (FEAT-008): Core, Tests (38), TypeScript
+  Declarations, README, Examples, GitHub Actions CI — alles in
+  packages/audit-chain/ fertig.
+
+  WICHTIG — Namenskonvention:
+  - Paketname: audit-chain
+  - GitHub Repo: detmerspublish/audit-chain
+  - Tagline: "Lightweight tamper-evident audit log for Node.js"
+  - NICHT "tamperproof-log" verwenden — dieser Name ist veraltet und wurde
+    durch "audit-chain" ersetzt. Alle Dokumente und Referenzen muessen
+    "audit-chain" verwenden.
+
+  Offene Dokument-Bereinigung:
+  - docs/konzept/audit-log-npm-marktrecherche.md enthaelt noch "tamperproof-log"
+  - docs/konzept/audit-log-npm-bewertung.md enthaelt noch "tamperproof-log"
+  - Beide Dateien muessen auf "audit-chain" umbenannt werden (Inhalt, nicht Dateiname)
+
+acceptance_criteria:
+  - "npm-Account auf npmjs.com vorhanden (fuer unscoped publish)"
+  - "GitHub Repo detmerspublish/audit-chain erstellt (public, MIT)"
+  - "Code aus packages/audit-chain/ in eigenes Repo gepusht"
+  - "npm publish Token in GitHub Secrets (NPM_TOKEN)"
+  - "npm publish --access public erfolgreich (v0.1.0)"
+  - "GitHub Release v0.1.0 mit Changelog"
+  - "Alle Dokumente: 'tamperproof-log' durch 'audit-chain' ersetzt"
+
+affected_files:
+  - "docs/konzept/audit-log-npm-marktrecherche.md"
+  - "docs/konzept/audit-log-npm-bewertung.md"
+
+depends_on:
+  - "FEAT-008"
+
+manual_steps:
+  - step: "npm-Account pruefen"
+    desc: "npmjs.com einloggen, sicherstellen dass 'audit-chain' als unscoped Paket publishbar ist"
+    status: "todo"
+  - step: "GitHub Repo erstellen"
+    desc: "github.com/detmerspublish/audit-chain — public, MIT, kein Template"
+    status: "todo"
+  - step: "Code in eigenes Repo pushen"
+    desc: "git init in packages/audit-chain/, remote add, push"
+    status: "todo"
+  - step: "npm Token erstellen"
+    desc: "npmjs.com → Access Tokens → Automation Token, in GitHub Secrets als NPM_TOKEN"
+    status: "todo"
+  - step: "Ersten Release veroeffentlichen"
+    desc: "git tag v0.1.0 && git push --tags → npm publish --access public"
+    status: "todo"
+  - step: "Dokumente bereinigen"
+    desc: "In marktrecherche.md und bewertung.md 'tamperproof-log' durch 'audit-chain' ersetzen"
+    status: "todo"
+  - step: "Marketing (optional, spaeter)"
+    desc: "dev.to Blog-Post, Reddit r/node, Hacker News Show HN"
+    status: "todo"
+
+estimated_effort: "S"
+time_limit: "1 Arbeitstag"

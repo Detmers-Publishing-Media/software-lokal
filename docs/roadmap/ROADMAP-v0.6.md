@@ -11,6 +11,7 @@
 **Typ:** Rein dokumentarisch, kein Code. Kein Blocker fuer v0.6.x.
 
 - [ ] Business-Plan ueberarbeiten (Marktanalyse, Finanzplanung, Zielgruppen)
+- [ ] FEAT-008: audit-chain npm-Paket (Vertrauensanker, siehe docs/konzept/audit-log-npm-bewertung.md)
 - [ ] Preisstruktur finalisieren (39/59/79 EUR Staffelung lt. Kap. 4.2)
 - [ ] Bundle B-05 Scope definieren: welche 5-8 Tools zum Launch?
 - [ ] Digistore24-Produktkonfiguration dokumentieren (Einmalkauf + Abo)

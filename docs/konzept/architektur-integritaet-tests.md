@@ -1,6 +1,6 @@
 # Code-Fabrik — Architekturkonzept: Integritaet, Event-Log, Updates & Testpflicht
 
-*Stand: 2026-03-04 | Gilt als Default fuer alle Code-Fabrik Desktop-Produkte*
+*Stand: 2026-03-11 | Gilt als Default fuer alle Code-Fabrik Desktop-Produkte*
 *Grundlage: Gesamtkonzept v3, Mitgliederverwaltung-Produktspec, Brainstorming Maerz 2026*
 
 ---
@@ -8,7 +8,7 @@
 ## 1. Geltungsbereich
 
 Dieses Konzept definiert die verbindliche Architektur fuer **alle** Code-Fabrik
-Desktop-Produkte (Tauri + SQLite). Es ist kein optionales Feature — jedes neue
+Desktop-Produkte (Electron + SQLite). Es ist kein optionales Feature — jedes neue
 Produkt muss diese Architektur von Tag 1 implementieren.
 
 Betroffene Produkte: MitgliederSimple, kuenftige B-05 Tools, B-24 Finanz-Rechner,
@@ -76,23 +76,27 @@ und im neuen OS-Keystore gespeichert.
 Die DB-Datei ist portabel — der Schluessel steckt nicht in der Datei, sondern
 wird aus dem Passwort abgeleitet.
 
-### 3.4 Tauri-Integration
+### 3.4 Electron-Integration
 
-`tauri-plugin-sql` muss gegen einen Custom-Build mit SQLCipher ausgetauscht werden.
-Das erfordert:
+`better-sqlite3` wird durch `@journeyapps/sqlcipher` ersetzt (Drop-in-Replacement
+mit SQLCipher-Unterstuetzung). Das erfordert:
 
-1. Fork von `tauri-plugin-sql` oder eigenes Plugin
-2. SQLCipher als native Dependency im Rust-Build
+1. `@journeyapps/sqlcipher` statt `better-sqlite3` in package.json
+2. `electron-rebuild` fuer native Module
 3. PRAGMA key beim Oeffnen der DB setzen
-4. Cross-Compilation fuer Windows/macOS/Linux testen
+4. Cross-Compilation fuer Windows/macOS/Linux via electron-builder
 
-**Aufwand:** 1-2 Wochen. **Zeitpunkt:** v0.3 oder v0.4.
+**Aufwand:** 1-2 Wochen. **Zeitpunkt:** v0.7 oder v0.8.
 
 ---
 
 ## 4. Saeule 2: Event-Log — Was passiert ist, ist beweisbar
 
 ### 4.1 Prinzip
+
+> **Hinweis:** Die HMAC-SHA256-Hash-Ketten-Logik wird als eigenstaendiges, oeffentliches
+> npm-Paket (`audit-chain`) extrahiert. Siehe FEAT-008 und
+> `docs/konzept/audit-log-npm-business-review.md` fuer Details.
 
 Jede Schreiboperation erzeugt ein Event. Die Events sind append-only (nur INSERT,
 nie UPDATE, nie DELETE). Eine HMAC-Hash-Kette verkettet alle Events kryptographisch.
@@ -584,7 +588,7 @@ Test: "SQLCipher verhindert Zugriff"
 
 ### 8.9 Kategorie 7: Smoke-Tests
 
-Bestehend (azure-pipelines.yml + tests/windows/smoke-test.ps1), erweitert um:
+Bestehend (GitHub Actions: electron-build.yml), erweitert um:
 
 ```
 Smoke-Test-Checkliste:
@@ -703,7 +707,7 @@ v0.3:  Event-Log Grundlage
        └── Unit-Tests fuer Event-Log
 
 v0.4:  SQLCipher + Backup
-       ├── tauri-plugin-sql mit SQLCipher ersetzen
+       ├── better-sqlite3 durch @journeyapps/sqlcipher ersetzen
        ├── Schluessel im OS-Keystore
        ├── Lokales Backup bei jedem Start
        ├── Backup-Wiederherstellung in Einstellungen
@@ -767,7 +771,7 @@ Fuer den Datenschutzbeauftragten:
 
 | # | Thema | Optionen | Empfehlung | Entscheiden bis |
 |---|-------|----------|------------|-----------------|
-| 1 | SQLCipher-Integration | Fork tauri-plugin-sql vs. eigenes Plugin | Fork (weniger Aufwand) | Vor v0.4 |
+| 1 | SQLCipher-Integration | @journeyapps/sqlcipher vs. eigener Build | @journeyapps/sqlcipher (Drop-in) | Vor v0.8 |
 | 2 | Event-DB separat? | Ab v0.3 separat vs. ab v0.5 | Ab v0.3 in Haupt-DB, ab v0.5 separat | Vor v0.3 |
 | 3 | Code-Signing-Zertifikat | EV (~300 EUR/J) vs. Standard (~70 EUR/J) | Standard + Reputation aufbauen | Vor v0.7 |
 | 4 | HMAC-Secret | In App eingebettet vs. aus Schluessel abgeleitet | Aus DB-Schluessel ableiten | Vor v0.3 |

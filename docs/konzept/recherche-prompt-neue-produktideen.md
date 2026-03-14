@@ -93,8 +93,8 @@ Ein gutes Code-Fabrik-Produkt hat:
 - **B-01 Arbeitsschutz**: Vorlagen basierend auf DGUV-Vorschriften, ArbSchG (spaeter)
 
 ### Bewertete Produktideen (bereits dokumentiert)
-- **NachweisSimple**: Pruefprotokolle, Checklisten, Nachweise, Historie (horizontaler Plattformverstaerker)
-- **TeilnehmerSimple**: Teilnehmer-, Helfer-, Gruppen-, Kursverwaltung (Ableitung aus Vereinslogik)
+- **Nachweis Lokal**: Pruefprotokolle, Checklisten, Nachweise, Historie (horizontaler Plattformverstaerker)
+- **Teilnehmer Lokal**: Teilnehmer-, Helfer-, Gruppen-, Kursverwaltung (Ableitung aus Vereinslogik)
 
 ---
 
@@ -102,7 +102,7 @@ Ein gutes Code-Fabrik-Produkt hat:
 
 Finde genau **5 neue Themenbundles** mit je **25 konkreten Tools** (125 Tools gesamt), die:
 
-1. **Noch nicht oben gelistet sind** (keine Vereins-Tools, keine Finanz-Rechner, kein Arbeitsschutz, kein Makler-Buero, kein NachweisSimple, kein TeilnehmerSimple)
+1. **Noch nicht oben gelistet sind** (keine Vereins-Tools, keine Finanz-Rechner, kein Arbeitsschutz, kein Makler-Buero, kein Nachweis Lokal, kein Teilnehmer Lokal)
 2. **Zum Plattformkern passen** (SQLite, PDF, CSV, Listen, Audit-Log, lokale Datenhaltung)
 3. **Eine reale, erreichbare Zielgruppe im DACH-Raum haben** (keine hypothetischen Maerkte)
 4. **Niedrige bis mittlere Haftung** haben (organisatorisch, nicht beratend)

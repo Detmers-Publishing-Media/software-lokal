@@ -24,7 +24,6 @@ Studio Ops/00-Vault/Code-Fabrik/
   digistore-ipn-passphrase   — Digistore24 IPN Kennwort
   cloudflare-origin-ca-cert  — Cloudflare Origin CA Zertifikat
   cloudflare-origin-ca-key   — Cloudflare Origin CA Private Key
-  circleci-api-token         — CircleCI API Token
   github-push-token          — GitHub Push Token (Fine-Grained, Admin:R/W)
   ssh-deploy-key             — SSH Private Key (Ed25519, ohne Passphrase)
   ssh-deploy-key-pub         — SSH Public Key

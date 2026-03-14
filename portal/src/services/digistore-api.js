@@ -5,11 +5,18 @@ async function apiCall(fn, params = {}) {
   if (!DIGISTORE_API_KEY) {
     throw new Error('DIGISTORE_API_KEY nicht konfiguriert');
   }
-  const url = `${BASE_URL}/${DIGISTORE_API_KEY}/json/${fn}`;
-  const body = new URLSearchParams(params);
+  const url = `${BASE_URL}/${fn}/json`;
+  const prefixed = {};
+  for (const [k, v] of Object.entries(params)) {
+    prefixed[`data[${k}]`] = v;
+  }
+  const body = new URLSearchParams(prefixed);
   const res = await fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'X-DS-API-KEY': DIGISTORE_API_KEY,
+    },
     body,
   });
   const data = await res.json();

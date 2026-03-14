@@ -191,29 +191,30 @@ Die Tabelle zeigt, in welcher Entwicklungsstufe (Sprint) jedes Feature hinzukomm
 
 Die Software steht unter der **GPL 3.0** und ist vollstaendig Open Source. Alle Features sind kostenlos nutzbar — ohne Mitglieder-Limit, ohne Stufen-Einschraenkung, ohne Freischaltung. Der Quellcode ist oeffentlich auf GitHub verfuegbar.
 
-### 4.2 Support-Abo (optional)
+### 4.2 Servicepaket (optional)
 
-Das Support-Abo schaltet Service-Features frei, die ueber die reine Software hinausgehen:
+Das Servicepaket bietet Bequemlichkeit und Inhalte — nicht primaer Support:
 
-| Leistung | Ohne Abo | Mit Support-Abo |
+| Leistung | Ohne Paket | Mit Servicepaket |
 |----------|:-:|:-:|
 | Alle Software-Features (Stufe 1-5) | ✓ | ✓ |
 | Updates & Bugfixes (selbst installiert) | ✓ | ✓ |
-| Community-Support (GitHub Issues) | ✓ | ✓ |
+| Community (GitHub Issues) | ✓ | ✓ |
+| Fertige Installer (EXE/DMG/AppImage) | – | ✓ |
+| Zugang zum Download-Portal | – | ✓ |
 | Update-Checker (automatische Benachrichtigung) | – | ✓ |
 | Vorlagen-Bibliothek (Spendenquittung, Mahnbrief, Satzung) | – | ✓ |
 | PDF-Briefkopf ohne Wasserzeichen | – | ✓ |
-| E-Mail-Support (Antwort innerhalb 48h) | – | ✓ |
-| Cloud-Backup (verschluesselt, optional) | – | ✓ |
+| Feature-Requests + Stimmrecht | – | ✓ |
+| Technische Hilfe bei Problemen (Ticket, 48h) | – | ✓ |
 
-**Preise:**
+**Preis:** 39 EUR/Jahr (automatische Verlaengerung, jederzeit kuendbar)
 
-- **Support-Abo**: 29 EUR/Jahr (automatische Verlaengerung, jederzeit kuendbar)
-- **Einmalkauf**: 39 EUR fuer 12 Monate Service-Zugang (keine automatische Verlaengerung)
+Kein Telefon-Support. Keine Schulung. Keine individuelle Einrichtung.
 
 ### 4.3 Positionierung
 
-Die Software ist frei — der Support ist das Produkt. Wer seine Mitgliederdaten einmal eingepflegt hat wechselt nicht mehr — das ist der staerkste Retentions-Faktor dieser Software-Kategorie. Der kostenlose Einstieg ohne jede Einschraenkung senkt die Huerde auf Null. Die optionalen Service-Features (Update-Checker, Templates, Support) erzeugen wiederkehrenden Umsatz ohne kuenstliche Limitierungen.
+Die Software ist frei — das Servicepaket ist das Produkt. Der Hauptwert ist Bequemlichkeit (fertige Installer, Updates) und Inhalte (Vorlagen), nicht persoenliche Betreuung. Wer seine Mitgliederdaten einmal eingepflegt hat wechselt nicht mehr — das ist der staerkste Retentions-Faktor dieser Software-Kategorie. Der kostenlose Einstieg ohne jede Einschraenkung senkt die Huerde auf Null.
 
 ---
 

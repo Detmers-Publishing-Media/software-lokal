@@ -4,8 +4,6 @@
   import { members } from '../lib/stores/members.js';
   import { getMember, saveMember, getFeeClasses, getMembers } from '../lib/db.js';
   import { STATUS_OPTIONS } from '../lib/types.js';
-  import { checkMemberLimit } from '../lib/license.js';
-
   let { memberId = null } = $props();
 
   const today = new Date().toISOString().split('T')[0];
@@ -21,8 +19,6 @@
 
   let feeClasses = $state([]);
   let saving = $state(false);
-  let limitReached = $state(false);
-  let limitInfo = $state(null);
   let isEdit = $derived(memberId != null);
 
   onMount(async () => {
@@ -42,18 +38,7 @@
   async function handleSubmit() {
     if (!form.first_name.trim() || !form.last_name.trim()) return;
 
-    // Check trial limit for new members
-    if (!isEdit) {
-      const limit = await checkMemberLimit();
-      if (!limit.allowed) {
-        limitReached = true;
-        limitInfo = limit;
-        return;
-      }
-    }
-
     saving = true;
-    limitReached = false;
     try {
       await saveMember(memberId ? { ...form, id: memberId } : form);
       members.set(await getMembers());
@@ -69,14 +54,6 @@
     <h1>{isEdit ? 'Mitglied bearbeiten' : 'Neues Mitglied'}</h1>
     <button class="btn-secondary" onclick={() => currentView.set('list')}>Abbrechen</button>
   </div>
-
-  {#if limitReached && limitInfo}
-    <div class="limit-box">
-      <strong>Probe-Limit erreicht</strong>
-      <p>Sie haben {limitInfo.count} von {limitInfo.limit} Mitgliedern in der Probe-Version.
-        Um weitere Mitglieder anzulegen, benoetigen Sie eine Lizenz.</p>
-    </div>
-  {/if}
 
   <form onsubmit={e => { e.preventDefault(); handleSubmit(); }}>
     <fieldset>

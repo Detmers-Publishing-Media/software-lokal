@@ -1,7 +1,8 @@
 id: "FEAT-005"
-title: "Device-Limit fuer Lizenzkeys (max. 3 Geraete)"
+title: "Instance-Limit fuer Lizenzkeys + verifizierbare Trial-Keys"
 epic: "LIZENZ-LIFECYCLE"
-status: "inbox"
+status: "refined"
+priority: "P0-pre-prod"
 
 story_type: "platform-core"
 lane: "slow"
@@ -11,61 +12,90 @@ force_approve_allowed: false
 auto_merge_allowed: false
 
 platform_rationale: "Aendert Lizenz-Validierung in electron-platform und Portal — betrifft alle Produkte"
-reused_by_products: ["mitglieder-lokal", "rechnung-lokal", "finanz-rechner"]
+reused_by_products: ["mitglieder-lokal", "rechnung-lokal", "finanz-rechner", "nachweis-lokal", "berater-lokal"]
 non_goals:
   - "Hardware-Fingerprinting (zu invasiv, DSGVO-kritisch)"
   - "Online-Pflicht (Offline-Modus muss weiter funktionieren)"
+  - "Self-Service 'Geraet entfernen' UI (Auto-Bereinigung reicht)"
+  - "Device-Management-Portal fuer Endkunden"
 
 description: |
+  Zwei zusammenhaengende Anforderungen:
+
+  **1. Instance-Limit (Weitergabe-Schutz)**
   Aktuell kann ein Lizenzkey auf beliebig vielen Geraeten gleichzeitig
   genutzt werden. Das ermoeglicht unkontrollierte Weitergabe.
 
-  Loesung: Jedes Geraet registriert sich beim Portal mit einer anonymen
-  Device-ID (z.B. UUID, beim ersten Start generiert und lokal gespeichert).
-  Das Portal zaehlt aktive Devices pro Key und lehnt ab, wenn das Limit
+  Loesung: Jede App-Installation generiert beim ersten Start eine zufaellige
+  Instance-ID (UUID), gespeichert in license.json. Bei jeder Online-Validierung
+  wird die Instance-ID mitgeschickt. Portal trackt Instance-IDs pro Key
+  (JSONB-Array in metadata oder eigene Tabelle) und lehnt ab, wenn das Limit
   ueberschritten wird.
 
-  Regeln:
-  - Max. 3 Geraete pro Key (1 Arbeitsplatz + 1 Laptop + 1 Reserve)
-  - Device-ID ist eine zufaellige UUID (kein Hardware-Fingerprint)
-  - Geraet kann manuell deaktiviert werden (Self-Service oder Support)
-  - Inaktive Geraete (>90 Tage keine Validierung) werden automatisch freigegeben
-  - Offline-Modus: Cache bleibt 30 Tage gueltig, Device-Registrierung
-    erfolgt bei naechster Online-Validierung
-  - Trial-Keys: gleiches Limit (3 Geraete)
+  Limits:
+  - Trial-Keys (CFTx): max. 3 Instanzen
+  - Produktions-Keys (CFxx): max. 3 Instanzen
+
+  Auto-Bereinigung: Instance-IDs die sich >90 Tage nicht gemeldet haben
+  (keine Revalidierung), werden automatisch entfernt. Damit loest sich
+  das "neuer Rechner"-Problem von selbst ohne Kunden-Aktion.
+
+  Kein "Geraet entfernen"-UI, kein Self-Service. Falls ein Kunde wirklich
+  am Limit ist: Support-Ticket → Admin entfernt manuell eine Instance-ID.
+
+  **2. Verifizierbare Trial-Keys (30-Tage-Probe)**
+  Trial-Keys (CFTx-Prefix) muessen im Portal registriert sein mit
+  expires_at = NOW() + 30 Tage. Damit:
+  - Support-Tickets funktionieren (validateByHash findet den Key)
+  - Portal kann Restlaufzeit pruefen
+  - Keine Geraete-Beschraenkung als Limitierung, 30 Tage reicht
+
+  Desktop fordert bei Erststart (kein Key vorhanden) automatisch einen
+  Trial-Key vom Portal an: POST /api/license/trial (kein Auth noetig).
 
   Aenderungen:
-  - Portal: `license_devices` Tabelle (license_id, device_id, last_seen, active)
-  - Portal: `/api/license/validate` prueft Device-Count, registriert Device
-  - electron-platform: Device-ID generieren + bei Validierung mitsenden
-  - Portal: Admin-API zum Deaktivieren einzelner Devices
+  - Portal: Instance-Tracking in license_instances Tabelle oder licenses.metadata
+  - Portal: /api/license/validate prueft Instance-Count, registriert Instance
+  - Portal: POST /api/license/trial — oeffentlicher Endpoint, erzeugt 30-Tage-Key
+  - Portal: Auto-Bereinigung inaktiver Instances (>90 Tage) bei Validierung
+  - electron-platform: Instance-ID generieren + bei Validierung mitsenden
+  - electron-platform: Auto-Trial-Request bei Erststart
+  - Portal: Admin-API zum manuellen Entfernen einer Instance-ID
 
 acceptance_criteria:
-  - "Portal DB hat Tabelle license_devices (license_id, device_id, first_seen, last_seen, active)"
-  - "POST /api/license/validate akzeptiert optionalen deviceId-Parameter"
-  - "4. Geraet bekommt valid:false mit reason:'device_limit_exceeded'"
-  - "Inaktive Devices (>90 Tage) werden bei Validierung automatisch freigegeben"
-  - "electron-platform generiert UUID beim ersten Start, speichert in userData"
-  - "electron-platform sendet deviceId bei jeder Online-Validierung"
+  - "App generiert beim ersten Start eine Instance-ID (UUID v4), gespeichert in license.json"
+  - "POST /api/license/validate akzeptiert instanceId-Parameter"
+  - "Trial-Key: 4. Instanz bekommt valid:false mit reason:'instance_limit_exceeded'"
+  - "Produktions-Key: 4. Instanz bekommt valid:false mit reason:'instance_limit_exceeded'"
+  - "Instances die >90 Tage inaktiv sind werden bei Validierung automatisch entfernt"
+  - "POST /api/license/trial erzeugt 30-Tage Trial-Key (CFTx-Prefix) ohne Auth"
+  - "Trial-Key ist in Portal-DB registriert (source='auto-trial', expires_at=NOW()+30d)"
+  - "Support-Tickets funktionieren mit Trial-Keys (validateByHash findet den Key)"
+  - "Erststart ohne Key → App fordert automatisch Trial-Key an"
   - "Offline-Cache funktioniert weiterhin (30 Tage ohne Online-Check)"
-  - "Admin-API: DELETE /api/admin/license/:id/devices/:deviceId"
-  - "Tests: Device-Limit, Auto-Freigabe, Offline-Kompatibilitaet"
+  - "Admin-API: DELETE /api/admin/license/:id/instances/:instanceId"
+  - "Tests: Instance-Limit (Trial=3, Prod=3), Auto-Bereinigung, Trial-Erstellung, Offline-Kompatibilitaet"
   - "CLAUDE.md aktualisiert"
 
 affected_files:
   - "portal/src/db/migrate-v*.sql"
   - "portal/src/routes/api-license.js"
   - "portal/src/services/license.js"
+  - "portal/src/services/license-keygen.js"
   - "packages/electron-platform/lib/license-client.js"
+  - "packages/electron-platform/ipc/license.js"
   - "portal/test/unit/license-service.test.js"
   - "portal/test/unit/license-validate-api.test.js"
+  - "packages/electron-platform/tests/test_license_client.js"
 
 depends_on: []
 
 manual_steps:
-  - step: "Device-Limit kommunizieren"
-    desc: "FAQ und Produktseiten aktualisieren: 'Ihr Key gilt fuer bis zu 3 Geraete'"
-  - step: "Support-Prozess definieren"
-    desc: "Wie reagiert Support wenn Kunde mehr als 3 Geraete braucht?"
+  - step: "Portal-DB-Migration deployen"
+    desc: "migrate-v*.sql mit license_instances Tabelle auf Portal-Server ausfuehren"
+  - step: "Kommunikation"
+    desc: "FAQ: 'Ihr Key gilt fuer bis zu 3 Geraete. Inaktive Geraete werden automatisch freigegeben.'"
+  - step: "Support-Prozess"
+    desc: "Bei Instance-Limit-Problemen: Admin entfernt manuell eine alte Instance-ID"
 
 estimated_effort: "L"

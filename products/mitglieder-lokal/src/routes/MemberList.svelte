@@ -5,7 +5,7 @@
   import { currentView } from '../lib/stores/navigation.js';
   import { getMembers, getClubProfile } from '../lib/db.js';
   import { generateCsv, downloadCsv } from '@codefabrik/shared/csv';
-  import { checkMemberLimit, hasLicenseKey } from '../lib/license.js';
+  import { hasLicenseKey } from '../lib/license.js';
   import { generateMitgliederliste, generateTelefonliste, generateGeburtstagsliste, generateJubilarliste } from '../lib/pdf-lists.js';
 
   const columns = [
@@ -20,7 +20,6 @@
 
   let sortKey = $state('last_name');
   let sortDir = $state('asc');
-  let limitInfo = $state(null);
   let showPrintMenu = $state(false);
 
   let sortedMembers = $derived.by(() => {
@@ -38,7 +37,6 @@
 
   onMount(async () => {
     members.set(await getMembers());
-    limitInfo = await checkMemberLimit();
   });
 
   async function handlePrint(type) {
@@ -77,12 +75,6 @@
       <button class="btn-primary" onclick={() => currentView.set('add')}>+ Neues Mitglied</button>
     </div>
   </div>
-
-  {#if limitInfo && !hasLicenseKey() && limitInfo.count >= 25}
-    <div class="trial-banner">
-      Probe-Version: {limitInfo.limit - limitInfo.count} von {limitInfo.limit} Plaetzen verbleibend
-    </div>
-  {/if}
 
   <div class="filters">
     <SearchBar bind:value={$searchQuery} placeholder="Name, Nr. oder Ort suchen..." />

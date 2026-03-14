@@ -335,7 +335,7 @@ CI/CD: Forgejo Actions, GitHub Actions (Windows)
 
 ### 8.1 Architektur-Integrität (DB-Produkte)
 
-- **Event-Log:** Jede Schreiboperation → Event in append-only Tabelle, HMAC-SHA256 Hash-Kette
+- **Event-Log:** Jede Schreiboperation → Event in append-only Tabelle, HMAC-SHA256 Hash-Kette (wird als oeffentliches npm-Paket `audit-chain` extrahiert — siehe FEAT-008)
 - **SQLCipher:** DB verschlüsselt mit AES-256, Schlüssel im OS-Keystore
 - **Schema-Versionierung:** `_schema_meta`, inkrementelle Migration (max 3 Versionen), danach Event-Replay
 - **Backup:** Automatisch bei App-Start (wenn > 24h), VACUUM INTO, Rotation (7d/4w/12m)

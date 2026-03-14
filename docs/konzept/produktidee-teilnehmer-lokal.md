@@ -1,7 +1,8 @@
-# Produktidee: TeilnehmerSimple
+# Produktidee: Teilnehmer Lokal
 
-*Stand: 2026-03-06*
+*Stand: 2026-03-11*
 *Status: Idee / Bewertung*
+*Umbenannt von: TeilnehmerSimple → Teilnehmer Lokal (Namenskonvention: "[Funktion] Lokal")*
 
 ---
 
@@ -13,6 +14,9 @@ Es hilft kleinen Traegern, Vereinen oder Initiativen dabei, Personen internen
 Ablaeufen zuzuordnen, Listen zu pflegen und Nachweise / Bescheinigungen / Exporte
 sauber zu erzeugen.
 
+**Kernbotschaft:** Teilnehmer, Gruppen und Einsaetze lokal verwalten —
+Listen drucken, Bescheinigungen erzeugen, Historie nachvollziehen.
+
 ---
 
 ## Zielgruppe
@@ -20,7 +24,7 @@ sauber zu erzeugen.
 Geeignet fuer kleine Organisationen mit einfachen Personen- und Gruppenzuordnungen:
 
 - kleine Bildungstraeger
-- Vereine
+- Vereine (Kursprogramm, Helferkoordination)
 - Initiativen
 - Trainer / Kursanbieter
 - Ehrenamtsorganisationen
@@ -39,25 +43,20 @@ mit pragmatischem Verwaltungsbedarf.
 5. Listen, Bescheinigungen oder Exporte erzeugen
 6. Verlauf nachvollziehen
 
-Nah an Mitgliederverwaltung, aber etwas allgemeiner.
+Nah an Mitgliederverwaltung, aber allgemeiner und ohne Beitrags-/Finanzfokus.
 
 ---
 
 ## Muss-Funktionen (Version 1)
 
-- Personenverwaltung
+- Personenverwaltung (CRUD)
 - Gruppen-/Kurs-/Einsatzverwaltung
-- Zuordnung von Personen
-- Statusfelder
-- Listenansichten
+- Zuordnung von Personen zu Gruppen
+- Statusfelder (aktiv, abgeschlossen, abgesagt)
+- Listenansichten mit Filter
 - PDF-Listen / Bescheinigungen
 - CSV-Import / Export
 - einfache Historie
-
-Optional frueh, aber nur wenn wirklich noetig:
-
-- Notizfeld
-- einfache Terminzuordnung
 
 ---
 
@@ -73,7 +72,7 @@ Abgrenzung besonders wichtig:
 - digitale Lernplattform
 - Rollen-/Rechtesysteme mit vielen Ebenen
 
-Sonst driftet das Produkt sofort in eine andere Klasse.
+**Teilnehmer Lokal ist internes Verwaltungs-Backoffice, keine Kursplattform.**
 
 ---
 
@@ -81,18 +80,15 @@ Sonst driftet das Produkt sofort in eine andere Klasse.
 
 **Hoch**
 
-TeilnehmerSimple kann viel aus MitgliederSimple uebernehmen:
+Teilnehmer Lokal kann viel aus Mitglieder Lokal uebernehmen:
 
-- Personen-CRUD
-- Listen
-- Filter
+- Personen-CRUD (person-Tabelle aus finanz-shared)
+- Listen / Filter (DataTable, SearchBar)
 - PDF-Ausgabe
-- CSV
+- CSV-Import/Export
 - Statuslogik
-- Historie
+- Historie / Audit-Log
 - Importpfade
-
-Gutes Ableitungsprodukt.
 
 ---
 
@@ -103,6 +99,7 @@ Gutes Ableitungsprodukt.
 - Zahlungsbereitschaft kann kleiner und heterogener sein als bei Finanztools
 - Trotzdem interessant bei enger Produktgrenze: Organisationen die Listen brauchen,
   Bescheinigungen drucken, Zuordnungen verwalten, keine Cloud-Plattform wollen
+- 39 EUR/Jahr Servicepaket
 
 ---
 
@@ -110,15 +107,16 @@ Gutes Ableitungsprodukt.
 
 **Mittel bis hoch**
 
-Kein so starker horizontaler Verstaerker wie NachweisSimple, aber ein guter Test,
+Kein so starker horizontaler Verstaerker wie Nachweis Lokal, aber ein guter Test,
 ob Personen-/Gruppen-/Statusmuster wirklich plattformfaehig sind.
 
 Es staerkt:
 
-- Personenmodelle
-- Zuordnungslogik
+- Personenmodelle (Wiederverwendung person-Tabelle)
+- Zuordnungslogik (Person ↔ Gruppe)
 - Listen-/Exportlogik
 - PDF-/Bescheinigungsbausteine
+- Anwesenheits-Erfassung
 
 ---
 
@@ -126,22 +124,27 @@ Es staerkt:
 
 Hauptrisiko: Funktionsdrift.
 
-Sehr schnell kommen Wuensche wie:
-
-- Online-Buchung
-- Terminplanung
-- Mailversand
-- Wartelisten
-- Zahlungsabwicklung
-- Self-Service
-
-Deshalb muss die Botschaft glasklar sein:
-
-**TeilnehmerSimple ist internes Verwaltungs-Backoffice, keine Kursplattform.**
+Sehr schnell kommen Wuensche wie: Online-Buchung, Terminplanung, Mailversand,
+Wartelisten, Zahlungsabwicklung, Self-Service.
 
 ---
 
-## Empfehlung (externer Review)
+## Empfehlung
 
-TeilnehmerSimple eher als zweite Ableitung aus der Vereins-/Personenlogik
-priorisieren — nach NachweisSimple.
+Teilnehmer Lokal eher als zweite Ableitung aus der Vereins-/Personenlogik
+priorisieren — nach Nachweis Lokal.
+
+---
+
+## Einordnung in die Produktfamilie
+
+```
+Bestehend:
+  Rechnung Lokal       — Rechnungen + EUeR + ZUGFeRD (Nebenberufler)
+  Mitglieder Lokal     — Vereinsverwaltung (Vereine 30-250 Mitglieder)
+  FinanzRechner Lokal  — Versicherungsrechner (Makler)
+
+Naechste Stufe:
+  Nachweis Lokal       — Pruefprotokolle + Checklisten + Nachweise (Prioritaet 1)
+  Teilnehmer Lokal     — Teilnehmer-/Gruppen-/Kursverwaltung (Prioritaet 2) ← DIESES PRODUKT
+```

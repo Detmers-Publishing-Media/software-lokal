@@ -1,48 +1,66 @@
-# Produktstrategie Lokal-Tools — Rechnung Lokal & Mitglieder Lokal
+# Produktstrategie Lokal-Tools
 
-Stand: März 2026
+Stand: Maerz 2026 (aktualisiert 2026-03-12)
+*Reframing: "Support-Abo" → "Servicepaket", Support-Erwartung konkretisiert (Dreistufenmodell)*
 
 ---
 
 ## 1. Zweck
 
-Dieses Dokument ist die verbindliche Leitlinie für beide Desktop-Produkte der Code-Fabrik:
-**Rechnung Lokal** und **Mitglieder Lokal**. Es ersetzt die produktspezifischen Einzelstrategien
-und definiert die gemeinsame Basis für Produktentscheidungen, Architektur, Preis,
+Dieses Dokument ist die verbindliche Leitlinie fuer alle Desktop-Produkte der Code-Fabrik.
+Es definiert die gemeinsame Basis fuer Produktentscheidungen, Architektur, Preis,
 Erwartungsmanagement und Kommunikation.
 
 ---
 
-## 2. Die zwei Produkte
+## 2. Die Produkte
+
+### Nachweis Lokal (NEU — Prioritaet 1)
+
+**Pruefprotokolle, Checklisten und Nachweise lokal dokumentieren — einfach,
+nachvollziehbar und ohne SaaS-Zwang.**
+
+- Zielgruppe: Kleine Betriebe, Vereine, Dienstleister, Ehrenamtsstrukturen mit Dokumentationspflichten
+- Typischer Nutzer: Sicherheitsbeauftragter, Hausmeister, Vereinsvorstand — eine Person dokumentiert
+- Marktluecke: SafetyCulture/Lumiform sind Cloud-Plattformen, Jotform ist ein generischer Form-Builder. Kein lokales, privacy-first Nachweis-Tool existiert.
+- Differenzierung: audit-chain (HMAC-SHA256 Hash-Kette) als sichtbares Kernversprechen — nicht nur Unterbau, sondern Produktkern
+- Strategischer Wert: Hoechster Plattformverstaerker (5 neue Bausteine), Quernutzen in 3+ Bundles
 
 ### Rechnung Lokal
 
-**Einfache Rechnungsstellung mit E-Rechnung (ZUGFeRD) und Einnahmen-Ausgaben-Übersicht
-für Nebenberufler und Kleinunternehmer — lokal, ohne Cloud, ohne Buchhaltungskomplexität.**
+**Einfache Rechnungsstellung mit E-Rechnung (ZUGFeRD) und Einnahmen-Ausgaben-Uebersicht
+fuer Nebenberufler und Kleinunternehmer — lokal, ohne Cloud, ohne Buchhaltungskomplexitaet.**
 
 - Zielgruppe: Nebenberufler, Kleinunternehmer (§19 UStG), Kleingewerbetreibende
-- Typischer Nutzer: Kursleiter, Coach, Berater — eine Person, 2–50 Rechnungen/Monat
-- Marktlücke: Kein lokales, günstiges Rechnungstool mit E-Rechnung existiert
-- Markttreiber: E-Rechnungspflicht ab 01.01.2028 für alle B2B-Rechnungen
+- Typischer Nutzer: Kursleiter, Coach, Berater — eine Person, 2-50 Rechnungen/Monat
+- Marktluecke: Kein lokales, guenstiges Rechnungstool mit E-Rechnung existiert
+- Markttreiber: E-Rechnungspflicht ab 01.01.2028 fuer alle B2B-Rechnungen
 
 ### Mitglieder Lokal
 
-**Einfache Vereinsverwaltung für kleine und mittlere Vereine — Mitglieder, Sparten, Beiträge
+**Einfache Vereinsverwaltung fuer kleine und mittlere Vereine — Mitglieder, Sparten, Beitraege
 und Standarddokumente lokal verwalten, ohne Cloud und ohne IT-Aufwand.**
 
-- Zielgruppe: Kleine Vereine (30–250 Mitglieder), ehrenamtlich organisiert
-- Typischer Nutzer: Schriftführer oder Vorsitzender — eine Person pflegt die Daten
-- Marktlücke: Kein modernes, lokales Desktop-Tool für Win/Mac/Linux
+- Zielgruppe: Kleine Vereine (30-250 Mitglieder), ehrenamtlich organisiert
+- Typischer Nutzer: Schriftfuehrer oder Vorsitzender — eine Person pflegt die Daten
+- Marktluecke: Kein modernes, lokales Desktop-Tool fuer Win/Mac/Linux
 - Differenzierung: Spendenbescheinigungen, Ehrenamtsstunden, Versammlungsprotokoll
 
-### Warum zwei Produkte auf einer Basis
+### FinanzRechner Lokal
 
-Beide Produkte teilen sich:
+**Versicherungsmathematische Rechner fuer Makler — kein DB, kein Event-Log.**
+
+- Zielgruppe: Versicherungsmakler
+- Status: v0.2.0 fertig, 5 Rechner, 23 Tests
+
+### Warum mehrere Produkte auf einer Basis
+
+Alle Produkte teilen sich:
 
 - dieselbe Desktop-Plattform (Electron + Svelte 5 + SQLite)
-- dasselbe Geschäftsmodell (Open Source + Servicepaket)
+- dasselbe Geschaeftsmodell (Open Source + Servicepaket)
 - dieselben Kernversprechen (lokal, einfach, offen, produktisiert)
-- überlappende Funktionen (Einnahmen-Ausgaben-Übersicht, PDF-Erzeugung, Profilverwaltung)
+- ueberlappende Funktionen (PDF-Erzeugung, Listen, Filter, Audit-Log)
 
 Was sie unterscheidet, sind aktivierte Feature-Module, Labels und Templates — nicht die Codebasis.
 
@@ -51,28 +69,45 @@ Was sie unterscheidet, sind aktivierte Feature-Module, Labels und Templates — 
 ## 3. Entwicklungsreihenfolge
 
 ```
-Phase 1: finanz-shared Package
-         → Gemeinsames Datenmodell, Models, EÜR-Logik, PDF-Engine, Tests
+Phase 1: finanz-shared Package (DONE)
+         → Gemeinsames Datenmodell, Models, EUeR-Logik, Tests
+         → audit-chain npm-Paket (DONE, v0.1.0 publish-ready)
 
-Phase 2: Rechnung Lokal v1.0
-         → Beweist: Shared-Architektur, ZUGFeRD, EÜR, Feature-Flags
-         → Erster zahlender Kunde vor E-Rechnungspflicht 2028
+Phase 2: Nachweis Lokal v1.0 (NEU — naechster Schritt)
+         → Beweist: audit-chain als sichtbares Produktversprechen
+         → Beweist: Vorlagen-Engine, Pruefprotokoll-Modul, Faelligkeits-Tracker
+         → Liefert: 5 neue Plattform-Bausteine fuer alle kuenftigen Produkte
+         → Kleiner Scope, schneller erstes Produkt am Markt
 
-Phase 3: Mitglieder Lokal v2.0 (Neubau auf Shared-Architektur)
+Phase 3: Rechnung Lokal v1.0
+         → Nutzt: finanz-shared + Plattform-Bausteine aus Nachweis Lokal
+         → Beweist: ZUGFeRD, EUeR, Feature-Flags
+         → Zeitdruck: E-Rechnungspflicht 2028
+
+Phase 4: Mitglieder Lokal v2.0 (Neubau auf Shared-Architektur)
          → Nutzt: dasselbe Datenmodell, dieselben Finanz-Komponenten
-         → Ergänzt: Mitgliederverwaltung, Sparten, Spendenbescheinigungen
+         → Ergaenzt: Mitgliederverwaltung, Sparten, Spendenbescheinigungen
          → Migration bestehender v0.5.0-Datenbanken
 
-Phase 4: Weitere Produkte
-         → Neue Produkte durch Feature-Aktivierung, nicht neuen Code
+Phase 5: Weitere Produkte / Bundle-Erweiterungen
+         → Teilnehmer Lokal, Immobilien Lokal, Handwerk Lokal
+         → Neue Produkte durch Feature-Aktivierung + bestehende Bausteine
 ```
 
-**Rechnung Lokal zuerst**, weil:
+**Nachweis Lokal zuerst**, weil:
 
-- Kleinerer Scope (kein DSGVO-Spezialfall, keine Sparten, keine SEPA)
-- E-Rechnungspflicht erzeugt konkreten Handlungsdruck ab 2028
-- Validiert die Shared-Architektur mit einem echten Produkt
-- Mitglieder Lokal v0.5.0 existiert bereits und kann Kunden bedienen, während die neue Architektur reift
+- Kleinster Scope (kein Finanz-Spezialwissen, keine Regulatorik wie ZUGFeRD/EUeR)
+- audit-chain wird zum sichtbaren Kernversprechen statt nur Unterbau
+- 5 neue Plattform-Bausteine die ALLE kuenftigen Produkte staerken
+- Quernutzen in 3+ Bundles (Handwerk, Kommunal, Immobilien)
+- Schnellster Weg zum ersten verkaufbaren Produkt
+- Mitglieder Lokal v0.5.0 + Rechnung Lokal Architektur existieren bereits und koennen Kunden bedienen
+
+**Rechnung Lokal danach**, weil:
+
+- E-Rechnungspflicht 2028 erzeugt konkreten Handlungsdruck
+- Nutzt die in Phase 2 bewiesenen Plattform-Bausteine
+- ZUGFeRD/EUeR erfordert mehr Regulatorik-Arbeit
 
 ---
 
@@ -80,52 +115,65 @@ Phase 4: Weitere Produkte
 
 ### 4.1 Lokal statt Cloud
 
-Alle Daten bleiben auf dem eigenen Rechner. Kein API-Call während der Nutzung.
+Alle Daten bleiben auf dem eigenen Rechner. Kein API-Call waehrend der Nutzung.
 Kein Telemetrie, kein Tracking, kein Account.
 
-### 4.2 Einfach statt überladen
+### 4.2 Einfach statt ueberladen
 
-Die Software deckt die häufigsten Aufgaben der jeweiligen Zielgruppe ab,
-ohne in ein komplexes ERP- oder Buchhaltungssystem zu kippen.
+Die Software deckt die haeufigsten Aufgaben der jeweiligen Zielgruppe ab,
+ohne in ein komplexes ERP- oder Compliance-System zu kippen.
 
 ### 4.3 Offen statt Blackbox
 
 Der Code ist Open Source (GPL-3.0). Daten bleiben exportierbar. Kein Lock-in.
-Jeder Kassenprüfer, jeder Steuerberater, jeder IT-Dienstleister kann reinschauen.
+Jeder Kassenpruefer, jeder Steuerberater, jeder IT-Dienstleister kann reinschauen.
 
-### 4.4 Service statt Gating
+### 4.4 Nachvollziehbar statt ueberschreibbar
 
-Bezahlt wird nicht für freigeschaltete Funktionen, sondern für fertige Installer,
+Jede Aenderung wird in einer kryptographisch gesicherten Hash-Kette dokumentiert
+(audit-chain, HMAC-SHA256). Nachweise sind glaubwuerdig, weil Manipulationen
+sofort erkennbar sind.
+
+### 4.5 Service statt Gating
+
+Bezahlt wird nicht fuer freigeschaltete Funktionen, sondern fuer fertige Installer,
 Updates, Vorlagen und Servicezugang. Alle lokalen Kernfunktionen bleiben frei nutzbar.
 
-### 4.5 Produktisiert statt betreuungsintensiv
+### 4.6 Produktisiert statt betreuungsintensiv
 
 Probleme werden durch klare Dialoge, Fehlercodes, Diagnosefunktionen, Backup-Mechanismen
-und verständliche Hinweise gelöst — nicht durch individuelle Betreuung.
+und verstaendliche Hinweise geloest — nicht durch individuelle Betreuung.
 
 ---
 
-## 5. Gemeinsames Geschäftsmodell
+## 5. Gemeinsames Geschaeftsmodell
 
 ### 5.1 Open Source plus Servicepaket
 
 **Die Software ist Open Source. Das bezahlte Angebot ist das Servicepaket.**
 
-**39 EUR pro Jahr** pro Verein bzw. pro Unternehmen.
+**39 EUR pro Jahr** pro Organisation bzw. pro Unternehmen.
 
-Kein Mitglieder-Limit, kein Rechnungs-Limit, keine Funktionsstaffel, keine künstliche Verknappung.
+Kein Mitglieder-Limit, kein Rechnungs-Limit, kein Nachweis-Limit,
+keine Funktionsstaffel, keine kuenstliche Verknappung.
 
-### 5.2 Das Servicepaket enthält
+### 5.2 Das Servicepaket enthaelt
 
-- Fertige lauffähige Installationsdateien (.exe / .dmg / .AppImage)
-- Zugriff auf stabile Releases
+**Bequemlichkeit (Hauptwert):**
+- Fertige lauffaehige Installationsdateien (.exe / .dmg / .AppImage)
+- Zugriff auf stabile Releases im Download-Portal
 - Update-Hinweise und Update-Service
-- Vorlagen und professionelle PDF-Ausgaben
-- Diagnose- und Wiederherstellungsfunktionen
-- Zugriff auf Portal / Downloadbereich
-- Priorisierte Hilfe bei echten Blockern
 
-### 5.3 Das Servicepaket enthält ausdrücklich nicht
+**Inhalte (skaliert ohne Zeitaufwand):**
+- Branchenspezifische Vorlagen-Pakete
+- Professionelle PDF-Ausgaben mit eigenem Logo
+- Feature-Requests mit Stimmrecht
+
+**Sicherheitsnetz (selten noetig):**
+- Diagnose- und Wiederherstellungsfunktionen
+- Technische Hilfe bei echten Blockern (Ticket, 48h)
+
+### 5.3 Das Servicepaket enthaelt ausdruecklich nicht
 
 - Telefon-Support
 - Individuelle Einrichtung oder Datenmigration
@@ -136,7 +184,7 @@ Kein Mitglieder-Limit, kein Rechnungs-Limit, keine Funktionsstaffel, keine küns
 
 ### 5.4 Was wir bewusst nicht tun
 
-- Keine kostenlose Light-Version mit künstlichen Sperren
+- Keine kostenlose Light-Version mit kuenstlichen Sperren
 - Keine Preisstaffel
 - Keine versteckten Zusatzmodule
 - Kein Upselling
@@ -145,15 +193,32 @@ Kein Mitglieder-Limit, kein Rechnungs-Limit, keine Funktionsstaffel, keine küns
 
 ## 6. Zielgruppen im Detail
 
-### 6.1 Rechnung Lokal
+### 6.1 Nachweis Lokal
 
-**Primär:** Nebenberufler und Kleinunternehmer mit einfachen Verhältnissen:
+**Primaer:** Kleine Teams und Einzelverantwortliche mit Dokumentationspflichten:
+
+- Sicherheitsbeauftragte in Kleinbetrieben
+- Hausmeister / Facility-Verantwortliche
+- Vereinsvorstande (Geraetepruefungen, Unterweisungen)
+- Kleine Vermieter (Uebergabeprotokolle, Rauchmelder)
+- Ehrenamtliche (Feuerwehr, THW, Jugendarbeit)
+- Handwerker (Wartungs-/Pruefprotokolle)
+
+**Nicht-Zielgruppe:**
+
+- Unternehmen die standortuebergreifende Operations-Plattformen brauchen
+- Teams die Echtzeit-Kollaboration und Dashboards erwarten
+- Nutzer die einen generischen No-Code-Form-Builder suchen
+
+### 6.2 Rechnung Lokal
+
+**Primaer:** Nebenberufler und Kleinunternehmer mit einfachen Verhaeltnissen:
 
 - Kursleiter, Coaches, Berater, Freelancer, Therapeuten
 - Kleinunternehmer nach §19 UStG
-- 2–50 Rechnungen pro Monat
+- 2-50 Rechnungen pro Monat
 - Bisher Word/Excel oder gar nichts
-- Steuererklärung selbst via ELSTER, kein Steuerberater
+- Steuererklaerung selbst via ELSTER, kein Steuerberater
 
 **Nicht-Zielgruppe:**
 
@@ -161,22 +226,19 @@ Kein Mitglieder-Limit, kein Rechnungs-Limit, keine Funktionsstaffel, keine küns
 - Unternehmen mit Warenwirtschaft, Lager, Bestellwesen
 - Teams die gleichzeitig Rechnungen schreiben
 
-### 6.2 Mitglieder Lokal
+### 6.3 Mitglieder Lokal
 
-**Primär:** Kleine bis mittlere Vereine mit 30–250 Mitgliedern:
+**Primaer:** Kleine bis mittlere Vereine mit 30-250 Mitgliedern:
 
 - Ehrenamtlich organisiert
-- Eine Hauptperson für die Verwaltung
-- Bisher Excel, Papier oder unübersichtliche Einzellösungen
-- Keine Cloud gewünscht
+- Eine Hauptperson fuer die Verwaltung
+- Bisher Excel, Papier oder unuebersichtliche Einzelloesungen
+- Keine Cloud gewuenscht
 - Einfache bis moderate Mehrspartenstruktur
-
-**Sekundär:** Vereine bis ca. 500 Mitglieder, solange die Abläufe einfach bleiben.
 
 **Nicht-Zielgruppe:**
 
 - Vereine mit stark arbeitsteiligem Vorstand und gleichzeitiger Datenpflege
-- Vereine mit stark autonomen Sparten, getrennten Kassen
 - Vereine mit komplexer Buchhaltung oder DATEV-Erwartung
 - Vereine die App, Mitgliederportal oder integrierten Mailversand erwarten
 
@@ -186,60 +248,167 @@ Kein Mitglieder-Limit, kein Rechnungs-Limit, keine Funktionsstaffel, keine küns
 
 ### 7.1 Was die Produkte sind
 
-Lokale Organisationswerkzeuge für typische Aufgaben der jeweiligen Zielgruppe.
+Lokale Organisationswerkzeuge fuer typische Aufgaben der jeweiligen Zielgruppe.
 
 ### 7.2 Was die Produkte nicht sind
 
 - **Keine Cloud-Plattform**
 - **Keine Team-Kollaborationssoftware**
-- **Keine vollwertige Finanzbuchhaltung** (keine doppelte Buchführung, kein SKR03/04)
+- **Keine vollwertige Finanzbuchhaltung** (keine doppelte Buchfuehrung, kein SKR03/04)
 - **Kein DATEV-System**
 - **Kein ERP-System** (keine Warenwirtschaft, kein Lager)
-- **Kein App-Ökosystem**
-- **Kein Ersatz für Steuer-, Rechts- oder Fachberatung**
+- **Keine Operations-/Compliance-Plattform** (kein SafetyCulture/Lumiform-Ersatz)
+- **Kein App-Oekosystem**
+- **Kein Ersatz fuer Steuer-, Rechts- oder Fachberatung**
 
 ### 7.3 Support-Erwartung
 
-Der Service ist bewusst standardisiert. Wir helfen bei Installation, Updates,
-Nutzung der vorgesehenen Funktionen, Diagnose bei reproduzierbaren Fehlern
-und Wiederherstellung im Rahmen der eingebauten Mechanismen.
+**Grundsatz:** Support ist das Sicherheitsnetz, nicht das Produkt.
+Der Hauptwert des Servicepakets ist Bequemlichkeit (Installer, Updates)
+und Inhalte (Vorlagen). Nicht persoenliche Betreuung.
 
-Wir übernehmen nicht: individuelle Fachberatung, manuelle Datenpflege,
-Sonderimporte, spontane Feature-Zusagen, Notfall-SLA oder Echtzeit-Support.
+**Dreistufige Problemloesung (Deflection by Design):**
+
+| Stufe | Was passiert | Aufwand |
+|-------|-------------|---------|
+| 1. Selbstdiagnose | Integritaetspruefung, Fehlercodes, Diagnose-Bundle, In-App-Hinweise | Null (eingebaut) |
+| 2. Wissensdatenbank | FAQ, Fehlerkatalog, Video-Anleitungen (einmalig erstellen) | Einmal |
+| 3. Ticket (48h) | Asynchron, Diagnose-Bundle vorausgefuellt, kein Echtzeit-Kanal | Gebatcht |
+
+**Kein Chat. Kein Telefon. Keine Echtzeit.** Das ist keine Einschraenkung —
+das ist das Modell. Bei 39 EUR/Jahr ist asynchroner Support mit 48h-Antwortzeit
+voellig angemessen und muss auf der Verkaufsseite glasklar stehen.
+
+**Support-Scope:**
+
+Abgedeckt:
+- Installation und Updates
+- Fehler in der Software (Bugs)
+- Datenwiederherstellung (Backup)
+
+Nicht abgedeckt:
+- "Wie funktioniert Feature X?" → Doku / Videos
+- Individuelle Einrichtung oder Datenmigration
+- Schulungen
+- Steuer-, Rechts-, Vereins- oder Buchhaltungsberatung
+- Sonderprogrammierung
+- Notfall-SLA
+
+**Batch-Processing:** Tickets werden nicht reaktiv bearbeitet, sondern in
+festen Zeitbloecken (z.B. 2h pro Woche). Das 48h-SLA gibt diesen Puffer.
+
+**KI-Triage:** Diagnose-Bundle automatisch auswerten und dem Ticket eine
+Kategorie + Loesungsvorschlag anhaengen — bevor der Mensch es sieht.
+Aber nicht als "KI-Support-Chat" verkaufen, der Eskalationserwartungen weckt.
 
 ---
 
-## 8. Produktprinzipien für die Entwicklung
+## 8. Produktprinzipien fuer die Entwicklung
 
 Jedes neue Feature muss an diesen Fragen bestehen:
 
-1. **Löst es ein häufiges Problem der Hauptzielgruppe?**
-2. **Ist es ohne Schulung verständlich?**
+1. **Loest es ein haeufiges Problem der Hauptzielgruppe?**
+2. **Ist es ohne Schulung verstaendlich?**
 3. **Passt es zur lokalen Single-User-Grundidee?**
-4. **Reduziert oder erhöht es Supportaufwand?**
-5. **Erzeugt es gefährliche Erwartungen in Richtung Buchhaltung, Kollaboration oder Beratung?**
-6. **Lässt es sich stabil testen und klar begrenzen?**
-7. **Gehört es in den Shared-Kern oder ist es produktspezifisch?**
+4. **Reduziert oder erhoeht es Supportaufwand?**
+5. **Erzeugt es gefaehrliche Erwartungen in Richtung Buchhaltung, Kollaboration oder Beratung?**
+6. **Laesst es sich stabil testen und klar begrenzen?**
+7. **Gehoert es in den Shared-Kern oder ist es produktspezifisch?**
 
 Wenn ein Feature diese Fragen nicht sauber besteht, kommt es nicht in v1.
 
 ---
 
-## 9. Featurestrategie Rechnung Lokal
+## 9. Featurestrategie Nachweis Lokal
 
 ### 9.1 Kern v1.0
+
+#### A. Pruefvorlagen / Checklisten
+
+- Vorlagen anlegen und verwalten (CRUD)
+- Pflichtfelder, Abschnitte, Bewertung/Status
+- Feldtypen: Ja/Nein, Text, Datum, Zahl
+- Vorlagen kopieren und anpassen
+
+#### B. Nachweis-Erfassung
+
+- Pruefung aus Vorlage starten
+- Foto-Referenzen anhaengen
+- Unterschriftsfeld (optional)
+- Notizen, Zeitstempel, verantwortliche Person
+- Status: offen → geprueft → bestanden/bemaengelt
+
+#### C. Pruefprotokoll / Bericht
+
+- Aus jeder Pruefung automatisch ein PDF-Bericht
+- Sammel-PDF fuer Zeitraeume
+- Druckansicht
+- CSV-Export
+
+#### D. Faelligkeits-Tracker
+
+- Naechste Pruefung / naechster Termin
+- Uebersicht faelliger und ueberfaelliger Pruefungen
+- Filter nach Objekt, Typ, Status
+
+#### E. Nachvollziehbare Historie
+
+- Aenderungen sichtbar (Timeline pro Objekt)
+- Keine stillen Ueberschreibungen
+- audit-chain im Hintergrund (HMAC-SHA256 Hash-Kette)
+- Verifikation der Kette auf Knopfdruck
+
+#### F. Betriebssicherheit
+
+- Backup / Wiederherstellung
+- Datenexport (CSV, JSON)
+- Diagnosepaket
+- Lizenz-System (39 EUR/Jahr Servicepaket)
+
+### 9.2 Bewusst nicht in v1
+
+- Mehrbenutzer-Workflows
+- E-Mail-Versand / Benachrichtigungen
+- Eskalationslogik / CAPA
+- Mobile Aussendienst-App
+- Komplexe Rollenmodelle
+- Externe Integrationen (API, Webhooks)
+- Kundenportal / Dashboard
+- Signatur-Workflows (digitale Signaturen mit Zertifikat)
+
+### 9.3 Beste Einstiegs-Use-Cases
+
+1. **Wartungs- und Pruefprotokolle** (Geraete, Anlagen, Fahrzeuge)
+2. **Uebergaben und Abnahmen** (Wohnungen, Raeume, Arbeitsplaetze)
+3. **Hygiene-, Sicherheits- oder Routine-Checklisten** (HACCP, Arbeitsschutz, Brandschutz)
+
+### 9.4 Neue Plattform-Bausteine
+
+| Baustein | Wiederverwendung |
+|----------|-----------------|
+| Vorlagen-Engine | Rechnung Lokal (Rechnungsvorlagen), Mitglieder Lokal (Versammlungsvorlagen) |
+| Pruefprotokoll-Modul | Handwerk-Bundle, Kommunal-Bundle, Agrar-Bundle |
+| Faelligkeits-/Fristen-Tracker | Alle Produkte mit wiederkehrenden Terminen |
+| Status-Workflow-Engine | Alle Produkte mit Vorgangsbearbeitung |
+| Timeline-/Historien-Ansicht | Alle Produkte mit Audit-Log |
+
+---
+
+## 10. Featurestrategie Rechnung Lokal
+
+### 10.1 Kern v1.0
 
 #### A. Rechnungsstellung
 
 - Rechnung erstellen (Positionen, Einzelpreis, Menge, Summe)
-- Pflichtangaben nach §14 UStG automatisch befüllt
+- Pflichtangaben nach §14 UStG automatisch befuellt
 - Kleinunternehmer-Regelung (§19 UStG) als Profil-Einstellung
 - Rechnungsnummern fortlaufend, konfigurierbar
-- Kunde anlegen / aus Liste wählen
+- Kunde anlegen / aus Liste waehlen
 - Wiederkehrende Rechnungen (Vorlage → Klick → neue Rechnung)
-- Storno-Rechnung (Gutschrift) statt Löschen
+- Storno-Rechnung (Gutschrift) statt Loeschen
 - **ZUGFeRD-Export (PDF/A-3 + eingebettetes XML nach EN 16931)**
-- Einfacher PDF-Export (für B2C)
+- Einfacher PDF-Export (fuer B2C)
 
 #### B. Kundenverwaltung (schlank)
 
@@ -247,17 +416,17 @@ Wenn ein Feature diese Fragen nicht sauber besteht, kommt es nicht in v1.
 - Suche und Filter
 - Kennzeichnung B2B / B2C
 
-#### C. Einnahmen-Ausgaben-Übersicht (EÜR)
+#### C. Einnahmen-Ausgaben-Uebersicht (EUeR)
 
 - Einnahmen automatisch aus Rechnungen (wenn als bezahlt markiert)
 - Ausgaben manuell erfassen (Datum, Betrag, Kategorie, Beleg)
-- Kategorien nach Anlage EÜR (BMF-Standard)
-- Jahresübersicht mit Summen pro Kategorie
-- Monatsübersicht / Saldo
-- Storno statt Löschen
+- Kategorien nach Anlage EUeR (BMF-Standard)
+- Jahresuebersicht mit Summen pro Kategorie
+- Monatsuebersicht / Saldo
+- Storno statt Loeschen
 - Jahresabschluss-PDF
 
-#### D. Geschäftsprofil
+#### D. Geschaeftsprofil
 
 - Firmenname / Name, Anschrift, Steuernummer
 - Bankverbindung, Logo / Briefkopf
@@ -271,32 +440,32 @@ Wenn ein Feature diese Fragen nicht sauber besteht, kommt es nicht in v1.
 - Diagnosepaket
 - 10-Jahres-Aufbewahrungshinweis
 
-### 9.2 Bewusst nicht in v1
+### 10.2 Bewusst nicht in v1
 
 - Kein ELSTER-Direktexport
-- Keine Angebote / Auftragsbestätigungen
+- Keine Angebote / Auftragsbestaetigungen
 - Keine automatischen Mahnungen
 - Kein Kassenbuch, kein DATEV-Export
 - Keine Warenwirtschaft
 - Keine Umsatzsteuervoranmeldung
 
-### 9.3 Regulatorisch verpflichtend
+### 10.3 Regulatorisch verpflichtend
 
 | Anforderung | Umsetzung |
 |---|---|
-| Pflichtangaben §14 UStG | Profil-Felder + automatische Befüllung |
+| Pflichtangaben §14 UStG | Profil-Felder + automatische Befuellung |
 | Kleinunternehmer §19 UStG | Profil-Einstellung, Hinweistext auf Rechnung |
 | Fortlaufende Rechnungsnummern | Auto-Increment, konfigurierbar |
 | ZUGFeRD (E-Rechnung) | PDF/A-3 + EN 16931 XML, ab v1.0 Pflicht |
-| Aufbewahrung 10 Jahre | Storno statt Löschen, kein automatisches Löschen |
-| GoBD-Prozessunterstützung | Event-Log, Hash-Kette, Unveränderbarkeit |
-| Haftungsausschluss | „Organisatorisches Hilfsmittel, ersetzt keine Steuerberatung" |
+| Aufbewahrung 10 Jahre | Storno statt Loeschen, kein automatisches Loeschen |
+| GoBD-Prozessunterstuetzung | Event-Log, Hash-Kette, Unveraenderbarkeit |
+| Haftungsausschluss | "Organisatorisches Hilfsmittel, ersetzt keine Steuerberatung" |
 
 ---
 
-## 10. Featurestrategie Mitglieder Lokal
+## 11. Featurestrategie Mitglieder Lokal
 
-### 10.1 Kern v1.0 (= v2.0 auf Shared-Architektur)
+### 11.1 Kern v1.0 (= v2.0 auf Shared-Architektur)
 
 #### A. Mitgliederverwaltung
 
@@ -304,60 +473,49 @@ Wenn ein Feature diese Fragen nicht sauber besteht, kommt es nicht in v1.
 - Suche und Filter
 - Status und Eintritt/Austritt
 - Gruppen / Abteilungen / Sparten (Mitglied kann mehreren zugeordnet sein)
-- Optionale Hauptsparte
 - CSV-Import und CSV-Export
 - PDF-Mitgliederlisten, Filter nach Sparte
-- DSGVO-Basisfunktionen (Löschung, Einwilligung, Audit-Log)
+- DSGVO-Basisfunktionen (Loeschung, Einwilligung, Audit-Log)
 
-#### B. Beiträge in schlanker Form
+#### B. Beitraege in schlanker Form
 
 - Beitragsklassen
 - Soll-/Ist-Status
 - Manuelle Zahlungserfassung
-- Jahresübersicht
+- Jahresuebersicht
 - Einfache Mahn- oder Hinweisdokumente als PDF
 
-#### C. Einnahmen-Ausgaben-Übersicht
+#### C. Einnahmen-Ausgaben-Uebersicht
 
-- Aus finanz-shared: dieselbe EÜR-Logik wie Rechnung Lokal
-- Kategorien: Ideeller Bereich, Wirtschaftl. Geschäftsbetrieb, Vermögensverwaltung
-- Jahresabschluss-PDF für Kassenprüfer
-- Storno statt Löschen
+- Aus finanz-shared: dieselbe EUeR-Logik wie Rechnung Lokal
+- Kategorien: Ideeller Bereich, Wirtschaftl. Geschaeftsbetrieb, Vermoegensverwaltung
+- Jahresabschluss-PDF fuer Kassenpruefer
+- Storno statt Loeschen
 
 #### D. Spenden / Bescheinigungen
 
 - Spenderdaten verwalten
-- Zuwendungsbestätigungen nach BMF-Muster (PDF)
+- Zuwendungsbestaetigungen nach BMF-Muster (PDF)
 - Sammel-PDF pro Jahr
-- Vereinsdaten / Briefkopf / Freistellungsbescheid
 
 #### E. Betriebssicherheit
 
 - Aus electron-platform: Backup, Wiederherstellung, Diagnosepaket
-- Datenexport, Umzugs-/Übergabehilfe
+- Datenexport, Umzugs-/Uebergabehilfe
 
-### 10.2 Optional in v1 (wenn stabil)
-
-#### F. Versammlung schlank
-
-- Versammlung anlegen, Anwesenheitsliste, Quorum-Anzeige
-- Einfache Protokollvorlage / PDF
-
-### 10.3 Bewusst nicht im Kern
+### 11.2 Bewusst nicht im Kern
 
 - Echter Mehrplatzbetrieb / Live-Sync
-- Flexible Felder als Baukastensystem
-- SEPA-XML-Erzeugung (nur bei klarer Nachfrage und robuster Implementierung)
+- SEPA-XML-Erzeugung (nur bei klarer Nachfrage)
 - DATEV, GoBD-Zertifizierung
-- E-Mail-Versand, Website-Baukasten, Mobile App
-- Online-Mitgliedsanträge, Multi-Mandanten
-- Komplexe Mehrspartenlogik mit getrennten Kassen
+- E-Mail-Versand, Mobile App
+- Online-Mitgliedsantraege, Multi-Mandanten
 
 ---
 
-## 11. Shared-Finanz-Architektur
+## 12. Shared-Architektur
 
-### 11.1 Grundprinzip
+### 12.1 Grundprinzip
 
 Produkte sind **Konfigurationen eines gemeinsamen Kerns**, nicht eigene Codebasen.
 
@@ -365,77 +523,64 @@ Sie unterscheiden sich in:
 
 - Welche Feature-Module aktiviert sind
 - Welche Views / Routes sichtbar sind
-- Welche Templates / PDF-Ausgaben verfügbar sind
+- Welche Templates / PDF-Ausgaben verfuegbar sind
 - Welche Begriffe in der UI verwendet werden
 
 Sie teilen sich:
 
 - Das Datenmodell
-- Die Geschäftslogik (EÜR, Zahlungen, Personen-CRUD)
+- Die Geschaeftslogik (Personen-CRUD, Zahlungen, EUeR)
 - Die Komponenten (DataTable, SearchBar, Export, PDF-Engine)
 - Die Plattform (Electron, Backup, License, Support, Update)
+- audit-chain (Hash-Kette fuer alle Produkte mit DB)
 
-### 11.2 Package-Struktur
+### 12.2 Package-Struktur
 
 ```
 packages/
   electron-platform/        (existiert) Electron Main-Prozess
   shared/                   (existiert) Crypto, CSV, License
-  app-shared/           (existiert) Svelte 5 Shared Components
-
-  finanz-shared/            (NEU) Shared Finanz-Kern
-    src/
-      db/
-        schema.sql          Gemeinsames Datenmodell
-        migrations/         Versionierte Migrationen
-      models/
-        invoice.js          Rechnungs-CRUD + Events
-        person.js           Kunden/Mitglieder-CRUD + Events
-        transaction.js      Einnahmen/Ausgaben + Events
-        category.js         EÜR-Kategorien
-        fee-class.js        Beitragsklassen (nur Vereins-Produkte)
-      pdf/
-        invoice-pdf.js      Rechnungs-PDF
-        zugferd.js          ZUGFeRD XML + PDF/A-3
-        euer-pdf.js         EÜR-Jahresabschluss
-        receipt-pdf.js      Spendenbescheinigung (nur Vereins-Produkte)
-        list-pdf.js         Listen-PDF
-      euer/
-        categories.js       Anlage-EÜR-Kategorien (BMF)
-        summary.js          Jahresberechnung, Monatsübersicht, Saldo
-
-  ui-shared/                (NEU) Svelte 5 Shared Views
-    src/components/
-      InvoiceForm.svelte
-      InvoiceList.svelte
-      TransactionForm.svelte
-      TransactionList.svelte
-      PersonForm.svelte
-      PersonList.svelte
-      EuerDashboard.svelte
-      ProfileForm.svelte
+  app-shared/               (existiert) Svelte 5 Shared Components
+  ui-shared/                (existiert) Generische UI-Komponenten
+  finanz-shared/            (existiert) Shared Finanz-Kern
+  audit-chain/              (existiert) npm-Paket, publish-ready v0.1.0
 
 products/
-  rechnung-simple/          Rechnung Lokal (product.config.js + produkt-spezifische Views)
-  mitglieder-lokal/        Mitglieder Lokal (product.config.js + produkt-spezifische Views)
+  nachweis-lokal/            (NEU) Nachweis Lokal
+  rechnung-lokal/            (existiert) Rechnung Lokal
+  mitglieder-lokal/          (existiert) Mitglieder Lokal v0.5.0
+  finanz-rechner/            (existiert) FinanzRechner Lokal v0.2.0
 ```
 
-### 11.3 Feature-Flags per Produktkonfiguration
+### 12.3 Feature-Flags per Produktkonfiguration
 
 ```js
+// Nachweis Lokal
+{
+  features: {
+    inspections: true, templates: true, deadlines: true,
+    invoices: false, customers: false, euer: false, zugferd: false,
+    members: false, departments: false, fees: false,
+    donations: false, assembly: false
+  },
+  labels: { person: 'Verantwortlicher', profile: 'Organisationsprofil' }
+}
+
 // Rechnung Lokal
 {
   features: {
+    inspections: false, templates: false, deadlines: false,
     invoices: true, customers: true, euer: true, zugferd: true,
     members: false, departments: false, fees: false,
     donations: false, assembly: false
   },
-  labels: { person: 'Kunde', personPlural: 'Kunden', profile: 'Geschäftsprofil' }
+  labels: { person: 'Kunde', personPlural: 'Kunden', profile: 'Geschaeftsprofil' }
 }
 
 // Mitglieder Lokal
 {
   features: {
+    inspections: false, templates: false, deadlines: false,
     invoices: false, customers: false, euer: true, zugferd: false,
     members: true, departments: true, fees: true,
     donations: true, assembly: true
@@ -444,36 +589,18 @@ products/
 }
 ```
 
-### 11.4 Gemeinsames Datenmodell
-
-```
-Shared-Kern (immer):          Nur Rechnungsprodukte:    Nur Vereinsprodukte:
-  profile                       invoice                   fee_class
-  person                        invoice_item              payment
-  person_group                                            donation
-  person_group_m                                          assembly
-  transaction                                             assembly_item
-  category                                                attendance
-  document
-  events
-  _schema_meta
-```
-
-Schema wird Feature-aware erzeugt: Nur Tabellen für aktivierte Features werden angelegt.
-Migrationen sind ebenfalls Feature-aware.
-
 ---
 
-## 12. Leitlinie Mehrplatz / Zusammenarbeit
+## 13. Leitlinie Mehrplatz / Zusammenarbeit
 
 ### Grundsatz
 
-Beide Produkte sind **Single-User-Desktop-Apps**.
+Alle Produkte sind **Single-User-Desktop-Apps**.
 
 ### Was wir priorisieren
 
 - Saubere Backups
-- Einfache Datenübergabe (Vorstandswechsel, Rechner-Umzug)
+- Einfache Datenuebergabe (Vorstandswechsel, Rechner-Umzug)
 - Wiederherstellung
 - Datenexport in offenen Formaten
 
@@ -481,53 +608,52 @@ Beide Produkte sind **Single-User-Desktop-Apps**.
 
 - Gleichzeitiges Bearbeiten durch mehrere Personen
 - Konfliktfreies Live-Sync
-- Cloud-gestützte Teamarbeit
-
-### Kommunikation
-
-> Die Software ist für Einzelnutzer gedacht — eine Person pflegt die Daten.
-> Für Übergaben und Absicherung gibt es Export-, Backup- und Wiederherstellungsfunktionen.
+- Cloud-gestuetzte Teamarbeit
 
 ---
 
-## 13. Feature-Roadmap (beide Produkte)
+## 14. Feature-Roadmap
 
-### Phase 1: Rechnung Lokal kaufbar machen
+### Phase 1: finanz-shared + audit-chain (DONE)
+
+- Gemeinsames Datenmodell, Models, EUeR-Logik, Tests
+- audit-chain npm-Paket (38 Tests, publish-ready)
+
+### Phase 2: Nachweis Lokal v1.0 (NAECHSTER SCHRITT)
+
+- Pruefvorlagen / Checklisten
+- Nachweis-Erfassung mit Foto + Unterschrift
+- PDF-Pruefprotokolle
+- Faelligkeits-Tracker
+- audit-chain als sichtbares Kernversprechen
+- Installer + Produkttexte + Portal-Eintrag
+
+### Phase 3: Rechnung Lokal v1.0
 
 - Rechnungsstellung + ZUGFeRD
-- EÜR-Übersicht
+- EUeR-Uebersicht
 - Kundenverwaltung
-- PDF/CSV
-- Backup/Wiederherstellung
-- Installer + Produkttexte
+- PDF/CSV + Backup
 
-### Phase 2: Selbsthilfe und Stabilität (beide Produkte)
+### Phase 4: Stabilitaet (alle Produkte)
 
 - Bessere Validierung und Hilfetexte
 - Recovery-Center und Diagnosepakete
 - Import-Assistenten
 - Mehr Standardvorlagen
 
-### Phase 3: Mitglieder Lokal v2.0 auf Shared-Architektur
+### Phase 5: Mitglieder Lokal v2.0 auf Shared-Architektur
 
 - Neubau auf finanz-shared
 - Migration bestehender v0.5.0-Datenbanken
-- Spendenbescheinigungen, Sparten, Beiträge
-- Optional: Versammlungsprotokoll
+- Spendenbescheinigungen, Sparten, Beitraege
 
-### Phase 4: Nützliche Erweiterungen (bei klarer Nachfrage)
+### Phase 6: Bundle-Erweiterungen (bei Nachfrage)
 
-Rechnung Lokal:
-
-- XRechnung (für Behörden-Rechnungen)
-- Angebote / Auftragsbestätigungen
-- Wiederkehrende Rechnungen mit automatischer Erzeugung
-
-Mitglieder Lokal:
-
-- Ehrenamtsstunden (falls Referenzkunden es wollen)
-- SEPA (nur bei robuster Implementierung)
-- Datensicherung mit Freigabe / Übergabe-Funktion
+- Teilnehmer Lokal
+- Immobilien Lokal (aus Bundle B1)
+- Handwerk Lokal (aus Bundle B2)
+- Weitere Produkte durch Feature-Aktivierung
 
 ### Nicht als Standardziel
 
@@ -536,104 +662,92 @@ Mitglieder Lokal:
 - DATEV-Export
 - Umsatzsteuervoranmeldung
 - Cloud-Zentralserver
+- Operations-/Compliance-Plattform
 
 ---
 
-## 14. Harte Produktentscheidungen
+## 15. Harte Produktentscheidungen
 
-Wenn „mehr Features" gegen „weniger Supportaufwand" steht → **weniger Supportaufwand**.
+Wenn "mehr Features" gegen "weniger Supportaufwand" steht → **weniger Supportaufwand**.
 
-Wenn „größere Zielgruppe" gegen „klarere Positionierung" steht → **klarere Positionierung**.
+Wenn "groessere Zielgruppe" gegen "klarere Positionierung" steht → **klarere Positionierung**.
 
-Wenn „technisch elegant" gegen „einfach erklärbar" steht → **einfach erklärbar**.
+Wenn "technisch elegant" gegen "einfach erklaerbar" steht → **einfach erklaerbar**.
 
-Wenn „produktspezifischer Code" gegen „Shared-Kern" steht → **Shared-Kern**, sofern das Feature in mindestens zwei Produkten sinnvoll ist.
+Wenn "produktspezifischer Code" gegen "Shared-Kern" steht → **Shared-Kern**, sofern das Feature in mindestens zwei Produkten sinnvoll ist.
 
 ---
 
-## 15. Kommunikation
+## 16. Kommunikation
 
-### 15.1 Gemeinsame Dachmarke
+### 16.1 Gemeinsame Dachmarke
 
-Beide Produkte sind **„Lokal-Tools"** der Code-Fabrik. Sie teilen:
+Alle Produkte sind **"Lokal-Tools"** der Code-Fabrik. Sie teilen:
 
-- Dasselbe Vertrauensversprechen (lokal, offen, fair)
+- Dasselbe Vertrauensversprechen (lokal, offen, fair, nachvollziehbar)
 - Denselben Preis (39 EUR/Jahr)
-- Dasselbe Geschäftsmodell (Open Source + Servicepaket)
-- Dasselbe Portal für Downloads, Support und Updates
+- Dasselbe Geschaeftsmodell (Open Source + Servicepaket)
+- Dasselbe Portal fuer Downloads, Support und Updates
 
-### 15.2 Rechnung Lokal — Kernbotschaft
+### 16.2 Nachweis Lokal — Kernbotschaft
+
+**Nachweise, die bleiben. Pruefprotokolle, Checklisten und Belege lokal dokumentieren —
+einfach, nachvollziehbar und ohne Cloud-Zwang.**
+
+### 16.3 Rechnung Lokal — Kernbotschaft
 
 **Rechnungen schreiben, E-Rechnung erzeugen, Einnahmen und Ausgaben im Blick —
 ohne Cloud-Zwang und ohne Buchhaltungssoftware.**
 
-### 15.3 Mitglieder Lokal — Kernbotschaft
+### 16.4 Mitglieder Lokal — Kernbotschaft
 
-**Mitglieder, Sparten, Beiträge und Standarddokumente lokal verwalten —
-offen, nachvollziehbar und ohne aufgeblähte SaaS-Plattform.**
+**Mitglieder, Sparten, Beitraege und Standarddokumente lokal verwalten —
+offen, nachvollziehbar und ohne aufgeblaehte SaaS-Plattform.**
 
-### 15.4 Was auf Verkaufsseiten klar gesagt werden muss (beide Produkte)
+### 16.5 Was auf Verkaufsseiten klar gesagt werden muss (alle Produkte)
 
 - Open Source, aber das kostenpflichtige Angebot ist das Servicepaket
 - Lokal und cloudfrei
-- Für einfache bis mittlere Anforderungen
-- Keine künstlichen Feature-Sperren
+- Fuer einfache bis mittlere Anforderungen
+- Keine kuenstlichen Feature-Sperren
 - Keine Telefonhotline, kein individuelles Consulting
 - Keine Steuer-, Rechts- oder Buchhaltungsberatung
 - Kein gleichzeitiger Mehrplatzbetrieb
 - Organisatorisches Hilfsmittel, ersetzt keine Fachberatung
 
-### 15.5 Gemeinsame FAQ
-
-#### Warum kostet das Produkt Geld, wenn es Open Source ist?
-
-Der Quellcode ist offen. Das kostenpflichtige Angebot finanziert fertige Installationsdateien,
-stabile Releases, Updates, Vorlagen und den standardisierten Servicezugang.
-
-#### Ist das eine Cloud-Lösung?
-
-Nein. Die Daten bleiben lokal auf Ihrem Rechner.
-
-#### Können mehrere Personen gleichzeitig arbeiten?
-
-Nicht als Standardfunktion. Die Produkte sind für Einzelnutzer gedacht.
-
-#### Ist das eine Buchhaltungssoftware?
-
-Nein. Die Produkte sind Organisationswerkzeuge, keine vollwertige Buchhaltung oder DATEV-Lösung.
-
-#### Welche Hilfe ist im Servicepaket enthalten?
-
-Hilfe bei Installation, Updates und reproduzierbaren Problemen. Nicht enthalten sind
-individuelle Beratung, manuelle Datenpflege oder Sonderprogrammierung.
-
 ---
 
-## 16. Risiken
+## 17. Risiken
 
-| Risiko | Betrifft | Eintritt | Gegenmaßnahme |
+| Risiko | Betrifft | Eintritt | Gegenmassnahme |
 |---|---|---|---|
-| ZUGFeRD komplexer als erwartet | Rechnung | Mittel | Library evaluieren, offizielle Testdaten nutzen |
-| Shared-Datenmodell passt nicht für beide | Beide | Niedrig | Rechnung Lokal zuerst beweisen |
-| Migration Mitglieder v0.5.0 → neues Schema bricht Daten | Mitglieder | Niedrig | Backup vor Migration, Fixture-Tests |
-| Nebenberufler gehen zu lexoffice statt zu uns | Rechnung | Hoch | Akzeptiertes Risiko, organisches Wachstum |
-| Feature-Creep in Richtung Buchhaltung | Beide | Hoch | Diese Leitlinie als Gate |
-| Kein Umsatz in den ersten 6 Monaten | Beide | Hoch | Nebenerwerb, kein Kostendruck |
+| Nachweis-Scope wird zu breit ("alles dokumentieren") | Nachweis | Hoch | 3 konkrete Use-Cases als Gate |
+| ZUGFeRD komplexer als erwartet | Rechnung | Mittel | Library evaluieren, offizielle Testdaten |
+| Shared-Datenmodell passt nicht fuer alle Produkte | Alle | Niedrig | Nachweis Lokal und Rechnung Lokal zuerst beweisen |
+| Migration Mitglieder v0.5.0 → neues Schema | Mitglieder | Niedrig | Backup vor Migration, Fixture-Tests |
+| SafetyCulture/Lumiform bieten Free-Tier an | Nachweis | Mittel | Differenzierung: lokal, keine Cloud, kein Account |
+| Nebenberufler gehen zu lexoffice | Rechnung | Hoch | Akzeptiertes Risiko, organisches Wachstum |
+| Feature-Creep | Alle | Hoch | Diese Leitlinie als Gate |
+| Kein Umsatz in den ersten 6 Monaten | Alle | Hoch | Nebenerwerb, kein Kostendruck |
 
 ---
 
-## 17. Kurzfassung für interne Entscheidungen
+## 18. Kurzfassung fuer interne Entscheidungen
 
-**Zwei Produkte, ein Kern.**
+**Drei Produkte, ein Kern. Nachweis Lokal zuerst.**
 
-**Rechnung Lokal:** Rechnungen + EÜR + ZUGFeRD für Nebenberufler. Kommt zuerst.
+**Nachweis Lokal:** Pruefprotokolle + Checklisten + Nachweise fuer kleine Teams. Kommt zuerst — audit-chain als sichtbares Kernversprechen, 5 neue Plattform-Bausteine.
 
-**Mitglieder Lokal:** Mitglieder + Sparten + Beiträge + Spendenbescheinigungen für Vereine. Kommt als Neubau auf der bewiesenen Architektur.
+**Rechnung Lokal:** Rechnungen + EUeR + ZUGFeRD fuer Nebenberufler. Kommt danach — E-Rechnungspflicht 2028 als Markttreiber.
+
+**Mitglieder Lokal:** Mitglieder + Sparten + Beitraege + Spendenbescheinigungen fuer Vereine. Kommt als Neubau auf der bewiesenen Architektur.
 
 **Preis:** 39 EUR/Jahr pro Produkt.
 
-**Architektur:** Shared-Kern (finanz-shared), Feature-Flags per Produktkonfiguration. Produkte unterscheiden sich in Labels, Views und aktivierten Modulen — nicht im Datenmodell.
+**Architektur:** Shared-Kern, Feature-Flags per Produktkonfiguration, audit-chain als gemeinsame Integritaetsschicht. Produkte unterscheiden sich in Labels, Views und aktivierten Modulen.
 
-**Nicht-Kern:** Mehrplatz-Sync, Buchhaltung, DATEV, App, Mailversand, Cloud.
+**Nicht-Kern:** Mehrplatz-Sync, Buchhaltung, DATEV, App, Mailversand, Cloud, Operations-Plattform.
 
 **Prinzip:** Lieber kleiner, stabiler und klarer als breiter, lauter und supportintensiver.
+
+**Positionierung:** "Dokumentieren statt suchen. Belegen statt behaupten. Lokal arbeiten statt SaaS-Abhaengigkeit."

@@ -1,5 +1,5 @@
 # Smoke Tests fuer MitgliederSimple Windows Installer
-# Wird von Azure DevOps Pipeline nach dem Build ausgefuehrt
+# Wird von GitHub Actions nach dem Build ausgefuehrt
 
 $ErrorActionPreference = "Stop"
 

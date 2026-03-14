@@ -5,14 +5,11 @@
   import { annualAmountCents, PAYMENT_METHOD_OPTIONS } from '../lib/types.js';
   import { generateBeitragsuebersicht } from '../lib/pdf-lists.js';
   import { getClubProfile } from '../lib/db.js';
-  import { checkMemberLimit } from '../lib/license.js';
-
   const currentYear = new Date().getFullYear();
   let selectedYear = $state(currentYear);
   let overview = $state([]);
   let loading = $state(true);
   let profile = $state(null);
-  let isProbe = $state(false);
 
   // Payment form
   let showForm = $state(false);
@@ -30,8 +27,6 @@
 
   onMount(async () => {
     profile = await getClubProfile();
-    const limit = await checkMemberLimit();
-    isProbe = !limit.allowed || limit.probe === true;
     await loadOverview();
   });
 
@@ -124,7 +119,7 @@
       diff_cents: diffCents(row),
       status: statusOf(row),
     }));
-    generateBeitragsuebersicht(rows, profile, selectedYear, isProbe);
+    generateBeitragsuebersicht(rows, profile, selectedYear, false);
   }
 
   // Summary

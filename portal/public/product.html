@@ -107,7 +107,7 @@
       const features = texts.features ? parseJson(texts.features.content) : [];
       const price = product.price_cents === 0
         ? '<span class="badge badge-green">Kostenlos</span>'
-        : `<span class="price-tag">${(product.price_cents / 100).toFixed(2)} EUR <small>einmalig</small></span>`;
+        : `<span class="price-tag">${(product.price_cents / 100).toFixed(2)} EUR <small>pro Jahr (Servicepaket)</small></span>`;
 
       el.innerHTML = `
         <div class="card">
@@ -136,7 +136,7 @@
         <div class="card" style="text-align:center">
           ${price}
           <div style="margin-top:1rem">
-            <a href="/buy/${esc(product.id)}" class="btn">Jetzt erwerben</a>
+            <a href="/buy/${esc(product.id)}" class="btn">Servicepaket bestellen</a>
           </div>
         </div>
       `;
