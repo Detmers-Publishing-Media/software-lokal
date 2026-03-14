@@ -74,19 +74,19 @@
 
 <div class="page">
   {#if !embedded}
-    <h1>Vorlagen importieren</h1>
+    <h1>Checklisten importieren</h1>
   {/if}
   <p class="hint">
-    CSV mit Semikolon-Trennung einfuegen. Spalten: Name, Beschreibung, Kategorie, Intervall (Tage), Pruefpunkte (getrennt mit |)
+    CSV mit Semikolon-Trennung einfügen. Spalten: Name, Beschreibung, Kategorie, Intervall (Tage), Prüfpunkte (getrennt mit |)
   </p>
 
-  <textarea bind:value={csvText} rows="10" placeholder="Name;Beschreibung;Kategorie;Intervall;Pruefpunkte&#10;Feuerloescher-Pruefung;Jaehrliche Sichtpruefung;Brandschutz;365;Plombierung|Druck|Schlauch|Beschilderung"></textarea>
+  <textarea bind:value={csvText} rows="10" placeholder="Name;Beschreibung;Kategorie;Intervall;Prüfpunkte&#10;Feuerlöscher-Prüfung;Jährliche Sichtprüfung;Brandschutz;365;Plombierung|Druck|Schlauch|Beschilderung"></textarea>
 
   <div class="actions">
     <button class="btn-secondary" onclick={handlePreview} disabled={!csvText.trim()}>Vorschau</button>
     {#if preview.length > 0 && !result}
       <button class="btn-primary" onclick={handleImport} disabled={importing}>
-        {importing ? 'Importiere...' : `${preview.length} Vorlage(n) importieren`}
+        {importing ? 'Importiere...' : `${preview.length} Checkliste(n) importieren`}
       </button>
     {/if}
   </div>
@@ -94,14 +94,14 @@
   {#if result}
     <div class="result">
       Importiert: {result.imported}, Fehler: {result.errors}
-      <button class="btn-secondary" onclick={() => currentView.set('templates')}>Zu den Vorlagen</button>
+      <button class="btn-secondary" onclick={() => currentView.set('templates')}>Zu den Checklisten</button>
     </div>
   {/if}
 
   {#if preview.length > 0 && !result}
     <table>
       <thead>
-        <tr><th>Name</th><th>Kategorie</th><th>Intervall</th><th>Pruefpunkte</th></tr>
+        <tr><th>Name</th><th>Kategorie</th><th>Intervall</th><th>Prüfpunkte</th></tr>
       </thead>
       <tbody>
         {#each preview as row}

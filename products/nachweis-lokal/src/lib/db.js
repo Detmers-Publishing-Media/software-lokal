@@ -472,6 +472,34 @@ export async function getDueInspections() {
   `, [today, today]);
 }
 
+export async function getRecentInspections(limit = 5) {
+  return query(`
+    SELECT i.id, i.title, i.status, i.inspection_date, i.updated_at,
+      t.name as template_name, o.name as object_name
+    FROM inspections i
+    LEFT JOIN templates t ON i.template_id = t.id
+    LEFT JOIN objects o ON i.object_id = o.id
+    ORDER BY COALESCE(i.updated_at, i.created_at) DESC
+    LIMIT ?
+  `, [limit]);
+}
+
+export async function getOpenDefects(limit = 5) {
+  return query(`
+    SELECT d.id, d.description, d.status, d.created_at,
+      i.title as inspection_title, i.object_id,
+      o.name as object_name, ti.label as item_label
+    FROM defects d
+    JOIN inspections i ON d.inspection_id = i.id
+    LEFT JOIN objects o ON i.object_id = o.id
+    JOIN inspection_results ir ON d.inspection_result_id = ir.id
+    JOIN template_items ti ON ir.template_item_id = ti.id
+    WHERE d.status = 'offen'
+    ORDER BY d.created_at DESC
+    LIMIT ?
+  `, [limit]);
+}
+
 export async function getInspectionStats() {
   const rows = await query(`
     SELECT

@@ -1,7 +1,7 @@
 <script>
   import { onMount } from 'svelte';
   import { currentView } from './lib/stores/navigation.js';
-  import { initDb, getTemplates, getOrgProfile } from './lib/db.js';
+  import { initDb, getTemplates, getOrgProfile, getDueInspections } from './lib/db.js';
   import Dashboard from './routes/Dashboard.svelte';
   import FirstRunWizard from './routes/FirstRunWizard.svelte';
   import TemplateList from './routes/TemplateList.svelte';
@@ -32,6 +32,8 @@
       if (templates.length === 0 && !profile?.name) {
         showWizard = true;
       }
+      // System-Benachrichtigung bei ueberfaelligen Pruefungen
+      checkOverdueNotifications();
       window.electronAPI?.app?.rendererReady?.();
     } catch (err) {
       dbError = err.message;
@@ -39,23 +41,50 @@
     }
   });
 
+  async function checkOverdueNotifications() {
+    try {
+      if (!('Notification' in window)) return;
+      if (Notification.permission === 'denied') return;
+      if (Notification.permission !== 'granted') {
+        await Notification.requestPermission();
+      }
+      if (Notification.permission !== 'granted') return;
+
+      const dueItems = await getDueInspections();
+      const overdue = dueItems.filter(d => d.urgency === 'ueberfaellig');
+      if (overdue.length === 0) return;
+
+      const body = overdue.length === 1
+        ? `${overdue[0].template_name}${overdue[0].object_name ? ' — ' + overdue[0].object_name : ''}`
+        : overdue.slice(0, 3).map(d => d.template_name).join(', ') + (overdue.length > 3 ? ` (+${overdue.length - 3} weitere)` : '');
+
+      new Notification(
+        `${overdue.length} ${overdue.length === 1 ? 'Pruefung' : 'Pruefungen'} ueberfaellig`, {
+          body,
+          icon: undefined,
+          silent: false,
+        }
+      );
+    } catch (_) {
+      // Notification API not available or blocked — ignore silently
+    }
+  }
+
   const navGroups = [
     { items: [
       { id: 'dashboard', label: 'Dashboard' },
     ]},
-    { header: 'VORBEREITEN', items: [
-      { id: 'templates', label: 'Vorlagen' },
-      { id: 'objects', label: 'Objekte' },
+    { header: 'EINRICHTEN', items: [
+      { id: 'templates', label: 'Checklisten' },
+      { id: 'objects', label: 'Geräte & Räume' },
     ]},
-    { header: 'PRUEFEN', items: [
-      { id: 'inspections', label: 'Pruefungen' },
-    ]},
-    { header: 'NACHVERFOLGEN', items: [
-      { id: 'defects', label: 'Maengel' },
+    { header: 'DURCHFÜHREN', items: [
+      { id: 'inspections', label: 'Prüfungen' },
+      { id: 'defects', label: 'Mängel' },
     ]},
     { separator: true, items: [
       { id: 'settings', label: 'Einstellungen' },
-      { id: 'support', label: 'Support' },
+      { id: 'support', label: 'Hilfe' },
     ]},
   ];
 

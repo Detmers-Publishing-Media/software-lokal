@@ -33,9 +33,9 @@
 
 <div class="page">
   {#if !embedded}
-    <h1>Vorlagen-Bibliothek</h1>
+    <h1>Checklisten-Bibliothek</h1>
   {/if}
-  <p class="description">Fertige Pruefvorlagen zum direkten Uebernehmen. Die Vorlagen koennen nach dem Import angepasst werden.</p>
+  <p class="description">Fertige Checklisten zum direkten Übernehmen. Die Checklisten können nach dem Import angepasst werden.</p>
 
   <div class="library-grid">
     {#each templates as t}
@@ -46,13 +46,13 @@
         </div>
         <p class="card-desc">{t.description}</p>
         <div class="card-meta">
-          <span>{t.items.length} Pruefpunkte</span>
+          <span>{t.items.length} Prüfpunkte</span>
           {#if t.interval_days}
             <span>Intervall: {t.interval_days} Tage</span>
           {/if}
         </div>
         <details class="items-preview">
-          <summary>Pruefpunkte anzeigen</summary>
+          <summary>Prüfpunkte anzeigen</summary>
           <ul>
             {#each t.items as item, i}
               <li>
@@ -68,7 +68,7 @@
             <button class="btn-secondary" disabled>Bereits vorhanden</button>
           {:else}
             <button class="btn-primary" onclick={() => handleImport(t)} disabled={importing === t.id}>
-              {importing === t.id ? 'Wird importiert...' : 'Vorlage uebernehmen'}
+              {importing === t.id ? 'Wird importiert...' : 'Checkliste übernehmen'}
             </button>
           {/if}
         </div>
@@ -77,7 +77,7 @@
   </div>
 
   {#if !embedded}
-    <button class="btn-secondary" onclick={() => currentView.set('templates')}>Zurueck zu Vorlagen</button>
+    <button class="btn-secondary" onclick={() => currentView.set('templates')}>Zurück zu Checklisten</button>
   {/if}
 </div>
 

@@ -41,16 +41,16 @@
     const columns = [
       { text: 'Datum', width: 60 },
       { text: 'Titel', width: '*' },
-      { text: 'Vorlage', width: 100 },
-      { text: 'Objekt', width: 80 },
-      { text: 'Pruefer', width: 80 },
+      { text: 'Checkliste', width: 100 },
+      { text: 'Gerät / Raum', width: 80 },
+      { text: 'Prüfer', width: 80 },
       { text: 'Status', width: 60 },
     ];
     const rows = data.map(i => [
       formatDate(i.inspection_date), i.title, i.template_name ?? '-',
       i.object_name ?? '-', i.inspector, i.status,
     ]);
-    generateListPdf('Pruefungsliste', columns, rows, profile, false);
+    generateListPdf('Prüfungsliste', columns, rows, profile, false);
   }
 
   async function handleBatchPdf() {
@@ -70,8 +70,8 @@
 
 <div class="page">
   <div class="header">
-    <h1>Pruefungen</h1>
-    <button class="btn-primary" onclick={() => currentView.set('inspection:new')}>+ Neue Pruefung</button>
+    <h1>Prüfungen</h1>
+    <button class="btn-primary" onclick={() => currentView.set('inspection:new')}>+ Neue Prüfung</button>
   </div>
 
   <div class="filters">
@@ -80,7 +80,7 @@
       <option value="alle">Alle Status</option>
       <option value="offen">Offen</option>
       <option value="bestanden">Bestanden</option>
-      <option value="bemaengelt">Bemaengelt</option>
+      <option value="bemaengelt">Bemängelt</option>
       <option value="abgebrochen">Abgebrochen</option>
     </select>
     <button class="btn-secondary" onclick={handleExportCSV}>CSV</button>
@@ -91,16 +91,16 @@
   </div>
 
   {#if $filteredInspections.length === 0}
-    <p class="empty">Keine Pruefungen gefunden.</p>
+    <p class="empty">Keine Prüfungen gefunden.</p>
   {:else}
     <table>
       <thead>
         <tr>
           <th>Datum</th>
           <th>Titel</th>
-          <th>Vorlage</th>
-          <th>Objekt</th>
-          <th>Pruefer</th>
+          <th>Checkliste</th>
+          <th>Gerät / Raum</th>
+          <th>Prüfer</th>
           <th>Status</th>
         </tr>
       </thead>

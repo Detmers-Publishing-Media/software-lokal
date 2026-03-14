@@ -37,7 +37,7 @@
 </script>
 
 <div class="page">
-  <h1>{objectId ? 'Objekt bearbeiten' : 'Neues Objekt'}</h1>
+  <h1>{objectId ? 'Gerät / Raum bearbeiten' : 'Neues Gerät / Raum'}</h1>
 
   <form onsubmit={handleSubmit}>
     <div class="field">
@@ -50,7 +50,7 @@
     </div>
     <div class="field">
       <label for="category">Kategorie</label>
-      <input id="category" bind:value={form.category} placeholder="z.B. Brandschutz, Elektro, Spielgeraete" />
+      <input id="category" bind:value={form.category} placeholder="z.B. Brandschutz, Elektro, Spielgeräte" />
     </div>
     <div class="field">
       <label for="identifier">Kennung / Inventarnummer</label>

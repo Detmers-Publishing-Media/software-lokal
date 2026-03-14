@@ -52,7 +52,7 @@
 </script>
 
 <div class="page">
-  <h1>{templateId ? 'Vorlage bearbeiten' : 'Neue Vorlage'}</h1>
+  <h1>{templateId ? 'Checkliste bearbeiten' : 'Neue Checkliste'}</h1>
 
   <form onsubmit={handleSubmit}>
     <div class="field">
@@ -61,10 +61,10 @@
     </div>
     <div class="field">
       <label for="category">Kategorie</label>
-      <input id="category" bind:value={form.category} placeholder="z.B. Sicherheit, Geraete, Gebaeude" />
+      <input id="category" bind:value={form.category} placeholder="z.B. Sicherheit, Geräte, Gebäude" />
     </div>
     <div class="field">
-      <label for="interval">Pruefintervall (Tage)</label>
+      <label for="interval">Prüfintervall (Tage)</label>
       <input id="interval" type="number" min="1" bind:value={form.interval_days} placeholder="z.B. 365" />
     </div>
     <div class="field">
@@ -72,11 +72,11 @@
       <textarea id="desc" bind:value={form.description} rows="3"></textarea>
     </div>
 
-    <h2>Pruefpunkte</h2>
+    <h2>Prüfpunkte</h2>
     {#each items as item, i}
       <div class="item-row">
         <span class="item-num">{i + 1}.</span>
-        <input bind:value={item.label} placeholder="Pruefpunkt" class="item-label" />
+        <input bind:value={item.label} placeholder="Prüfpunkt" class="item-label" />
         <input bind:value={item.hint} placeholder="Hinweis (optional)" class="item-hint" />
         <label class="item-required">
           <input type="checkbox" bind:checked={item.required} /> Pflicht
@@ -84,7 +84,7 @@
         <button type="button" class="btn-remove" onclick={() => removeItem(i)} title="Entfernen">&times;</button>
       </div>
     {/each}
-    <button type="button" class="btn-secondary" onclick={addItem}>+ Pruefpunkt</button>
+    <button type="button" class="btn-secondary" onclick={addItem}>+ Prüfpunkt</button>
 
     <div class="actions">
       <button type="submit" class="btn-primary" disabled={saving}>

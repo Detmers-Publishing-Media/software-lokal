@@ -37,7 +37,7 @@
   let grouped = $derived.by(() => {
     const groups = new Map();
     for (const d of defects) {
-      const key = d.object_name ?? 'Ohne Objekt';
+      const key = d.object_name ?? 'Ohne Zuordnung';
       if (!groups.has(key)) groups.set(key, []);
       groups.get(key).push(d);
     }
@@ -52,7 +52,7 @@
 
 <div class="page">
   <div class="header">
-    <h1>Maengel ({defects.length})</h1>
+    <h1>Mängel ({defects.length})</h1>
     <select onchange={handleFilterChange} value={filterStatus}>
       <option value="">Alle Status</option>
       <option value="offen">Offen</option>
@@ -62,7 +62,7 @@
   </div>
 
   {#if defects.length === 0}
-    <p class="empty">Keine Maengel {filterStatus ? `mit Status "${statusLabel(filterStatus)}"` : ''} vorhanden.</p>
+    <p class="empty">Keine Mängel {filterStatus ? `mit Status "${statusLabel(filterStatus)}"` : ''} vorhanden.</p>
   {:else}
     {#each [...grouped] as [objectName, items]}
       <div class="group">
@@ -70,8 +70,8 @@
         <table>
           <thead>
             <tr>
-              <th>Pruefpunkt</th>
-              <th>Pruefung</th>
+              <th>Prüfpunkt</th>
+              <th>Prüfung</th>
               <th>Beschreibung</th>
               <th>Status</th>
               <th>Erstellt</th>

@@ -34,7 +34,7 @@
   }
 
   function resultLabel(result) {
-    const labels = { offen: 'Offen', ok: 'OK', maengel: 'Maengel', nicht_anwendbar: 'N/A' };
+    const labels = { offen: 'Offen', ok: 'OK', maengel: 'Mängel', nicht_anwendbar: 'N/A' };
     return labels[result] ?? result;
   }
 
@@ -72,7 +72,7 @@
   }
 
   async function handleDelete() {
-    if (confirm(`Pruefung "${inspection.title}" loeschen?`)) {
+    if (confirm(`Prüfung "${inspection.title}" löschen?`)) {
       await deleteInspection(inspectionId);
       currentView.set('inspections');
     }
@@ -106,22 +106,22 @@
           {generatingPdf ? 'Erstelle PDF...' : 'PDF Protokoll'}
         </button>
         {#if deficiencyCount > 0}
-          <button class="btn-secondary" onclick={handlePrintDeficiencies}>PDF Maengel ({deficiencyCount})</button>
+          <button class="btn-secondary" onclick={handlePrintDeficiencies}>PDF Mängel ({deficiencyCount})</button>
         {/if}
         {#if openDefectCount > 0}
-          <button class="btn-secondary" onclick={handleReinspection}>Nachpruefung ({openDefectCount} Maengel)</button>
+          <button class="btn-secondary" onclick={handleReinspection}>Nachprüfung ({openDefectCount} Mängel)</button>
         {/if}
-        <button class="btn-danger" onclick={handleDelete}>Loeschen</button>
+        <button class="btn-danger" onclick={handleDelete}>Löschen</button>
       </div>
     </div>
 
     <div class="meta-grid">
-      <div><span class="label">Vorlage:</span> {inspection.template_name ?? '-'}</div>
-      <div><span class="label">Objekt:</span> {inspection.object_name ?? '-'}</div>
-      <div><span class="label">Pruefer:</span> {inspection.inspector}</div>
+      <div><span class="label">Checkliste:</span> {inspection.template_name ?? '-'}</div>
+      <div><span class="label">Gerät / Raum:</span> {inspection.object_name ?? '-'}</div>
+      <div><span class="label">Prüfer:</span> {inspection.inspector}</div>
       <div><span class="label">Datum:</span> {formatDate(inspection.inspection_date)}</div>
       {#if inspection.due_date}
-        <div><span class="label">Naechste Pruefung:</span> {formatDate(inspection.due_date)}</div>
+        <div><span class="label">Nächste Prüfung:</span> {formatDate(inspection.due_date)}</div>
       {/if}
     </div>
 
@@ -131,10 +131,10 @@
       </div>
     {/if}
 
-    <h2>Ergebnisse ({results.length} Pruefpunkte)</h2>
+    <h2>Ergebnisse ({results.length} Prüfpunkte)</h2>
     <table>
       <thead>
-        <tr><th>Nr.</th><th>Pruefpunkt</th><th>Ergebnis</th><th>Bemerkung</th></tr>
+        <tr><th>Nr.</th><th>Prüfpunkt</th><th>Ergebnis</th><th>Bemerkung</th></tr>
       </thead>
       <tbody>
         {#each results as r, i}
@@ -155,7 +155,7 @@
       </tbody>
     </table>
 
-    <button class="btn-secondary" onclick={() => currentView.set('inspections')}>Zurueck</button>
+    <button class="btn-secondary" onclick={() => currentView.set('inspections')}>Zurück</button>
   </div>
 {/if}
 

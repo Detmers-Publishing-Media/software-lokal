@@ -1,7 +1,7 @@
 <script>
   import { currentView } from '../lib/stores/navigation.js';
   import {
-    saveOrgProfile, saveInspector, saveObject,
+    saveOrgProfile, saveObject,
     importLibraryTemplate, getTemplates
   } from '../lib/db.js';
   import libraryData from '../assets/template-library.json';
@@ -11,17 +11,16 @@
   let step = $state(1);
   const totalSteps = 4;
 
-  // Step 1: Organisation
-  let org = $state({ name: '', street: '', zip: '', city: '', responsible: '' });
+  // Step 1: Willkommen (kein State noetig)
 
-  // Step 2: Pruefer
-  let inspector = $state({ name: '', role: '', qualification: '' });
-
-  // Step 3: Vorlagen aus Bibliothek
+  // Step 2: Checklisten aus Bibliothek
   let selectedTemplates = $state(new Set());
 
-  // Step 4: Erstes Objekt
+  // Step 3: Erstes Geraet / Raum
   let object = $state({ name: '', location: '', category: '' });
+
+  // Step 4: Organisation (optional)
+  let org = $state({ name: '', street: '', zip: '', city: '', responsible: '' });
 
   let saving = $state(false);
 
@@ -34,20 +33,10 @@
 
   async function handleNext() {
     if (step === 1) {
-      if (org.name.trim()) {
-        await saveOrgProfile(org);
-      }
+      // Willkommen — nichts zu speichern
       step = 2;
     } else if (step === 2) {
-      if (inspector.name.trim()) {
-        await saveInspector({
-          name: inspector.name.trim(),
-          role: inspector.role.trim(),
-          qualification: inspector.qualification.trim(),
-        });
-      }
-      step = 3;
-    } else if (step === 3) {
+      // Checklisten importieren
       saving = true;
       for (const t of libraryData) {
         if (selectedTemplates.has(t.id)) {
@@ -55,8 +44,9 @@
         }
       }
       saving = false;
-      step = 4;
-    } else if (step === 4) {
+      step = 3;
+    } else if (step === 3) {
+      // Erstes Geraet / Raum
       if (object.name.trim()) {
         await saveObject({
           name: object.name.trim(),
@@ -65,6 +55,12 @@
           identifier: null,
           notes: null,
         });
+      }
+      step = 4;
+    } else if (step === 4) {
+      // Organisation
+      if (org.name.trim()) {
+        await saveOrgProfile(org);
       }
       oncomplete();
     }
@@ -96,16 +92,82 @@
 
     <div class="wizard-body">
       {#if step === 1}
-        <h2>Ihre Organisation</h2>
-        <p class="hint">Erscheint als Briefkopf auf Pruefprotokollen und Listen.</p>
+        <h2>Prüfungen dokumentieren — einfach und sicher</h2>
+        <div class="welcome">
+          <p>Nachweis Lokal hilft Ihnen, wiederkehrende Prüfungen zu dokumentieren — <strong>rechtssicher, ohne Cloud, direkt auf Ihrem Rechner.</strong></p>
+          <div class="welcome-steps">
+            <div class="welcome-step">
+              <span class="welcome-num">1</span>
+              <span><strong>Checkliste wählen</strong> — fertige Vorlagen oder eigene erstellen</span>
+            </div>
+            <div class="welcome-step">
+              <span class="welcome-num">2</span>
+              <span><strong>Gerät oder Raum zuordnen</strong> — was wird geprüft?</span>
+            </div>
+            <div class="welcome-step">
+              <span class="welcome-num">3</span>
+              <span><strong>Prüfung durchführen</strong> — Punkte abhaken, Fotos machen, fertig</span>
+            </div>
+          </div>
+          <p class="welcome-hint">Das Dashboard erinnert Sie automatisch an fällige Prüfungen.</p>
+        </div>
+
+      {:else if step === 2}
+        <h2>Was prüfen Sie?</h2>
+        <p class="hint">Wählen Sie die Checklisten, die zu Ihrer Organisation passen. Sie können später weitere hinzufügen oder eigene erstellen.</p>
+        <div class="template-grid">
+          {#each libraryData as t}
+            <button
+              class="template-card"
+              class:selected={selectedTemplates.has(t.id)}
+              onclick={() => toggleTemplate(t.id)}
+            >
+              <div class="card-top">
+                <span class="card-name">{t.name}</span>
+                <span class="card-badge">{t.category}</span>
+              </div>
+              <span class="card-meta">{t.items.length} Prüfpunkte</span>
+              {#if selectedTemplates.has(t.id)}
+                <span class="card-check">&#10003;</span>
+              {/if}
+            </button>
+          {/each}
+        </div>
+        {#if selectedTemplates.size > 0}
+          <p class="selection-count">{selectedTemplates.size} {selectedTemplates.size === 1 ? 'Checkliste' : 'Checklisten'} ausgewählt</p>
+        {/if}
+
+      {:else if step === 3}
+        <h2>Wo prüfen Sie?</h2>
+        <p class="hint">Geben Sie Ihr erstes Gerät, Ihren ersten Raum oder Ihre erste Anlage ein. Weitere können Sie jederzeit hinzufügen.</p>
         <div class="fields">
           <div class="field">
-            <label for="wiz-org">Organisation *</label>
+            <label for="wiz-obj-name">Bezeichnung *</label>
+            <input id="wiz-obj-name" bind:value={object.name} placeholder="z.B. Feuerlöscher EG-01" />
+          </div>
+          <div class="row">
+            <div class="field">
+              <label for="wiz-obj-loc">Standort</label>
+              <input id="wiz-obj-loc" bind:value={object.location} placeholder="z.B. Erdgeschoss, Flur" />
+            </div>
+            <div class="field">
+              <label for="wiz-obj-cat">Kategorie</label>
+              <input id="wiz-obj-cat" bind:value={object.category} placeholder="z.B. Brandschutz" />
+            </div>
+          </div>
+        </div>
+
+      {:else if step === 4}
+        <h2>Ihre Daten (optional)</h2>
+        <p class="hint">Erscheint als Briefkopf auf Ihren Prüfprotokollen. Sie können das auch später unter Einstellungen ergänzen.</p>
+        <div class="fields">
+          <div class="field">
+            <label for="wiz-org">Organisation</label>
             <input id="wiz-org" bind:value={org.name} placeholder="Name der Organisation" />
           </div>
           <div class="row">
             <div class="field">
-              <label for="wiz-street">Strasse</label>
+              <label for="wiz-street">Straße</label>
               <input id="wiz-street" bind:value={org.street} />
             </div>
             <div class="field small">
@@ -122,85 +184,24 @@
             <input id="wiz-responsible" bind:value={org.responsible} placeholder="z.B. Max Mustermann, Sicherheitsbeauftragter" />
           </div>
         </div>
-
-      {:else if step === 2}
-        <h2>Ersten Pruefer anlegen</h2>
-        <p class="hint">Wird bei jeder Pruefung als Pruefer vorgeschlagen.</p>
-        <div class="fields">
-          <div class="field">
-            <label for="wiz-insp-name">Name *</label>
-            <input id="wiz-insp-name" bind:value={inspector.name} placeholder="Vor- und Nachname" />
-          </div>
-          <div class="row">
-            <div class="field">
-              <label for="wiz-insp-role">Rolle</label>
-              <input id="wiz-insp-role" bind:value={inspector.role} placeholder="z.B. Sicherheitsbeauftragter" />
-            </div>
-            <div class="field">
-              <label for="wiz-insp-qual">Qualifikation</label>
-              <input id="wiz-insp-qual" bind:value={inspector.qualification} placeholder="z.B. Elektrofachkraft" />
-            </div>
-          </div>
-        </div>
-
-      {:else if step === 3}
-        <h2>Vorlagen auswaehlen</h2>
-        <p class="hint">Waehlen Sie Pruefvorlagen, die zu Ihrer Organisation passen. Sie koennen spaeter weitere hinzufuegen oder eigene erstellen.</p>
-        <div class="template-grid">
-          {#each libraryData as t}
-            <button
-              class="template-card"
-              class:selected={selectedTemplates.has(t.id)}
-              onclick={() => toggleTemplate(t.id)}
-            >
-              <div class="card-top">
-                <span class="card-name">{t.name}</span>
-                <span class="card-badge">{t.category}</span>
-              </div>
-              <span class="card-meta">{t.items.length} Pruefpunkte</span>
-              {#if selectedTemplates.has(t.id)}
-                <span class="card-check">&#10003;</span>
-              {/if}
-            </button>
-          {/each}
-        </div>
-        {#if selectedTemplates.size > 0}
-          <p class="selection-count">{selectedTemplates.size} {selectedTemplates.size === 1 ? 'Vorlage' : 'Vorlagen'} ausgewaehlt</p>
-        {/if}
-
-      {:else if step === 4}
-        <h2>Erstes Objekt anlegen</h2>
-        <p class="hint">Ein Geraet, Raum oder eine Anlage, die Sie pruefen moechten.</p>
-        <div class="fields">
-          <div class="field">
-            <label for="wiz-obj-name">Bezeichnung *</label>
-            <input id="wiz-obj-name" bind:value={object.name} placeholder="z.B. Feuerloescher EG-01" />
-          </div>
-          <div class="row">
-            <div class="field">
-              <label for="wiz-obj-loc">Standort</label>
-              <input id="wiz-obj-loc" bind:value={object.location} placeholder="z.B. Erdgeschoss, Flur" />
-            </div>
-            <div class="field">
-              <label for="wiz-obj-cat">Kategorie</label>
-              <input id="wiz-obj-cat" bind:value={object.category} placeholder="z.B. Brandschutz" />
-            </div>
-          </div>
-        </div>
       {/if}
     </div>
 
     <div class="wizard-footer">
       <button class="btn-skip" onclick={handleSkipAll}>
-        Einrichtung ueberspringen
+        Einrichtung überspringen
       </button>
       <div class="footer-right">
-        <button class="btn-secondary" onclick={handleSkip}>
-          Ueberspringen
-        </button>
+        {#if step > 1}
+          <button class="btn-secondary" onclick={handleSkip}>
+            Überspringen
+          </button>
+        {/if}
         <button class="btn-primary" onclick={handleNext} disabled={saving}>
           {#if saving}
             Importiere...
+          {:else if step === 1}
+            Los geht's
           {:else if step === totalSteps}
             Fertig
           {:else}
@@ -286,6 +287,30 @@
     font-size: 0.8125rem;
     margin: 0 0 1rem;
   }
+
+  .welcome p { font-size: 0.9375rem; line-height: 1.5; margin: 0 0 1rem; }
+  .welcome-steps { display: flex; flex-direction: column; gap: 0.75rem; margin: 1.25rem 0; }
+  .welcome-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    font-size: 0.875rem;
+    line-height: 1.4;
+  }
+  .welcome-num {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 50%;
+    background: var(--color-primary);
+    color: white;
+    font-weight: 700;
+    font-size: 0.8125rem;
+    flex-shrink: 0;
+  }
+  .welcome-hint { color: var(--color-text-muted); font-size: 0.8125rem; margin: 0; }
 
   .fields {
     display: flex;

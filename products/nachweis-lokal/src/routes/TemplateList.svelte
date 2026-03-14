@@ -35,20 +35,20 @@
 
 <div class="page">
   <div class="header">
-    <h1>Vorlagen</h1>
+    <h1>Checklisten</h1>
     {#if activeTab === 'list'}
       <button
         class="btn-primary"
         onclick={() => currentView.set('template:new')}
       >
-        + Neue Vorlage
+        + Neue Checkliste
       </button>
     {/if}
   </div>
 
   <div class="tabs">
     <button class="tab" class:active={activeTab === 'list'} onclick={() => setTab('list')}>
-      Meine Vorlagen
+      Meine Checklisten
     </button>
     <button class="tab" class:active={activeTab === 'library'} onclick={() => setTab('library')}>
       Bibliothek
@@ -60,9 +60,9 @@
 
   {#if activeTab === 'list'}
     {#if templates.length === 0}
-      <p class="empty">Noch keine Vorlagen angelegt.
-        <button class="link-btn" onclick={() => setTab('library')}>Fertige Pruefungsvorlagen uebernehmen</button>
-        oder eine eigene Vorlage erstellen.</p>
+      <p class="empty">Noch keine Checklisten angelegt.
+        <button class="link-btn" onclick={() => setTab('library')}>Fertige Checklisten übernehmen</button>
+        oder eine eigene Checkliste erstellen.</p>
     {:else}
       <table>
         <thead>

@@ -49,22 +49,22 @@
 </script>
 
 <div class="page">
-  <h1>Neue Pruefung</h1>
+  <h1>Neue Prüfung</h1>
 
   <form onsubmit={handleSubmit}>
     <div class="field">
-      <label for="template">Vorlage *</label>
+      <label for="template">Checkliste *</label>
       <select id="template" bind:value={form.template_id} required>
-        <option value="">Bitte waehlen...</option>
+        <option value="">Bitte wählen...</option>
         {#each templates as t}
           <option value={t.id}>{t.name}</option>
         {/each}
       </select>
     </div>
     <div class="field">
-      <label for="object">Objekt (optional)</label>
+      <label for="object">Gerät / Raum (optional)</label>
       <select id="object" bind:value={form.object_id}>
-        <option value="">Kein Objekt</option>
+        <option value="">Kein Gerät / Raum</option>
         {#each objects as o}
           <option value={o.id}>{o.name}{o.location ? ` (${o.location})` : ''}</option>
         {/each}
@@ -76,8 +76,8 @@
     </div>
     <div class="row">
       <div class="field">
-        <label for="inspector">Pruefer *</label>
-        <input id="inspector" bind:value={form.inspector} required list="inspector-list" placeholder="Name eingeben oder waehlen..." />
+        <label for="inspector">Prüfer *</label>
+        <input id="inspector" bind:value={form.inspector} required list="inspector-list" placeholder="Name eingeben oder wählen..." />
         <datalist id="inspector-list">
           {#each inspectors as insp}
             <option value={insp.name}>{insp.role ? `${insp.name} (${insp.role})` : insp.name}</option>
@@ -96,7 +96,7 @@
 
     <div class="actions">
       <button type="submit" class="btn-primary" disabled={saving}>
-        {saving ? 'Erstelle...' : 'Pruefung starten'}
+        {saving ? 'Erstelle...' : 'Prüfung starten'}
       </button>
       <button type="button" class="btn-secondary" onclick={() => currentView.set('inspections')}>Abbrechen</button>
     </div>

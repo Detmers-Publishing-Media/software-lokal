@@ -56,22 +56,22 @@
       <div class="actions">
         {#if defect.status === 'offen'}
           <button class="btn-primary" onclick={() => handleStatusChange('behoben')} disabled={saving}>Als behoben markieren</button>
-          <button class="btn-secondary" onclick={handleReinspection} disabled={saving}>Nachpruefung starten</button>
+          <button class="btn-secondary" onclick={handleReinspection} disabled={saving}>Nachprüfung starten</button>
         {:else if defect.status === 'behoben'}
           <button class="btn-primary" onclick={() => handleStatusChange('verifiziert')} disabled={saving}>Verifizieren</button>
-          <button class="btn-secondary" onclick={() => handleStatusChange('offen')} disabled={saving}>Wieder oeffnen</button>
+          <button class="btn-secondary" onclick={() => handleStatusChange('offen')} disabled={saving}>Wieder öffnen</button>
         {:else if defect.status === 'verifiziert'}
-          <button class="btn-secondary" onclick={() => handleStatusChange('offen')} disabled={saving}>Wieder oeffnen</button>
+          <button class="btn-secondary" onclick={() => handleStatusChange('offen')} disabled={saving}>Wieder öffnen</button>
         {/if}
       </div>
     </div>
 
     <div class="meta-grid">
-      <div><span class="label">Pruefung:</span>
+      <div><span class="label">Prüfung:</span>
         <button class="link" onclick={() => currentView.set(`inspection:${defect.inspection_id}`)}>{defect.inspection_title}</button>
       </div>
-      <div><span class="label">Objekt:</span> {defect.object_name ?? '-'}</div>
-      <div><span class="label">Pruefpunkt:</span> {defect.item_label}</div>
+      <div><span class="label">Gerät / Raum:</span> {defect.object_name ?? '-'}</div>
+      <div><span class="label">Prüfpunkt:</span> {defect.item_label}</div>
       <div><span class="label">Erstellt:</span> {formatDate(defect.created_at)}</div>
       {#if defect.resolved_at}
         <div><span class="label">Behoben:</span> {formatDate(defect.resolved_at)}</div>
@@ -88,7 +88,7 @@
       </div>
     {/if}
 
-    <button class="btn-secondary" onclick={() => currentView.set('defects')}>Zurueck zur Maengelliste</button>
+    <button class="btn-secondary" onclick={() => currentView.set('defects')}>Zurück zur Mängelliste</button>
   </div>
 {/if}
 

@@ -162,7 +162,7 @@ Basiert auf `@codefabrik/finanz-shared` Kern mit Feature-Flags.
 **Stores:** navigation.js (String-basiert: 'invoices', 'customers', 'euer', 'profile', 'support', 'invoice:ID', 'invoice:edit:ID', 'customer:new', etc.)
 **Tests:** (in Aufbau)
 
-### Nachweis Lokal (v0.4.0)
+### Nachweis Lokal (v0.5.0)
 
 Pruefprotokolle, Checklisten und Nachweise. Bundle: `B-08-nachweis`. Hat eigene `CLAUDE.md`.
 

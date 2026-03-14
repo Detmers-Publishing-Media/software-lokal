@@ -13,7 +13,7 @@
   });
 
   async function handleDelete() {
-    if (confirm(`Objekt "${obj.name}" deaktivieren?`)) {
+    if (confirm(`"${obj.name}" deaktivieren?`)) {
       await deleteObject(objectId);
       currentView.set('objects');
     }
@@ -53,13 +53,13 @@
       <p class="notes">{obj.notes}</p>
     {/if}
 
-    <h2>Pruefhistorie ({history.length})</h2>
+    <h2>Prüfhistorie ({history.length})</h2>
     {#if history.length === 0}
-      <p class="empty">Noch keine Pruefungen fuer dieses Objekt.</p>
+      <p class="empty">Noch keine Prüfungen für dieses Objekt.</p>
     {:else}
       <table>
         <thead>
-          <tr><th>Datum</th><th>Vorlage</th><th>Titel</th><th>Pruefer</th><th>Status</th></tr>
+          <tr><th>Datum</th><th>Checkliste</th><th>Titel</th><th>Prüfer</th><th>Status</th></tr>
         </thead>
         <tbody>
           {#each history as h}
@@ -75,7 +75,7 @@
       </table>
     {/if}
 
-    <button class="btn-secondary" onclick={() => currentView.set('objects')}>Zurueck</button>
+    <button class="btn-secondary" onclick={() => currentView.set('objects')}>Zurück</button>
   </div>
 {/if}
 

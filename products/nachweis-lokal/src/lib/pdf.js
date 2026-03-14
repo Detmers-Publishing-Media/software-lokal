@@ -99,6 +99,139 @@ export function generateListPdf(title, columns, rows, orgProfile, isProbe) {
 }
 
 /**
+ * Generate a blank checklist form for printing.
+ * Users can take this on-site, check items with a pen, and enter results digitally later.
+ * @param {Object} template - Template data (name, description, category)
+ * @param {Array<Object>} items - Template items with label, hint, required
+ * @param {Object} orgProfile - Organization profile for letterhead
+ */
+export function generateBlankFormPdf(template, items, orgProfile) {
+  const today = new Date().toLocaleDateString('de-DE');
+  const content = [];
+
+  // Letterhead
+  if (orgProfile?.name) {
+    content.push({ text: orgProfile.name, fontSize: 14, bold: true, margin: [0, 0, 0, 2] });
+    const addressParts = [orgProfile.street, [orgProfile.zip, orgProfile.city].filter(Boolean).join(' ')].filter(Boolean);
+    if (addressParts.length) {
+      content.push({ text: addressParts.join(', '), fontSize: 9, color: '#666', margin: [0, 0, 0, 8] });
+    }
+  }
+
+  content.push({ text: 'Pruefprotokoll (Leerformular)', fontSize: 14, bold: true, margin: [0, 8, 0, 4] });
+  content.push({ text: template.name, fontSize: 12, margin: [0, 0, 0, 4] });
+  if (template.description) {
+    content.push({ text: template.description, fontSize: 9, color: '#666', margin: [0, 0, 0, 8] });
+  }
+
+  // Handwritten fields
+  content.push({
+    table: {
+      widths: [80, '*', 80, '*'],
+      body: [
+        [
+          { text: 'Geraet/Raum:', fontSize: 9, bold: true },
+          { text: '', fontSize: 9 },
+          { text: 'Datum:', fontSize: 9, bold: true },
+          { text: '', fontSize: 9 },
+        ],
+        [
+          { text: 'Pruefer:', fontSize: 9, bold: true },
+          { text: '', fontSize: 9 },
+          { text: 'Unterschrift:', fontSize: 9, bold: true },
+          { text: '', fontSize: 9 },
+        ],
+      ],
+    },
+    layout: {
+      hLineWidth: (i, node) => (i === node.table.body.length) ? 0.5 : 0,
+      vLineWidth: () => 0,
+      paddingTop: () => 6,
+      paddingBottom: () => 6,
+    },
+    margin: [0, 0, 0, 12],
+  });
+
+  // Checklist table with checkboxes
+  const headerRow = [
+    { text: 'Nr.', bold: true, fontSize: 8, fillColor: '#f0f0f0' },
+    { text: 'Pruefpunkt', bold: true, fontSize: 8, fillColor: '#f0f0f0' },
+    { text: 'OK', bold: true, fontSize: 8, fillColor: '#f0f0f0', alignment: 'center' },
+    { text: 'Mangel', bold: true, fontSize: 8, fillColor: '#f0f0f0', alignment: 'center' },
+    { text: 'N/A', bold: true, fontSize: 8, fillColor: '#f0f0f0', alignment: 'center' },
+    { text: 'Bemerkung', bold: true, fontSize: 8, fillColor: '#f0f0f0' },
+  ];
+
+  const itemRows = items.map((item, i) => {
+    const labelStack = [{ text: item.label, fontSize: 8 }];
+    if (item.hint) {
+      labelStack.push({ text: item.hint, fontSize: 7, color: '#888', italics: true });
+    }
+    return [
+      { text: String(i + 1), fontSize: 8 },
+      { stack: labelStack },
+      { text: '\u25A1', fontSize: 12, alignment: 'center' },
+      { text: '\u25A1', fontSize: 12, alignment: 'center' },
+      { text: '\u25A1', fontSize: 12, alignment: 'center' },
+      { text: '', fontSize: 8 },
+    ];
+  });
+
+  content.push({ text: 'Pruefpunkte', fontSize: 11, bold: true, margin: [0, 4, 0, 6] });
+  content.push({
+    table: {
+      headerRows: 1,
+      widths: [25, '*', 30, 35, 25, 100],
+      body: [headerRow, ...itemRows],
+    },
+    layout: {
+      hLineWidth: (i, node) => (i === 0 || i === 1 || i === node.table.body.length) ? 0.5 : 0.25,
+      vLineWidth: (i, node) => (i === 0 || i === node.table.widths.length) ? 0.5 : 0.25,
+      hLineColor: () => '#cccccc',
+      vLineColor: () => '#cccccc',
+      paddingLeft: () => 4,
+      paddingRight: () => 4,
+      paddingTop: () => 4,
+      paddingBottom: () => 4,
+    },
+  });
+
+  // Notes area
+  content.push({ text: 'Bemerkungen:', fontSize: 9, bold: true, margin: [0, 16, 0, 4] });
+  content.push({
+    table: {
+      widths: ['*'],
+      body: [[{ text: '\n\n\n\n', fontSize: 9 }]],
+    },
+    layout: {
+      hLineWidth: () => 0.5,
+      vLineWidth: () => 0.5,
+      hLineColor: () => '#cccccc',
+      vLineColor: () => '#cccccc',
+      paddingTop: () => 8,
+      paddingBottom: () => 8,
+      paddingLeft: () => 8,
+      paddingRight: () => 8,
+    },
+  });
+
+  const docDefinition = {
+    pageSize: 'A4',
+    pageMargins: [40, 40, 40, 60],
+    content,
+    footer: (currentPage, pageCount) => ({
+      columns: [
+        { text: `Leerformular, erstellt: ${today}`, fontSize: 7, color: '#999', margin: [40, 0, 0, 0] },
+        { text: `Seite ${currentPage} / ${pageCount}`, fontSize: 7, color: '#999', alignment: 'right', margin: [0, 0, 40, 0] },
+      ],
+      margin: [0, 20, 0, 0],
+    }),
+  };
+
+  pdfMake.createPdf(docDefinition).open();
+}
+
+/**
  * Build the content blocks for a single inspection protocol.
  * Used by both single and batch PDF generation.
  * @param {Object} inspection - Inspection data

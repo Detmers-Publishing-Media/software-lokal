@@ -90,32 +90,38 @@ tests/
   - Spezial: 'inspection:execute:ID'
 - Shared Components: `SupportView`, `FeatureRequestView`, `LicenseSection` aus `@codefabrik/app-shared/components`
 
-## Aktuelle Version: v0.4.0
+## Aktuelle Version: v0.5.0
 
-33 Features (20 aus v0.1.0 + 4 aus v0.2.0 + 7 aus v0.3.0 + 2 neu in v0.4.0):
-- Vorlagen-CRUD mit Pruefpunkten (beliebig viele)
-- Objekt-/Gegenstandsverwaltung mit Pruefhistorie
+40 Features (20 aus v0.1.0 + 4 aus v0.2.0 + 7 aus v0.3.0 + 2 aus v0.4.0 + 7 neu in v0.5.0):
+- Checklisten-CRUD mit Pruefpunkten (beliebig viele)
+- Geraete-/Raumverwaltung mit Pruefhistorie
 - Pruefungsverwaltung (anlegen, durchfuehren, abschliessen)
 - Interaktive Checkliste (OK/Maengel/N/A pro Punkt, Zwischenspeichern)
 - Status-Workflow (offen → bestanden/bemaengelt/abgebrochen)
 - Dashboard mit Statistiken + Faelligkeits-Ampel + Offene Maengel
 - PDF-Pruefprotokoll + Maengelbericht + Pruefungsliste
-- CSV-Export + CSV-Import (Vorlagen)
+- CSV-Export + CSV-Import (Checklisten)
 - Organisationsprofil (Briefkopf)
 - Event-Log mit HMAC-SHA256 Hash-Kette
 - Integritaetspruefung (sichtbar im UI)
-- Probe-Lizenz (10 Vorlagen Limit)
+- Probe-Lizenz (10 Checklisten Limit)
 - Support-Integration + Feature-Requests
-- Vorlagen-Bibliothek (15 fertige Vorlagen)
+- Checklisten-Bibliothek (35 fertige Checklisten)
 - Wiederkehrende Pruefungen (automatische Folgepruefung)
 - Foto-Anhaenge (pro Pruefpunkt, Thumbnail-Galerie)
 - Maengeltracking (offen/behoben/verifiziert, Nachpruefung)
-- Erweiterte Vorlagen-Bibliothek (15 Vorlagen)
 - Sammel-PDF (mehrere Pruefprotokolle in einem Dokument)
 - Fotos in PDF (eingebettete Foto-Anhaenge im Pruefprotokoll)
-- Vorlagen duplizieren (Kopie erstellen und anpassen)
+- Checklisten duplizieren (Kopie erstellen und anpassen)
 - Erinnerungen (Warnbanner fuer ueberfaellige/bald faellige Pruefungen)
 - Prueferverwaltung (Pruefer mit Rolle/Qualifikation, Autovervollstaendigung)
 - QR-Code auf PDF (Pruefungsreferenz zur Zuordnung)
-- **NEU v0.4.0:** Workflow-orientierte Sidebar (Gruppenheader: Vorbereiten/Pruefen/Nachverfolgen, 12→7 Eintraege, Tabs fuer Vorlagen/Einstellungen/Support)
-- **NEU v0.4.0:** Einrichtungsassistent (4-Schritte-Wizard beim ersten Start: Organisation, Pruefer, Vorlagen, erstes Objekt)
+- Workflow-orientierte Sidebar (Gruppenheader: Einrichten/Durchfuehren)
+- Einrichtungsassistent (4-Schritte-Wizard: Willkommen, Checklisten, Geraet/Raum, Organisation)
+- **NEU v0.5.0:** Usability-Refactoring (Vorlagen→Checklisten, Objekte→Geraete & Raeume, Navigation vereinfacht)
+- **NEU v0.5.0:** Dashboard-Upgrade (klickbare ueberfaellige Pruefungen, Jetzt-Pruefen-Button, Zuletzt-bearbeitet, offene Maengel als Liste)
+- **NEU v0.5.0:** Wizard-Neuordnung (Willkommen→Checklisten→Geraet→Organisation, Pruefer entfernt)
+- **NEU v0.5.0:** 35 Checklisten-Bibliothek (20 neue: Tueren/Tore, Werkzeugmaschinen, Kita, Gastro, Minigolf, Schankanlage, Saisonstart u.a.)
+- **NEU v0.5.0:** Leerformular drucken (Checkliste als leeres PDF mit Checkboxen zum Vor-Ort-Abhaken)
+- **NEU v0.5.0:** System-Benachrichtigungen (OS-Notification bei ueberfaelligen Pruefungen beim App-Start)
+- **NEU v0.5.0:** Schnellstart vom Dashboard (Jetzt-Pruefen erstellt Pruefung und springt direkt in Durchfuehrung)

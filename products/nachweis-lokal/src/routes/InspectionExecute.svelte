@@ -73,11 +73,11 @@
 
 {#if inspection}
   <div class="page">
-    <h1>Pruefung durchfuehren</h1>
+    <h1>Prüfung durchführen</h1>
     <div class="meta">
       <span><strong>{inspection.title}</strong></span>
-      <span>Pruefer: {inspection.inspector}</span>
-      {#if inspection.object_name}<span>Objekt: {inspection.object_name}</span>{/if}
+      <span>Prüfer: {inspection.inspector}</span>
+      {#if inspection.object_name}<span>Gerät / Raum: {inspection.object_name}</span>{/if}
     </div>
 
     <div class="checklist">
@@ -93,7 +93,7 @@
           {/if}
           <div class="check-buttons">
             <button class="result-btn {r.result === 'ok' ? 'active-ok' : ''}" onclick={() => setResult(i, 'ok')}>OK</button>
-            <button class="result-btn {r.result === 'maengel' ? 'active-fail' : ''}" onclick={() => setResult(i, 'maengel')}>Maengel</button>
+            <button class="result-btn {r.result === 'maengel' ? 'active-fail' : ''}" onclick={() => setResult(i, 'maengel')}>Mängel</button>
             <button class="result-btn {r.result === 'nicht_anwendbar' ? 'active-na' : ''}" onclick={() => setResult(i, 'nicht_anwendbar')}>N/A</button>
           </div>
           {#if r.result === 'maengel'}
@@ -115,15 +115,15 @@
       <div class="recurring-option">
         <label>
           <input type="checkbox" bind:checked={autoRecurring} />
-          Naechste Pruefung automatisch anlegen (in {template.interval_days} Tagen)
+          Nächste Prüfung automatisch anlegen (in {template.interval_days} Tagen)
         </label>
       </div>
     {/if}
 
     <div class="actions">
       <button class="btn-secondary" onclick={() => handleSave(false)} disabled={saving}>Zwischenspeichern</button>
-      <button class="btn-primary" onclick={() => handleSave(true)} disabled={saving}>Abschliessen</button>
-      <button class="btn-secondary" onclick={() => currentView.set(`inspection:${inspectionId}`)}>Zurueck</button>
+      <button class="btn-primary" onclick={() => handleSave(true)} disabled={saving}>Abschließen</button>
+      <button class="btn-secondary" onclick={() => currentView.set(`inspection:${inspectionId}`)}>Zurück</button>
     </div>
   </div>
 {/if}

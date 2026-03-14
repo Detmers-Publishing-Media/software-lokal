@@ -2,7 +2,7 @@ schema_version: 1
 product_id: "nachweis-lokal"
 name: "Nachweis Lokal"
 tagline: "Pruefprotokolle dokumentieren, Nachweise erzeugen, Historie nachvollziehen"
-version: "0.3.0"
+version: "0.5.0"
 license: "GPL-3.0-only"
 type: "app"
 tech_stack: "electron-svelte"

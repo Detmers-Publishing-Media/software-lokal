@@ -12,14 +12,14 @@
 
 <div class="page">
   <div class="header">
-    <h1>Objekte</h1>
-    <button class="btn-primary" onclick={() => currentView.set('object:new')}>+ Neues Objekt</button>
+    <h1>Geräte & Räume</h1>
+    <button class="btn-primary" onclick={() => currentView.set('object:new')}>+ Neuer Eintrag</button>
   </div>
 
-  <p class="hint">Geraete, Raeume, Anlagen oder andere Gegenstaende, die geprueft werden.</p>
+  <p class="hint">Geräte, Räume, Anlagen oder andere Gegenstände, die geprüft werden.</p>
 
   {#if objects.length === 0}
-    <p class="empty">Noch keine Objekte angelegt.</p>
+    <p class="empty">Noch keine Geräte oder Räume angelegt.</p>
   {:else}
     <table>
       <thead>
