@@ -182,7 +182,7 @@
     </section>
 
     <section>
-      <h2>Supportvertrag</h2>
+      <h2>Nachweis Lokal Business</h2>
       <LicenseSection />
     </section>
 

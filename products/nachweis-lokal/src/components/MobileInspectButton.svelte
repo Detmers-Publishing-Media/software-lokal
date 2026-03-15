@@ -110,8 +110,8 @@
   {#if licenseError === 'trial_expired'}
     <div class="license-notice">
       <p>Ihre 30-Tage-Testphase für die mobile Prüfung ist abgelaufen.</p>
-      <p>Mit einem Supportvertrag können Sie weiterhin mit dem Handy prüfen — auch unterwegs ohne WLAN.</p>
-      <p class="license-price">Einführungspreis: 59 €/Jahr <span class="price-regular">(regulär 99 €)</span></p>
+      <p>Mit Nachweis Lokal Business können Sie weiterhin mit dem Handy prüfen — auch unterwegs ohne WLAN.</p>
+      <p class="license-price">89 €/Jahr inkl. MwSt <span class="price-regular">· Early-Adopter: 69 €/Jahr (erste 50 Kunden)</span></p>
       <p class="license-link">→ detmers-publish.de</p>
     </div>
   {/if}

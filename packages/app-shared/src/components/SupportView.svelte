@@ -250,12 +250,12 @@
         Die Desktop-Funktionen stehen Ihnen vollständig zur Verfügung.
       </p>
       <p class="muted">
-        Mit einem Supportvertrag erhalten Sie zusätzlich:
-        Offline-Prüfung mit dem Handy, persönlichen Support und automatische Updates.
+        Mit Nachweis Lokal Business erhalten Sie kuratierte Branchenvorlagen, persönlichen Support, automatische Updates
+        und offizielle Installer.
       </p>
-      <p class="muted"><strong>Einführungspreis: 59 €/Jahr</strong> (regulär 99 €/Jahr)</p>
+      <p class="muted"><strong>89 €/Jahr inkl. MwSt</strong> · Early-Adopter: 69 €/Jahr (erste 50 Kunden)</p>
       <div class="cta-buttons">
-        <span class="link">Supportvertrag erwerben auf detmers-publish.de</span>
+        <span class="link">Nachweis Lokal Business auf detmers-publish.de</span>
         <span class="separator">oder</span>
         <span class="hint">Key eingeben unter Einstellungen</span>
       </div>

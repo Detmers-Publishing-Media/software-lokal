@@ -64,7 +64,7 @@
 </script>
 
 <div class="license-section">
-  <h2>Supportvertrag</h2>
+  <h2>Nachweis Lokal Business</h2>
 
   {#if loading}
     <p class="muted">Status wird geladen...</p>
@@ -90,7 +90,7 @@
       {#if status.reason === 'cache_expired'}
         <p class="hint">Bitte mit dem Internet verbinden, damit der Key geprüft werden kann.</p>
       {:else if status.reason === 'expired'}
-        <p class="hint">Ihr Supportvertrag ist abgelaufen. Verlängern Sie auf detmers-publish.de</p>
+        <p class="hint">Ihr Nachweis Lokal Business ist abgelaufen. Verlängern Sie auf detmers-publish.de</p>
       {/if}
       <button class="btn-danger-subtle" onclick={handleRemoveKey}>Key entfernen</button>
     </div>
@@ -98,11 +98,11 @@
     <div class="license-none">
       <p class="muted">
         Die Desktop-Version ist kostenlos nutzbar.
-        Mit einem Supportvertrag erhalten Sie zusätzlich: Offline-Prüfung mit dem Handy,
-        persönlichen Support und automatische Updates.
+        Mit Nachweis Lokal Business erhalten Sie kuratierte Branchenvorlagen, offizielle Installer, automatische Updates
+        und persönlichen Support für 12 Monate. Die zuletzt geladene Version läuft danach unbegrenzt weiter.
       </p>
       <p class="price-info">
-        <strong>Einführungspreis: 59 €/Jahr</strong> <span class="price-regular">(regulär 99 €/Jahr)</span>
+        <strong>89 €/Jahr inkl. MwSt</strong> <span class="price-regular">· Early-Adopter: 69 €/Jahr (erste 50 Kunden)</span>
       </p>
       <form class="key-form" onsubmit={e => { e.preventDefault(); handleEnterKey(); }}>
         <input
@@ -117,7 +117,7 @@
         </button>
       </form>
       <p class="hint">
-        Supportverträge erhältlich auf
+        Nachweis Lokal Business erhältlich auf
         <span class="link">detmers-publish.de</span>
       </p>
     </div>

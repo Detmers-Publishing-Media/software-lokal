@@ -12,6 +12,7 @@
   let importing = $state(null);
   let importedIds = $state(new Set());
   let selectedBranch = $state('alle');
+  let hasBusinessLicense = $state(false);
 
   // --- Stufe 1: KI-Prompt ---
   let promptCopied = $state(false);
@@ -161,6 +162,7 @@ Gib nur die CSV aus, ohne Erklärungen.`;
     templates = libraryData;
     const existing = await getTemplates();
     existingNames = existing.map(t => t.name);
+    hasBusinessLicense = (await window.electronAPI?.license?.getStatus())?.active || false;
   });
 
   function alreadyExists(name) {
@@ -237,12 +239,23 @@ Gib nur die CSV aus, ohne Erklärungen.`;
     {/each}
   </div>
 
+  {#if !hasBusinessLicense}
+    <div class="business-banner">
+      <strong>35+ kuratierte Branchenvorlagen im Business-Paket</strong>
+      <p>89 EUR/Jahr inkl. MwSt · <a href="https://portal.detmers-publish.de/nachweis-lokal#preise">Mehr erfahren</a></p>
+    </div>
+  {/if}
+
   <div class="library-grid">
     {#each filteredTemplates as t}
-      <div class="library-card">
+      {@const isLocked = t.tier === 'business' && !hasBusinessLicense}
+      <div class="library-card" class:template-locked={isLocked}>
         <div class="card-header">
           <h3>{t.name}</h3>
           <span class="badge">{t.category}</span>
+          {#if t.tier === 'business'}
+            <span class="business-badge">Business</span>
+          {/if}
         </div>
         <p class="card-desc">{t.description}</p>
         <div class="card-meta">
@@ -264,7 +277,9 @@ Gib nur die CSV aus, ohne Erklärungen.`;
           </ul>
         </details>
         <div class="card-actions">
-          {#if alreadyExists(t.name)}
+          {#if isLocked}
+            <button class="btn-primary" disabled>Im Business-Paket enthalten</button>
+          {:else if alreadyExists(t.name)}
             <button class="btn-secondary" disabled>Bereits vorhanden</button>
           {:else}
             <button class="btn-primary" onclick={() => handleImport(t)} disabled={importing === t.id}>
@@ -402,4 +417,10 @@ Gib nur die CSV aus, ohne Erklärungen.`;
   .btn-primary { padding: 0.375rem 0.75rem; background: var(--color-primary); color: white; border: none; border-radius: 0.375rem; font-size: 0.8125rem; }
   .btn-secondary { padding: 0.375rem 0.75rem; background: none; border: 1px solid var(--color-border); border-radius: 0.375rem; font-size: 0.8125rem; }
   .btn-secondary:disabled { opacity: 0.5; cursor: not-allowed; }
+  .template-locked { opacity: 0.7; }
+  .template-locked .card-actions .btn-primary { background: #a0aec0; cursor: not-allowed; }
+  .business-badge { background: #6366f1; color: white; font-size: 0.625rem; padding: 0.125rem 0.375rem; border-radius: 0.25rem; }
+  .business-banner { background: #f0f7ff; border: 1px solid #3b82f6; border-radius: 0.5rem; padding: 1rem; text-align: center; font-size: 0.875rem; }
+  .business-banner p { margin: 0.25rem 0 0; }
+  .business-banner a { color: #2563eb; }
 </style>

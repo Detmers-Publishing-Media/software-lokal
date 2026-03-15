@@ -1,0 +1,53 @@
+# Trainiertes KI-Modell für Checklisten-Generierung
+
+id: "FEAT-019"
+title: "Feintrainiertes KI-Modell für branchenspezifische Checklisten"
+epic: "NACHWEIS-KI"
+status: "inbox"
+priority: 2
+
+story_type: "platform-core"
+lane: "slow"
+platform_impact: "high"
+founder_gate_required: true
+force_approve_allowed: false
+auto_merge_allowed: false
+
+description: |
+  Kleines Sprachmodell (1-3B Parameter) feintrainiert auf deutsche
+  Prüfvorschriften und Checklisten. Ziel: Nutzer beschreibt Betrieb,
+  Modell generiert passende Checklisten mit korrekten Prüfpunkten.
+
+  Trainingsdaten:
+  - DGUV Vorschriften und Regeln (öffentlich)
+  - ASR Arbeitsstättenregeln (öffentlich)
+  - BetrSichV Anhänge (öffentlich)
+  - BG-Handlungshilfen und Prüflisten (frei verfügbar)
+  - HACCP-Leitfäden (öffentlich)
+  - Eigene 35+ Checklisten als Beispiele
+
+  Optionen für Hosting:
+  - Ollama Cloud (ollama.com) als API
+  - Portal-Server (wenn Modell klein genug)
+  - Lokal auf dem PC des Nutzers (offline-fähig)
+
+  Business-Feature: Gehosteter KI-Endpoint im Business-Paket.
+  Kostenlose Version: Keyword-Classifier (bereits implementiert) +
+  Möglichkeit eigenen LLM-Endpoint zu konfigurieren.
+
+  Offene Fragen:
+  - Welches Basismodell (Phi-3, DeepSeek-R1 1.5B, Gemma 2B)?
+  - Fine-Tuning vs. RAG (Retrieval Augmented Generation)?
+  - Hosting-Kosten und Latenz
+  - DIN-Normen: Inhalt ist kostenpflichtig, nur Titel frei
+
+acceptance_criteria:
+  - "Modell generiert branchenspezifische Checklisten aus Freitext-Beschreibung"
+  - "Qualität mindestens so gut wie die manuell erstellten 35 Vorlagen"
+  - "Antwortzeit unter 10 Sekunden"
+  - "Business-Kunden haben Zugang über gehosteten Endpoint"
+
+depends_on:
+  - "Trainingsdaten sammeln und aufbereiten"
+
+estimated_effort: "XL"

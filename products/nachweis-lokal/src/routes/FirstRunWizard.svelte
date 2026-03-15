@@ -71,6 +71,12 @@
   let showManualSelect = $state(false);
   let listening = $state(false);
   let speechSupported = $state(typeof window !== 'undefined' && ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window));
+  let hasBusinessLicense = $state(false);
+
+  // Check license on init
+  (async () => {
+    hasBusinessLicense = (await window.electronAPI?.license?.getStatus())?.active || false;
+  })();
 
   const branchLabels = [
     { key: 'alle', label: 'Alle' },
@@ -147,6 +153,10 @@
     );
   });
 
+  let businessSelectedCount = $derived(
+    libraryData.filter(t => selectedTemplates.has(t.id) && t.tier === 'business').length
+  );
+
   function toggleTemplate(id) {
     const next = new Set(selectedTemplates);
     if (next.has(id)) next.delete(id);
@@ -166,11 +176,12 @@
     } else if (step === 2) {
       step = 3;
     } else if (step === 3) {
-      // Import selected templates
+      // Import selected templates (only basis if no business license)
       saving = true;
       let count = 0;
       for (const t of libraryData) {
         if (selectedTemplates.has(t.id)) {
+          if (t.tier === 'business' && !hasBusinessLicense) continue;
           await importLibraryTemplate(t);
           count++;
         }
@@ -340,14 +351,20 @@
                 {#each libraryData.filter(t => selectedTemplates.has(t.id)) as t}
                   <li>
                     <label class="selected-item">
-                      <input type="checkbox" checked onchange={() => toggleTemplate(t.id)} />
+                      <input type="checkbox" checked={t.tier !== 'business' || hasBusinessLicense} disabled={t.tier === 'business' && !hasBusinessLicense} onchange={() => toggleTemplate(t.id)} />
                       <span>{t.name}</span>
+                      {#if t.tier === 'business'}
+                        <span class="business-badge">Business</span>
+                      {/if}
                       <span class="selected-meta">{t.items.length} Punkte</span>
                     </label>
                   </li>
                 {/each}
               </ul>
               <p class="selected-hint">Häkchen entfernen um eine Checkliste abzuwählen.</p>
+              {#if businessSelectedCount > 0 && !hasBusinessLicense}
+                <p class="business-hint">{businessSelectedCount} von {selectedTemplates.size} empfohlenen Checklisten sind im Business-Paket enthalten.</p>
+              {/if}
             </div>
           {/if}
 
@@ -367,10 +384,14 @@
             </div>
             <ul class="checklist-select">
               {#each filteredLibrary as t}
+                {@const isBusinessLocked = t.tier === 'business' && !hasBusinessLicense}
                 <li>
-                  <label class="selected-item">
-                    <input type="checkbox" checked={selectedTemplates.has(t.id)} onchange={() => toggleTemplate(t.id)} />
+                  <label class="selected-item" class:template-locked={isBusinessLocked}>
+                    <input type="checkbox" checked={selectedTemplates.has(t.id) && !isBusinessLocked} disabled={isBusinessLocked} onchange={() => toggleTemplate(t.id)} />
                     <span>{t.name}</span>
+                    {#if t.tier === 'business'}
+                      <span class="business-badge">Business</span>
+                    {/if}
                     <span class="selected-meta">{t.items.length} Punkte · {t.category}</span>
                   </label>
                 </li>
@@ -1021,6 +1042,9 @@
   }
 
   .warning-hint { color: #e65100; font-size: 0.8125rem; margin-top: 0.5rem; }
+  .business-badge { background: #6366f1; color: white; font-size: 0.625rem; padding: 0.125rem 0.375rem; border-radius: 0.25rem; }
+  .business-hint { font-size: 0.8125rem; color: #6366f1; margin-top: 0.5rem; font-style: italic; }
+  .template-locked { opacity: 0.6; }
 
   .btn-back {
     padding: 0.5rem 1rem;
