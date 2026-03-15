@@ -109,14 +109,10 @@
   {/if}
   {#if licenseError === 'trial_expired'}
     <div class="license-notice">
-      <p>Ihre Testphase für die Offline-Prüfung ist abgelaufen. Mit einem Supportvertrag können Sie weiterhin mobil prüfen.</p>
-      <p class="license-price">Einführungspreis: 59 €/Jahr</p>
-    </div>
-  {:else if licenseError === 'license_required'}
-    <div class="license-notice">
-      <p>Offline-Prüfung erfordert einen Supportvertrag.</p>
-      <p class="license-price">Einführungspreis: 59 €/Jahr</p>
-      <p>Oder starten Sie eine kostenlose 4-Wochen-Testphase.</p>
+      <p>Ihre 30-Tage-Testphase für die mobile Prüfung ist abgelaufen.</p>
+      <p>Mit einem Supportvertrag können Sie weiterhin mit dem Handy prüfen — auch unterwegs ohne WLAN.</p>
+      <p class="license-price">Einführungspreis: 59 €/Jahr <span class="price-regular">(regulär 99 €)</span></p>
+      <p class="license-link">→ detmers-publish.de</p>
     </div>
   {/if}
 {:else}
@@ -238,6 +234,8 @@
   .license-notice p { margin: 0 0 0.375rem 0; }
   .license-notice p:last-child { margin-bottom: 0; }
   .license-price { font-weight: 600; }
+  .price-regular { font-size: 0.75rem; color: var(--color-text-muted); text-decoration: line-through; font-weight: 400; }
+  .license-link { color: var(--color-primary); font-weight: 600; }
 
   .trial-info {
     font-size: 0.8125rem;

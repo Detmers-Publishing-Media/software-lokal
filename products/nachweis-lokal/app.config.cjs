@@ -44,7 +44,7 @@ module.exports = {
         try {
           const trial = JSON.parse(fs.readFileSync(trialFile, 'utf-8'));
           const startedAt = new Date(trial.startedAt);
-          const expiresAt = new Date(startedAt.getTime() + 28 * 24 * 60 * 60 * 1000);
+          const expiresAt = new Date(startedAt.getTime() + 30 * 24 * 60 * 60 * 1000);
           const now = new Date();
           if (now >= expiresAt) {
             return { ok: false, reason: 'trial_expired', trialExpiresAt: expiresAt.toISOString() };
@@ -55,8 +55,8 @@ module.exports = {
           // No trial file yet — create it (first use)
           const startedAt = new Date().toISOString();
           fs.writeFileSync(trialFile, JSON.stringify({ startedAt }));
-          const expiresAt = new Date(new Date(startedAt).getTime() + 28 * 24 * 60 * 60 * 1000);
-          trialInfo = { trial: true, trialDaysLeft: 28, trialExpiresAt: expiresAt.toISOString() };
+          const expiresAt = new Date(new Date(startedAt).getTime() + 30 * 24 * 60 * 60 * 1000);
+          trialInfo = { trial: true, trialDaysLeft: 30, trialExpiresAt: expiresAt.toISOString() };
         }
       }
 

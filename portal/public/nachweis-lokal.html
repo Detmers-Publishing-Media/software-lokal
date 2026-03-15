@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nachweis Lokal — Prüfungen dokumentieren, einfach und sicher</title>
+  <meta name="description" content="Prüfprotokolle und Checklisten für Ihren Betrieb. Desktop + Handy. Lokal, ohne Cloud. 30 Tage kostenlos testen.">
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .hero { text-align: center; padding: 3rem 1rem; }
+    .hero h2 { font-size: 2rem; margin-bottom: 0.75rem; color: #1a1a2e; }
+    .hero .subtitle { font-size: 1.125rem; color: #555; max-width: 600px; margin: 0 auto 2rem; }
+    .hero .cta { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+    .hero .cta .btn { padding: 0.875rem 2rem; font-size: 1.05rem; }
+    .btn-outline { background: transparent; border: 2px solid #2563eb; color: #2563eb; }
+    .btn-outline:hover { background: #eff6ff; text-decoration: none; }
+
+    .features { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin: 2rem 0; }
+    @media (max-width: 600px) { .features { grid-template-columns: 1fr; } }
+    .feature { background: #fff; border-radius: 8px; padding: 1.25rem; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+    .feature .icon { font-size: 1.5rem; margin-bottom: 0.5rem; }
+    .feature h3 { font-size: 1rem; margin-bottom: 0.375rem; }
+    .feature p { font-size: 0.875rem; color: #555; margin: 0; }
+
+    .workflow { background: #fff; border-radius: 8px; padding: 2rem; box-shadow: 0 1px 3px rgba(0,0,0,0.08); margin: 2rem 0; }
+    .workflow h2 { text-align: center; margin-bottom: 1.5rem; }
+    .steps { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+    .step { text-align: center; flex: 1; min-width: 140px; }
+    .step .num { width: 2.5rem; height: 2.5rem; border-radius: 50%; background: #2563eb; color: white; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.125rem; margin-bottom: 0.5rem; }
+    .step h4 { font-size: 0.9375rem; margin-bottom: 0.25rem; }
+    .step p { font-size: 0.8125rem; color: #555; }
+    .step-arrow { display: flex; align-items: center; color: #ccc; font-size: 1.5rem; padding-top: 0.5rem; }
+    @media (max-width: 600px) { .step-arrow { display: none; } }
+
+    .pricing { text-align: center; margin: 2rem 0; }
+    .price-card { background: #fff; border-radius: 8px; padding: 2rem; box-shadow: 0 1px 3px rgba(0,0,0,0.08); max-width: 400px; margin: 1rem auto; border: 2px solid #2563eb; }
+    .price-card .price { font-size: 2.5rem; font-weight: 700; color: #2563eb; }
+    .price-card .price-period { font-size: 1rem; color: #555; }
+    .price-card .price-regular { font-size: 0.9375rem; color: #999; text-decoration: line-through; }
+    .price-card .price-label { font-size: 0.8125rem; color: #2563eb; font-weight: 600; margin-bottom: 0.5rem; }
+    .price-card ul { text-align: left; list-style: none; margin: 1.5rem 0; }
+    .price-card li { padding: 0.375rem 0; font-size: 0.9375rem; }
+    .price-card li::before { content: "✓ "; color: #16a34a; font-weight: 700; }
+
+    .trust { text-align: center; margin: 2rem 0; color: #555; font-size: 0.875rem; }
+    .trust-items { display: flex; gap: 2rem; justify-content: center; flex-wrap: wrap; margin-top: 0.75rem; }
+    .trust-item { display: flex; align-items: center; gap: 0.5rem; }
+
+    .faq { margin: 2rem 0; }
+    .faq details { background: #fff; border-radius: 8px; margin-bottom: 0.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+    .faq summary { padding: 1rem; cursor: pointer; font-weight: 600; font-size: 0.9375rem; }
+    .faq .answer { padding: 0 1rem 1rem; font-size: 0.875rem; color: #555; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1><a href="/">Detmers Publishing &amp; Media</a></h1>
+      <nav>
+        <a href="/download">Download</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="hero">
+      <h2>Prüfungen dokumentieren.<br>Einfach. Mit dem Handy.</h2>
+      <p class="subtitle">
+        Checklisten für Ihren Betrieb — Brandschutz, Hygiene, Elektro und mehr.
+        Prüfen Sie mit dem Handy, archivieren Sie auf dem PC. Lokal, ohne Cloud.
+      </p>
+      <div class="cta">
+        <a href="/download" class="btn">Kostenlos herunterladen</a>
+        <a href="#preise" class="btn btn-outline">Preise ansehen</a>
+      </div>
+    </div>
+
+    <div class="features">
+      <div class="feature">
+        <div class="icon">📱</div>
+        <h3>Prüfen mit dem Handy</h3>
+        <p>QR-Code scannen, Checkliste auf dem Handy abarbeiten, Fotos machen. Auch unterwegs ohne WLAN.</p>
+      </div>
+      <div class="feature">
+        <div class="icon">📋</div>
+        <h3>35+ fertige Checklisten</h3>
+        <p>Brandschutz, Hygiene, Elektro, Spielgeräte, Leitern und mehr. Nach Branche filterbar.</p>
+      </div>
+      <div class="feature">
+        <div class="icon">🔒</div>
+        <h3>Ihre Daten gehören Ihnen</h3>
+        <p>Alles auf Ihrem Computer. Keine Cloud, kein Account, keine monatlichen Gebühren für die Grundfunktionen.</p>
+      </div>
+      <div class="feature">
+        <div class="icon">🤖</div>
+        <h3>KI-Assistent</h3>
+        <p>Beschreiben Sie Ihren Betrieb — der Assistent findet die passenden Checklisten. Auch per Spracheingabe.</p>
+      </div>
+      <div class="feature">
+        <div class="icon">📄</div>
+        <h3>PDF-Prüfprotokolle</h3>
+        <p>Professionelle Protokolle mit Briefkopf, Fotos und QR-Code. Sofort druckfertig.</p>
+      </div>
+      <div class="feature">
+        <div class="icon">🔗</div>
+        <h3>Manipulationssicher</h3>
+        <p>Jede Prüfung wird kryptographisch verkettet. Nachträgliche Änderungen werden erkannt.</p>
+      </div>
+    </div>
+
+    <div class="workflow">
+      <h2>So funktioniert es</h2>
+      <div class="steps">
+        <div class="step">
+          <div class="num">1</div>
+          <h4>Checkliste wählen</h4>
+          <p>Aus der Bibliothek oder eigene erstellen</p>
+        </div>
+        <div class="step-arrow">→</div>
+        <div class="step">
+          <div class="num">2</div>
+          <h4>Gerät zuordnen</h4>
+          <p>Was wird geprüft?</p>
+        </div>
+        <div class="step-arrow">→</div>
+        <div class="step">
+          <div class="num">3</div>
+          <h4>Mit dem Handy prüfen</h4>
+          <p>Punkte abhaken, Fotos machen</p>
+        </div>
+        <div class="step-arrow">→</div>
+        <div class="step">
+          <div class="num">4</div>
+          <h4>Protokoll erstellen</h4>
+          <p>PDF mit einem Klick</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="pricing" id="preise">
+      <h2>Ein Preis. Alles drin.</h2>
+      <p style="color: #555; margin-bottom: 1rem;">Die Desktop-Version ist dauerhaft kostenlos. Für die mobile Prüfung gibt es den Supportvertrag.</p>
+
+      <div class="price-card">
+        <div class="price-label">Einführungspreis</div>
+        <div class="price">59 €</div>
+        <div class="price-period">pro Jahr</div>
+        <div class="price-regular">regulär 99 €/Jahr</div>
+        <ul>
+          <li>Mobile Prüfung mit dem Handy</li>
+          <li>Offline-Prüfung unterwegs</li>
+          <li>Bis zu 3 Geräte</li>
+          <li>Persönlicher Support</li>
+          <li>Automatische Updates</li>
+          <li>30 Tage kostenlos testen</li>
+        </ul>
+        <a href="/download" class="btn" style="width: 100%; text-align: center;">Jetzt kostenlos testen</a>
+      </div>
+
+      <p style="color: #555; font-size: 0.875rem; margin-top: 1rem;">
+        Desktop-Prüfung, Checklisten-Bibliothek, PDF-Export und KI-Assistent sind dauerhaft kostenlos.
+      </p>
+    </div>
+
+    <div class="trust">
+      <div class="trust-items">
+        <div class="trust-item">🇩🇪 Made in Germany</div>
+        <div class="trust-item">🔒 Keine Cloud</div>
+        <div class="trust-item">💳 Kein Abo — jährlich kündbar</div>
+        <div class="trust-item">⚡ Sofort einsatzbereit</div>
+      </div>
+    </div>
+
+    <div class="faq">
+      <h2>Häufige Fragen</h2>
+
+      <details>
+        <summary>Welche Prüfungen muss ich in meinem Betrieb machen?</summary>
+        <div class="answer">
+          Das hängt von Ihrer Branche ab. Die App enthält 35+ Checklisten für die häufigsten Fälle.
+          Fragen Sie Ihre Berufsgenossenschaft (BG) — die berät Sie kostenlos, welche Prüfungen für Ihren Betrieb vorgeschrieben sind.
+        </div>
+      </details>
+
+      <details>
+        <summary>Brauche ich einen Supportvertrag?</summary>
+        <div class="answer">
+          Nein. Die Desktop-Version ist dauerhaft kostenlos und voll funktionsfähig.
+          Der Supportvertrag ist für die mobile Prüfung mit dem Handy (auch unterwegs ohne WLAN), persönlichen Support und automatische Updates.
+        </div>
+      </details>
+
+      <details>
+        <summary>Sind meine Daten sicher?</summary>
+        <div class="answer">
+          Ja. Alle Daten bleiben auf Ihrem Computer. Es gibt keinen Cloud-Speicher und keinen Account.
+          Zusätzlich wird jede Prüfung kryptographisch verkettet — nachträgliche Änderungen werden sofort erkannt.
+        </div>
+      </details>
+
+      <details>
+        <summary>Wie funktioniert die mobile Prüfung?</summary>
+        <div class="answer">
+          Sie starten die Prüfung am PC und scannen einen QR-Code mit dem Handy.
+          Die Checkliste öffnet sich im Browser — keine App-Installation nötig.
+          Sie können auch unterwegs ohne WLAN prüfen. Abends synchronisieren sich die Ergebnisse automatisch.
+        </div>
+      </details>
+
+      <details>
+        <summary>Läuft die App auf meinem Computer?</summary>
+        <div class="answer">
+          Ja. Nachweis Lokal läuft auf Windows, macOS und Linux. Die mobile Prüfung funktioniert mit jedem Handy (iPhone und Android).
+        </div>
+      </details>
+
+      <details>
+        <summary>Ich spreche nicht so gut Deutsch. Gibt es die App in anderen Sprachen?</summary>
+        <div class="answer">
+          Die App zeigt auf Wunsch Untertitel in Türkisch oder Englisch an. Sie finden die Einstellung unter Einstellungen → Sprache.
+          Die Checklisten-Inhalte sind auf Deutsch, weil sie sich auf deutsche Vorschriften beziehen.
+        </div>
+      </details>
+    </div>
+  </div>
+
+  <footer>
+    <span>Detmers Publishing &amp; Media</span>
+    <span class="footer-links">
+      <a href="/impressum">Impressum</a>
+      <a href="/datenschutz">Datenschutz</a>
+    </span>
+  </footer>
+</body>
+</html>
