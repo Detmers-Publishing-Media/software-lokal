@@ -430,16 +430,11 @@ function startServer({ getDb, mobilePath, onResultUpdate }) {
   token = crypto.randomBytes(16).toString('hex');
   serverIp = detectLocalIp();
 
-  // Try HTTPS with self-signed cert, fall back to HTTP
-  const certs = generateSelfSignedCert(serverIp);
-  let protocol;
-  if (certs) {
-    server = https.createServer({ key: certs.key, cert: certs.cert }, handleRequest);
-    protocol = 'https';
-  } else {
-    server = http.createServer(handleRequest);
-    protocol = 'http';
-  }
+  // HTTP — kein HTTPS, da selbstsignierte Zertifikate Sicherheitswarnungen
+  // auf dem Handy verursachen die Endanwender verunsichern.
+  // Fotos funktionieren über <input type="file" accept="image/*"> auch ohne HTTPS.
+  server = http.createServer(handleRequest);
+  const protocol = 'http';
 
   // Try default port, fall back to random
   return new Promise((resolve, reject) => {
