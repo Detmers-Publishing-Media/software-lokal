@@ -347,6 +347,7 @@ Jedes Feature das eine Produkt-Funktion aendert oder hinzufuegt MUSS folgende Da
 4. **`CLAUDE.md` (Root)** — Produkt-Version + Testzahlen
 5. **Portal-DB-Migration** — Falls sich Produktname/Beschreibung/Preis aendert
 6. **`VERSION`** — Monorepo-Version bei Release-wuerdigem Aenderungsumfang
+7. **Portal Changelog** — `product_texts` Tabelle mit text_type='changelog' aktualisieren (SQL auf Portal-Server). MUSS bei jedem Release gemacht werden, sonst ist "Was ist neu?" in der App leer
 
 ## Entwicklungsworkflow: Claude Code <-> Aider + DeepSeek
 
