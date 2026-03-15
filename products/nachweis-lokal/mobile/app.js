@@ -344,7 +344,13 @@
 
     save: function() {
       vibrate(10);
-      showToast('Gespeichert');
+      if (pendingQueue.length > 0) {
+        flushQueue().then(function() {
+          showToast(pendingQueue.length === 0 ? 'Alles gespeichert' : pendingQueue.length + ' Änderung(en) noch offen');
+        });
+      } else {
+        showToast('Alles gespeichert');
+      }
     },
 
     complete: function() {

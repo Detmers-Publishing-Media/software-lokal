@@ -231,7 +231,31 @@ function handleRequest(req, res) {
           ORDER BY ti.sort_order
         `).all(inspectionId);
 
-        sendJson(res, 200, { inspection, results });
+        // Load existing photos grouped by result ID
+        const attachments = db.prepare(
+          'SELECT a.id, a.inspection_result_id, a.file_name FROM attachments a JOIN inspection_results ir ON a.inspection_result_id = ir.id WHERE ir.inspection_id = ?'
+        ).all(inspectionId);
+        const photos = {};
+        for (const a of attachments) {
+          if (!photos[a.inspection_result_id]) photos[a.inspection_result_id] = [];
+          photos[a.inspection_result_id].push({ id: a.id, url: '/api/photo/' + a.id, name: a.file_name });
+        }
+
+        sendJson(res, 200, { inspection, results, photos });
+        return;
+      }
+
+      // GET /api/photo/:id — serve attachment file
+      const photoMatch2 = pathname.match(/^\/api\/photo\/(\d+)$/);
+      if (photoMatch2 && req.method === 'GET') {
+        const attachId = parseInt(photoMatch2[1], 10);
+        const db = getDbFn();
+        const att = db.prepare('SELECT file_path, file_name FROM attachments WHERE id = ?').get(attachId);
+        if (!att || !fs.existsSync(att.file_path)) {
+          send404(res);
+          return;
+        }
+        serveStaticFile(res, att.file_path);
         return;
       }
 
@@ -316,11 +340,16 @@ function handleRequest(req, res) {
           const filePath = path.join(attachDir, fileName);
           fs.writeFileSync(filePath, filePart.data);
 
+          // Detect mime type from extension
+          const ext = path.extname(safeFilename).toLowerCase();
+          const mimeTypes = { '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.webp': 'image/webp', '.gif': 'image/gif' };
+          const mimeType = mimeTypes[ext] || 'image/jpeg';
+
           // Insert into attachments table
           const db = getDbFn();
           const info = db.prepare(
-            'INSERT INTO attachments (inspection_result_id, file_path, file_name, created_at) VALUES (?, ?, ?, datetime(\'now\'))'
-          ).run(resultId, filePath, safeFilename);
+            'INSERT INTO attachments (inspection_result_id, file_path, file_name, mime_type, size_bytes) VALUES (?, ?, ?, ?, ?)'
+          ).run(resultId, filePath, safeFilename, mimeType, filePart.data.length);
 
           if (onResultUpdateFn) {
             onResultUpdateFn({ inspectionId, resultId, photoAdded: true, attachmentId: info.lastInsertRowid });
