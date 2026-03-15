@@ -14,11 +14,11 @@
 
   // Step 2: Demo-Pruefung
   const demoItems = [
-    { label: 'Feuerl\u00f6scher sichtbar und zug\u00e4nglich?', hint: 'Nicht hinter Kartons oder M\u00f6beln versteckt', required: true },
-    { label: 'Fluchtweg frei und nicht blockiert?', hint: 'Keine Kisten, M\u00fcll oder M\u00f6bel im Weg', required: true },
-    { label: 'Notausgang-Schild beleuchtet?', hint: 'Gr\u00fcnes Schild \u00fcber der T\u00fcr', required: true },
+    { label: 'Feuerlöscher sichtbar und zugänglich?', hint: 'Nicht hinter Kartons oder Möbeln versteckt', required: true },
+    { label: 'Fluchtweg frei und nicht blockiert?', hint: 'Keine Kisten, Müll oder Möbel im Weg', required: true },
+    { label: 'Notausgang-Schild beleuchtet?', hint: 'Grünes Schild über der Tür', required: true },
     { label: 'Rauchmelder an der Decke vorhanden?', hint: '', required: false },
-    { label: 'Elektrokabel ohne sichtbare Sch\u00e4den?', hint: 'Keine Br\u00fcche, Risse oder lose Stellen', required: true },
+    { label: 'Elektrokabel ohne sichtbare Schäden?', hint: 'Keine Brüche, Risse oder lose Stellen', required: true },
   ];
 
   let demoResults = $state(demoItems.map(item => ({
@@ -47,8 +47,8 @@
     const demoInspection = {
       title: 'Brandschutz Schnellcheck (Demo)',
       inspector: 'Demo-Nutzer',
-      object_name: 'Beispielgeb\u00e4ude',
-      date: new Date().toISOString().slice(0, 10),
+      object_name: 'Beispielgebäude',
+      inspection_date: new Date().toISOString().slice(0, 10),
       status: demoResults.some(r => r.result === 'maengel') ? 'bemaengelt' : 'bestanden',
       ref_code: 'DEMO-001',
     };
@@ -75,7 +75,7 @@
   const branchLabels = [
     { key: 'alle', label: 'Alle' },
     { key: 'gastro', label: 'Gastronomie' },
-    { key: 'buero', label: 'B\u00fcro' },
+    { key: 'buero', label: 'Büro' },
     { key: 'kita', label: 'Kita' },
     { key: 'handwerk', label: 'Handwerk' },
     { key: 'einzelhandel', label: 'Einzelhandel' },
@@ -84,13 +84,13 @@
   ];
 
   const keywords = {
-    gastro: ['restaurant', 'imbiss', 'caf\u00e9', 'cafe', 'k\u00fcche', 'kochen', 'gastronomie', 'speisen', 'essen', 'bar', 'kneipe', 'zapf', 'bier', 'fritteuse', 'grill', 'lebensmittel', 'hygiene', 'catering', 'kantine', 'b\u00e4ckerei', 'metzgerei', 'kiosk'],
-    buero: ['b\u00fcro', 'office', 'schreibtisch', 'bildschirm', 'computer', 'arbeitsplatz', 'praxis', 'kanzlei', 'agentur', 'beratung', 'verwaltung', 'server'],
-    kita: ['kita', 'kindergarten', 'krippe', 'hort', 'schule', 'kinder', 'spielplatz', 'spielger\u00e4te', 'turnhalle', 'betreuung', 'au\u00dfengel\u00e4nde'],
-    handwerk: ['werkstatt', 'handwerk', 'maschine', 'werkzeug', 'elektro', 'elektriker', 'installation', 'montage', 'baustelle', 'leiter', 'lager', 'regal', 'produktion', 'schwei\u00dfen', 'schreinerei'],
-    einzelhandel: ['laden', 'gesch\u00e4ft', 'shop', 'verkauf', 'kasse', 'regal', 'einzelhandel', 'supermarkt', 'boutique'],
-    hausverwaltung: ['geb\u00e4ude', 'haus', 'wohnung', 'vermieter', 'hausverwaltung', 'aufzug', 'heizung', 'keller', 'tiefgarage', 'treppe'],
-    verein: ['verein', 'sport', 'fu\u00dfball', 'tennis', 'schwimmbad', 'turnhalle', 'sportplatz', 'minigolf', 'clubhaus'],
+    gastro: ['restaurant', 'imbiss', 'café', 'cafe', 'küche', 'kochen', 'gastronomie', 'speisen', 'essen', 'bar', 'kneipe', 'zapf', 'bier', 'fritteuse', 'grill', 'lebensmittel', 'hygiene', 'catering', 'kantine', 'bäckerei', 'metzgerei', 'kiosk'],
+    buero: ['büro', 'office', 'schreibtisch', 'bildschirm', 'computer', 'arbeitsplatz', 'praxis', 'kanzlei', 'agentur', 'beratung', 'verwaltung', 'server'],
+    kita: ['kita', 'kindergarten', 'krippe', 'hort', 'schule', 'kinder', 'spielplatz', 'spielgeräte', 'turnhalle', 'betreuung', 'außengelände'],
+    handwerk: ['werkstatt', 'handwerk', 'maschine', 'werkzeug', 'elektro', 'elektriker', 'installation', 'montage', 'baustelle', 'leiter', 'lager', 'regal', 'produktion', 'schweißen', 'schreinerei'],
+    einzelhandel: ['laden', 'geschäft', 'shop', 'verkauf', 'kasse', 'regal', 'einzelhandel', 'supermarkt', 'boutique'],
+    hausverwaltung: ['gebäude', 'haus', 'wohnung', 'vermieter', 'hausverwaltung', 'aufzug', 'heizung', 'keller', 'tiefgarage', 'treppe'],
+    verein: ['verein', 'sport', 'fußball', 'tennis', 'schwimmbad', 'turnhalle', 'sportplatz', 'minigolf', 'clubhaus'],
   };
 
   function classifyBetrieb() {
@@ -193,7 +193,7 @@
   <div class="wizard">
     <div class="wizard-header">
       <h1>Willkommen bei Nachweis Lokal</h1>
-      <p class="subtitle">Pr\u00fcfungen dokumentieren \u2014 einfach und sicher.</p>
+      <p class="subtitle">Prüfungen dokumentieren — einfach und sicher.</p>
       <div class="progress">
         <div class="progress-bar" style="width: {(step / totalSteps) * 100}%"></div>
       </div>
@@ -203,9 +203,9 @@
     <div class="wizard-body">
       {#if step === 1}
         <!-- Willkommen -->
-        <h2>Pr\u00fcfungen dokumentieren \u2014 einfach und sicher</h2>
+        <h2>Prüfungen dokumentieren — einfach und sicher</h2>
         <div class="welcome">
-          <p>Probieren Sie es aus: F\u00fchren Sie jetzt eine kurze Demo-Pr\u00fcfung durch. Das dauert nur 2 Minuten.</p>
+          <p>Probieren Sie es aus: Führen Sie jetzt eine kurze Demo-Prüfung durch. Das dauert nur 2 Minuten.</p>
           <div class="welcome-actions">
             <button class="btn-primary btn-large" onclick={() => step = 2}>
               Jetzt ausprobieren
@@ -215,7 +215,7 @@
             </button>
           </div>
           <div class="info-box info-box-warning">
-            <strong>Warum ist das wichtig?</strong> Als Unternehmer m\u00fcssen Sie bestimmte Dinge regelm\u00e4\u00dfig pr\u00fcfen \u2014 zum Beispiel Feuerl\u00f6scher, elektrische Ger\u00e4te oder Fluchtwege. Wenn etwas passiert und Sie keine Pr\u00fcfung nachweisen k\u00f6nnen, haften Sie pers\u00f6nlich. Auch Ihre Versicherung kann die Zahlung verweigern.
+            <strong>Warum ist das wichtig?</strong> Als Unternehmer müssen Sie bestimmte Dinge regelmäßig prüfen — zum Beispiel Feuerlöscher, elektrische Geräte oder Fluchtwege. Wenn etwas passiert und Sie keine Prüfung nachweisen können, haften Sie persönlich. Auch Ihre Versicherung kann die Zahlung verweigern.
           </div>
         </div>
 
@@ -223,13 +223,13 @@
         <!-- Demo-Pruefung -->
         {#if !demoCompleted}
           <h2>Brandschutz Schnellcheck</h2>
-          <p class="hint">Pr\u00fcfen Sie die folgenden 5 Punkte \u2014 genau so funktioniert eine echte Pr\u00fcfung.</p>
+          <p class="hint">Prüfen Sie die folgenden 5 Punkte — genau so funktioniert eine echte Prüfung.</p>
 
           <div class="demo-progress-section">
             <div class="demo-progress-bar">
               <div class="demo-progress-fill" style="width: {(demoDoneCount / demoItems.length) * 100}%"></div>
             </div>
-            <span class="demo-progress-label">{demoDoneCount} von {demoItems.length} gepr\u00fcft</span>
+            <span class="demo-progress-label">{demoDoneCount} von {demoItems.length} geprüft</span>
           </div>
 
           <div class="demo-checklist">
@@ -245,8 +245,8 @@
                 {/if}
                 <div class="check-buttons">
                   <button class="result-btn {r.result === 'ok' ? 'active-ok' : ''}" onclick={() => setDemoResult(i, 'ok')}>OK</button>
-                  <button class="result-btn {r.result === 'maengel' ? 'active-fail' : ''}" onclick={() => setDemoResult(i, 'maengel')}>M\u00e4ngel</button>
-                  <button class="result-btn {r.result === 'nicht_anwendbar' ? 'active-na' : ''}" onclick={() => setDemoResult(i, 'nicht_anwendbar')}>Entf\u00e4llt</button>
+                  <button class="result-btn {r.result === 'maengel' ? 'active-fail' : ''}" onclick={() => setDemoResult(i, 'maengel')}>Mängel</button>
+                  <button class="result-btn {r.result === 'nicht_anwendbar' ? 'active-na' : ''}" onclick={() => setDemoResult(i, 'nicht_anwendbar')}>Entfällt</button>
                 </div>
                 {#if r.result === 'maengel'}
                   <textarea
@@ -262,7 +262,7 @@
 
           <div class="demo-actions">
             <button class="btn-primary btn-large" onclick={finishDemo} disabled={!demoAllDone}>
-              Demo abschlie\u00dfen
+              Demo abschließen
             </button>
             <button class="link-btn" onclick={skipToSetup}>
               Direkt einrichten
@@ -272,8 +272,8 @@
           <!-- Demo abgeschlossen -->
           <div class="demo-success">
             <div class="success-icon">&#10003;</div>
-            <h2>Pr\u00fcfung abgeschlossen!</h2>
-            <p>So sieht Ihr Pr\u00fcfprotokoll aus.</p>
+            <h2>Prüfung abgeschlossen!</h2>
+            <p>So sieht Ihr Prüfprotokoll aus.</p>
             <div class="demo-success-actions">
               <button class="btn-secondary btn-large" onclick={showDemoPdf}>
                 Als PDF anzeigen
@@ -290,7 +290,7 @@
         <h2>Beschreiben Sie Ihren Betrieb</h2>
 
         {#if !classifierDone}
-          <p class="hint">Was f\u00fcr ein Betrieb ist das? Wir finden die passenden Checklisten f\u00fcr Sie.</p>
+          <p class="hint">Was für ein Betrieb ist das? Wir finden die passenden Checklisten für Sie.</p>
           <div class="assistant-input">
             <input
               type="text"
@@ -303,13 +303,13 @@
             </button>
             {#if speechSupported}
               <button class="btn-mic" onclick={startSpeech} disabled={listening} title="Sprechen">
-                {listening ? '\u23fa' : '\ud83c\udfa4'}
+                {listening ? '⏺' : '🎤'}
               </button>
             {/if}
           </div>
           <p class="skip-link">
             <button class="link-btn" onclick={() => { showManualSelect = true; classifierDone = true; }}>
-              Ich m\u00f6chte selbst ausw\u00e4hlen
+              Ich möchte selbst auswählen
             </button>
           </p>
         {:else}
@@ -327,14 +327,14 @@
                   </li>
                 {/each}
               </ul>
-              <p class="selected-hint">H\u00e4kchen entfernen um eine Checkliste abzuw\u00e4hlen.</p>
+              <p class="selected-hint">Häkchen entfernen um eine Checkliste abzuwählen.</p>
             </div>
           {/if}
 
           <details class="manual-expand" open={showManualSelect}>
-            <summary>{showManualSelect ? 'Checklisten ausw\u00e4hlen' : 'Weitere Checklisten hinzuf\u00fcgen'}</summary>
+            <summary>{showManualSelect ? 'Checklisten auswählen' : 'Weitere Checklisten hinzufügen'}</summary>
             <div class="info-box" style="margin-top:0.75rem">
-              Diese Checklisten helfen beim Start \u2014 sie sind keine amtliche Vorschrift. Fragen Sie Ihre <Glossar term="BG">Berufsgenossenschaft (BG)</Glossar> f\u00fcr eine vollst\u00e4ndige Liste.
+              Diese Checklisten helfen beim Start — sie sind keine amtliche Vorschrift. Fragen Sie Ihre <Glossar term="BG">Berufsgenossenschaft (BG)</Glossar> für eine vollständige Liste.
             </div>
             <div class="branch-filter">
               {#each branchLabels as b}
@@ -351,7 +351,7 @@
                   <label class="selected-item">
                     <input type="checkbox" checked={selectedTemplates.has(t.id)} onchange={() => toggleTemplate(t.id)} />
                     <span>{t.name}</span>
-                    <span class="selected-meta">{t.items.length} Punkte \u00b7 {t.category}</span>
+                    <span class="selected-meta">{t.items.length} Punkte · {t.category}</span>
                   </label>
                 </li>
               {/each}
@@ -359,14 +359,14 @@
           </details>
 
           {#if selectedTemplates.size > 0}
-            <p class="selection-count">{selectedTemplates.size} {selectedTemplates.size === 1 ? 'Checkliste' : 'Checklisten'} ausgew\u00e4hlt</p>
+            <p class="selection-count">{selectedTemplates.size} {selectedTemplates.size === 1 ? 'Checkliste' : 'Checklisten'} ausgewählt</p>
           {/if}
         {/if}
 
       {:else if step === 4}
         <!-- Firmendaten (optional) -->
         <h2>Ihre Daten (optional)</h2>
-        <p class="hint">Erscheint als Briefkopf auf Ihren Pr\u00fcfprotokollen. Sie k\u00f6nnen das auch sp\u00e4ter unter Einstellungen erg\u00e4nzen.</p>
+        <p class="hint">Erscheint als Briefkopf auf Ihren Prüfprotokollen. Sie können das auch später unter Einstellungen ergänzen.</p>
         <div class="fields">
           <div class="field">
             <label for="wiz-org">Organisation</label>
@@ -374,7 +374,7 @@
           </div>
           <div class="row">
             <div class="field">
-              <label for="wiz-street">Stra\u00dfe</label>
+              <label for="wiz-street">Straße</label>
               <input id="wiz-street" bind:value={org.street} />
             </div>
             <div class="field small">
@@ -400,7 +400,7 @@
           {#if importedCount > 0}
             <p>{importedCount} {importedCount === 1 ? 'Checkliste wurde' : 'Checklisten wurden'} importiert.</p>
           {:else}
-            <p>Sie k\u00f6nnen jederzeit Checklisten aus der Bibliothek importieren.</p>
+            <p>Sie können jederzeit Checklisten aus der Bibliothek importieren.</p>
           {/if}
         </div>
       {/if}
@@ -409,7 +409,7 @@
     <div class="wizard-footer">
       {#if step !== 5}
         <button class="btn-skip" onclick={handleSkipAll}>
-          Einrichtung \u00fcberspringen
+          Einrichtung überspringen
         </button>
       {:else}
         <div></div>
@@ -427,7 +427,7 @@
           </button>
         {:else if step === 4}
           <button class="btn-secondary" onclick={() => { step = 5; }}>
-            \u00dcberspringen
+            Überspringen
           </button>
           <button class="btn-primary" onclick={handleNext}>
             Weiter
