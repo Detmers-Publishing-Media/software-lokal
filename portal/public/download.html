@@ -151,11 +151,11 @@
   </footer>
   <script>
     var products = {
-      'nachweis-lokal': { name: 'Nachweis Lokal', desc: 'Pr\u00fcfprotokolle und Checklisten f\u00fcr Ihren Betrieb' },
-      'rechnung-lokal': { name: 'Rechnung Lokal', desc: 'Rechnungsstellung f\u00fcr Nebenberufler und Kleinunternehmer' },
-      'berater-lokal': { name: 'Berater Lokal', desc: 'Beratungssoftware f\u00fcr Finanz- und Versicherungsberater' },
-      'mitglieder-lokal': { name: 'Mitglieder Lokal', desc: 'Mitgliederverwaltung f\u00fcr Vereine' },
-      'finanz-rechner': { name: 'FinanzRechner Lokal', desc: 'Versicherungsrechner f\u00fcr Berater' },
+      'nachweis-lokal': { name: 'Nachweis Lokal', desc: 'Pr\u00fcfprotokolle und Checklisten f\u00fcr Ihren Betrieb', visible: true },
+      'rechnung-lokal': { name: 'Rechnung Lokal', desc: 'Rechnungsstellung f\u00fcr Nebenberufler und Kleinunternehmer', visible: false },
+      'berater-lokal': { name: 'Berater Lokal', desc: 'Beratungssoftware f\u00fcr Finanz- und Versicherungsberater', visible: false },
+      'mitglieder-lokal': { name: 'Mitglieder Lokal', desc: 'Mitgliederverwaltung f\u00fcr Vereine', visible: false },
+      'finanz-rechner': { name: 'FinanzRechner Lokal', desc: 'Versicherungsrechner f\u00fcr Berater', visible: false },
     };
 
     function formatSize(bytes) {
@@ -177,6 +177,7 @@
       var listEl = document.getElementById('product-list');
       var html = '';
       for (var id in products) {
+        if (!products[id].visible) continue;
         html += '<div class="product-card" onclick="location.href=\'/download?product=' + id + '\'">';
         html += '<h3>' + products[id].name + '</h3>';
         html += '<p>' + products[id].desc + '</p>';
