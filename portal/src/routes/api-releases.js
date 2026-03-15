@@ -244,21 +244,21 @@ router.get('/api/download/:product_id/:platform', async (req, res) => {
     const { product_id, platform } = req.params;
     const { token, version: requestedVersion } = req.query;
 
-    if (!token) return res.status(400).json({ error: 'token Parameter fehlt' });
-
     const validPlatforms = ['linux', 'macos', 'windows'];
     if (!validPlatforms.includes(platform)) {
       return res.status(400).json({ error: `Ungueltige Plattform. Erlaubt: ${validPlatforms.join(', ')}` });
     }
 
-    // Token pruefen
-    const tokenData = downloadTokens.get(token);
-    if (!tokenData || tokenData.expiresAt < Date.now()) {
-      downloadTokens.delete(token);
-      return res.status(403).json({ error: 'Download-Token ungueltig oder abgelaufen' });
-    }
-    if (tokenData.productId !== product_id) {
-      return res.status(403).json({ error: 'Token gehoert nicht zu diesem Produkt' });
+    // Token pruefen (optional — kostenloser Download erlaubt)
+    if (token) {
+      const tokenData = downloadTokens.get(token);
+      if (!tokenData || tokenData.expiresAt < Date.now()) {
+        downloadTokens.delete(token);
+        return res.status(403).json({ error: 'Download-Token ungueltig oder abgelaufen' });
+      }
+      if (tokenData.productId !== product_id) {
+        return res.status(403).json({ error: 'Token gehoert nicht zu diesem Produkt' });
+      }
     }
 
     // Versionen laden

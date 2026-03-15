@@ -3,273 +3,194 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Download - Detmers Publishing &amp; Media</title>
+  <title>Download — Nachweis Lokal</title>
   <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .download-hero { text-align: center; margin-bottom: 2rem; }
+    .download-hero h2 { margin-bottom: 0.5rem; }
+    .download-hero p { color: #555; }
+
+    .platforms { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin: 2rem 0; }
+    @media (max-width: 600px) { .platforms { grid-template-columns: 1fr; } }
+    .platform-card {
+      background: #fff; border-radius: 8px; padding: 1.5rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08); text-align: center;
+    }
+    .platform-card .icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
+    .platform-card h3 { margin-bottom: 0.5rem; }
+    .platform-card .size { font-size: 0.8125rem; color: #888; margin-bottom: 1rem; }
+    .platform-card .btn { display: block; width: 100%; text-align: center; }
+
+    .trial-info {
+      background: #ecfdf5; border: 1px solid #6ee7b7; border-radius: 8px;
+      padding: 1.25rem; text-align: center; margin: 1.5rem 0;
+    }
+    .trial-info strong { color: #059669; }
+
+    .license-section {
+      background: #f8fafc; border-radius: 8px; padding: 1.5rem;
+      margin-top: 2rem;
+    }
+    .license-section h3 { margin-bottom: 0.75rem; }
+    .license-form { display: flex; gap: 0.5rem; max-width: 500px; }
+    .license-form input {
+      flex: 1; font-family: monospace; font-size: 0.95rem;
+      letter-spacing: 0.03em; text-transform: uppercase;
+    }
+    .license-result { margin-top: 0.75rem; font-size: 0.9rem; }
+    .license-result.ok { color: #059669; }
+    .license-result.err { color: #dc2626; }
+
+    .loading { display: none; text-align: center; padding: 2rem; color: #888; }
+    .no-versions { color: #888; text-align: center; padding: 2rem; }
+  </style>
 </head>
 <body>
   <header>
     <div class="container">
       <h1><a href="/">Detmers Publishing &amp; Media</a></h1>
       <nav>
-        <a href="/support">Support</a>
-        <a href="/ideas">Ideen</a>
-        <a href="/request">Anforderung</a>
-        <a href="/status">Status</a>
+        <a href="/nachweis-lokal">Nachweis Lokal</a>
       </nav>
     </div>
   </header>
+
   <div class="container">
-    <div id="loading" style="display:none"><p>Lizenz wird geprueft...</p></div>
-    <div id="key-form">
-      <h2>Produkt herunterladen</h2>
-      <div class="card">
-        <p style="margin-bottom:1rem">Geben Sie Ihren Lizenzkey ein, um Ihr Produkt herunterzuladen.</p>
-        <form id="keyForm">
-          <label for="license_key">Lizenzkey</label>
-          <input type="text" id="license_key" required placeholder="CFRL-XXXX-XXXX-XXXX-XXXX">
-          <button type="submit" class="btn">Weiter</button>
-        </form>
+    <div class="download-hero">
+      <h2>Nachweis Lokal herunterladen</h2>
+      <p>Kostenlos installieren. 30 Tage alles testen. Keine Kreditkarte.</p>
+    </div>
+
+    <div id="loading" class="loading"><p>Lade Downloads...</p></div>
+
+    <div id="platforms" class="platforms" style="display:none">
+      <div class="platform-card">
+        <div class="icon">🪟</div>
+        <h3>Windows</h3>
+        <p class="size" id="size-windows"></p>
+        <a href="#" class="btn" id="dl-windows">Download .exe</a>
       </div>
-      <div class="card" style="margin-top:1rem;background:#f8fafc">
-        <p style="font-size:0.9rem;color:#555;margin-bottom:0.5rem"><strong>Lizenzkey verloren?</strong> Stellen Sie ihn mit Ihrer Digistore24-Bestellnummer wieder her.</p>
-        <form id="recoverForm">
-          <label for="order_id">Bestellnummer</label>
-          <input type="text" id="order_id" required placeholder="z.B. ABC12345">
-          <button type="submit" class="btn btn-secondary">Lizenzkey wiederherstellen</button>
-        </form>
-        <div id="recover-error" class="error" style="display:none;margin-top:0.5rem"></div>
+      <div class="platform-card">
+        <div class="icon">🍎</div>
+        <h3>macOS</h3>
+        <p class="size" id="size-macos"></p>
+        <a href="#" class="btn" id="dl-macos">Download .dmg</a>
+      </div>
+      <div class="platform-card">
+        <div class="icon">🐧</div>
+        <h3>Linux</h3>
+        <p class="size" id="size-linux"></p>
+        <a href="#" class="btn" id="dl-linux">Download .AppImage</a>
       </div>
     </div>
-    <div id="product-view" style="display:none">
-      <h2 id="productName"></h2>
-      <div class="card">
-        <p id="productDesc"></p>
-      </div>
 
-      <div id="versions-list" style="margin-top:1rem"></div>
-
-      <div class="card" style="background:#fffbeb;margin-top:1rem;font-size:0.85rem;color:#92400e">
-        <p><strong>Hinweis:</strong> Wir stellen die letzten 4 Versionen zum Download bereit. Aeltere Versionen werden automatisch entfernt. Falls Sie eine bestimmte Version benoetigen, wenden Sie sich bitte an unseren <a href="/support">Support</a>.</p>
-      </div>
-
-      <div class="card" style="background:#ecfdf5;border:2px solid #059669;margin-top:1rem">
-        <h3 style="margin-bottom:0.5rem;color:#059669">Ihr Lizenzschluessel</h3>
-        <p style="font-size:1.3rem;font-family:monospace;letter-spacing:0.05em;background:#fff;padding:0.6rem 1rem;border-radius:4px;display:inline-block;user-select:all;cursor:pointer" id="displayKey" title="Klicken zum Kopieren"></p>
-        <div style="margin-top:0.8rem;font-size:0.9rem;color:#065f46">
-          <p><strong>So geht es weiter:</strong></p>
-          <ol style="margin:0.4rem 0 0 1.2rem;line-height:1.6">
-            <li>Laden Sie die passende Version fuer Ihr Betriebssystem herunter</li>
-            <li>Installieren und starten Sie die Anwendung</li>
-            <li>Tragen Sie den Lizenzschluessel in der Anwendung ein (unter Einstellungen → Supportvertrag)</li>
-          </ol>
-        </div>
-        <div style="margin-top:0.8rem;padding:0.6rem;background:#fffbeb;border-radius:4px;font-size:0.85rem;color:#92400e">
-          <strong>Wichtig:</strong> Bewahren Sie Ihren Lizenzschluessel sicher auf. Er ist Ihr Zugang zu Support, Updates und erneutem Download. Geben Sie ihn nicht an Dritte weiter.
-        </div>
-        <p style="margin-top:0.8rem;font-size:0.9rem">
-          <a href="#" id="supportLink">Support</a> &middot;
-          <a href="#" id="requestLink">Feature-Anforderung</a>
-        </p>
-      </div>
+    <div id="no-versions" class="no-versions" style="display:none">
+      <p>Downloads werden vorbereitet. Bitte versuchen Sie es in wenigen Minuten erneut.</p>
     </div>
-    <div id="no-download" style="display:none">
-      <h2>Lizenz aktiv</h2>
-      <div class="card">
-        <p><span class="badge badge-green">Aktiv</span> <strong id="noDownloadProduct"></strong></p>
-        <p style="margin-top:0.5rem;color:#555">Fuer dieses Produkt steht kein Download zur Verfuegung.</p>
-      </div>
+
+    <div class="trial-info">
+      <strong>30 Tage kostenlos testen</strong> — alle Funktionen inklusive mobile Prüfung mit dem Handy.
+      Danach bleibt die Desktop-Version dauerhaft kostenlos.
     </div>
-    <div id="error-view" style="display:none">
-      <h2>Lizenz ungueltig</h2>
-      <div class="error">
-        <p id="errorMsg"></p>
-      </div>
-      <p style="margin-top:1rem">
-        <a href="/support">Support kontaktieren</a> &middot;
-        <a href="/download">Erneut versuchen</a>
+
+    <div class="license-section">
+      <h3>Sie haben bereits einen Lizenzkey?</h3>
+      <p style="font-size:0.9rem;color:#555;margin-bottom:0.75rem">
+        Geben Sie Ihren Key in der App ein: Einstellungen → Supportvertrag.
+      </p>
+      <form class="license-form" id="keyForm" onsubmit="return false">
+        <input type="text" id="license_key" placeholder="CFNW-XXXX-XXXX-XXXX-XXXX">
+        <button type="submit" class="btn btn-secondary">Prüfen</button>
+      </form>
+      <div id="license-result" class="license-result"></div>
+
+      <p style="font-size:0.85rem;color:#888;margin-top:1rem">
+        Lizenzkey verloren? Sie finden ihn in Ihrem
+        <a href="https://www.digistore24.com/login" target="_blank">Digistore24-Konto</a>.
       </p>
     </div>
   </div>
-  <footer>Detmers Publishing &amp; Media</footer>
-  <script>
-    function esc(s) { if (!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
+  <footer>
+    <span>Detmers Publishing &amp; Media</span>
+    <span class="footer-links">
+      <a href="/impressum">Impressum</a>
+      <a href="/datenschutz">Datenschutz</a>
+    </span>
+  </footer>
+
+  <script>
     function formatSize(bytes) {
       if (!bytes) return '';
       return (bytes / 1024 / 1024).toFixed(1) + ' MB';
     }
 
-    function platformLabel(p) {
-      const labels = { linux: 'Linux', macos: 'macOS', windows: 'Windows' };
-      return labels[p] || p;
-    }
-
-    let downloadToken = null;
-    let productId = null;
-
-    async function validateKey(licenseKey) {
-      document.getElementById('key-form').style.display = 'none';
+    // Load available downloads
+    (async () => {
       document.getElementById('loading').style.display = 'block';
-
       try {
-        // 1. Download-Token holen (Key geht per POST, nie in URL)
-        const tokenRes = await fetch('/api/download-token', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ key: licenseKey }),
-        });
-
-        if (!tokenRes.ok) {
-          document.getElementById('loading').style.display = 'none';
-          const data = await tokenRes.json();
-          document.getElementById('errorMsg').textContent = data.error || 'Unbekannter Fehler';
-          document.getElementById('error-view').style.display = 'block';
-          return;
-        }
-
-        const tokenData = await tokenRes.json();
-        downloadToken = tokenData.token;
-        productId = tokenData.productId;
-
-        // 2. Produkt-Infos laden
-        const licRes = await fetch(`/api/license/${encodeURIComponent(licenseKey)}`);
-        document.getElementById('loading').style.display = 'none';
-
-        if (licRes.ok) {
-          const data = await licRes.json();
-
-          if (!data.download_url && !productId) {
-            document.getElementById('noDownloadProduct').textContent = data.product.name;
-            document.getElementById('no-download').style.display = 'block';
-            return;
-          }
-
-          document.getElementById('productName').textContent = data.product.name;
-          document.getElementById('productDesc').textContent = data.product.description || '';
-          document.getElementById('displayKey').textContent = data.license_key;
-        } else {
-          document.getElementById('productName').textContent = productId;
-          document.getElementById('productDesc').textContent = '';
-          document.getElementById('displayKey').textContent = licenseKey;
-        }
-
-        document.getElementById('supportLink').href = '/support';
-        document.getElementById('requestLink').href = '/request';
-        document.getElementById('product-view').style.display = 'block';
-
-        loadVersions(productId);
-      } catch {
-        document.getElementById('loading').style.display = 'none';
-        document.getElementById('errorMsg').textContent = 'Verbindungsfehler. Bitte versuchen Sie es spaeter erneut.';
-        document.getElementById('error-view').style.display = 'block';
-      }
-    }
-
-    async function loadVersions(pid) {
-      const el = document.getElementById('versions-list');
-      try {
-        const res = await fetch(`/api/releases/${encodeURIComponent(pid)}`);
+        const res = await fetch('/api/releases/nachweis-lokal');
         const data = await res.json();
 
+        document.getElementById('loading').style.display = 'none';
+
         if (!data.versions || !data.versions.length) {
-          el.innerHTML = '<div class="card"><p>Noch kein Download verfuegbar.</p></div>';
+          document.getElementById('no-versions').style.display = 'block';
           return;
         }
 
-        el.innerHTML = data.versions.map((v, i) => {
-          const isLatest = i === 0;
-          const versionLabel = esc(v.version) + (isLatest ? ' <span class="badge badge-green">Aktuell</span>' : '');
+        const latest = data.versions[0];
+        const platforms = {};
+        for (const p of latest.platforms) {
+          platforms[p.platform] = p;
+        }
 
-          const platformLinks = v.platforms.map(p => {
-            return `<a href="#" class="btn${isLatest ? '' : ' btn-secondary'}" style="font-size:0.85rem;padding:0.4rem 0.8rem;cursor:pointer" data-pid="${esc(pid)}" data-platform="${esc(p.platform)}" data-version="${esc(v.version)}">`
-              + `${platformLabel(p.platform)}`
-              + `<span style="font-size:0.75rem;color:${isLatest ? '#ddd' : '#888'};margin-left:0.3rem">${formatSize(p.size)}</span>`
-              + `</a>`;
-          }).join(' ');
+        // Set download links (direct file download, no token needed)
+        for (const [key, p] of Object.entries(platforms)) {
+          const btn = document.getElementById('dl-' + key);
+          const size = document.getElementById('size-' + key);
+          if (btn) {
+            btn.href = '/api/download/nachweis-lokal/' + key + '?version=' + encodeURIComponent(latest.version);
+            if (size) size.textContent = 'Version ' + latest.version + (p.size ? ' · ' + formatSize(p.size) : '');
+          }
+        }
 
-          return `<div class="card" style="margin-bottom:0.5rem">`
-            + `<h3 style="margin-bottom:0.5rem">${versionLabel}</h3>`
-            + `<div style="display:flex;gap:0.5rem;flex-wrap:wrap">${platformLinks}</div>`
-            + `</div>`;
-        }).join('');
-
-        // Download via Token (kein Key in URL)
-        el.addEventListener('click', (e) => {
-          const btn = e.target.closest('a[data-pid]');
-          if (!btn || !downloadToken) return;
-          e.preventDefault();
-          const { pid: p, platform, version } = btn.dataset;
-          const url = `/api/download/${encodeURIComponent(p)}/${encodeURIComponent(platform)}?token=${encodeURIComponent(downloadToken)}&version=${encodeURIComponent(version)}`;
-          const a = document.createElement('a');
-          a.href = url;
-          a.style.display = 'none';
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-        });
+        document.getElementById('platforms').style.display = 'grid';
       } catch (err) {
-        el.innerHTML = '<div class="card"><p class="error" style="display:block">Fehler beim Laden der Versionen.</p></div>';
-      }
-    }
-
-    document.getElementById('keyForm').addEventListener('submit', (e) => {
-      e.preventDefault();
-      const val = document.getElementById('license_key').value.trim();
-      if (val) validateKey(val);
-    });
-
-    document.getElementById('recoverForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const errEl = document.getElementById('recover-error');
-      errEl.style.display = 'none';
-      const orderId = document.getElementById('order_id').value.trim();
-      if (!orderId) return;
-
-      try {
-        const res = await fetch(`/api/order-license/${encodeURIComponent(orderId)}`);
-        if (res.ok) {
-          const data = await res.json();
-          validateKey(data.license_key);
-        } else {
-          const data = await res.json().catch(() => ({}));
-          errEl.textContent = data.error || 'Keine Lizenz fuer diese Bestellnummer gefunden.';
-          errEl.style.display = 'block';
-        }
-      } catch {
-        errEl.textContent = 'Verbindungsfehler. Bitte versuchen Sie es spaeter erneut.';
-        errEl.style.display = 'block';
-      }
-    });
-
-    // Auto-lookup: if redirected from Digistore24 with order_id
-    (async () => {
-      const params = new URLSearchParams(location.search);
-      const orderId = params.get('order_id');
-      if (!orderId) return;
-
-      document.getElementById('key-form').style.display = 'none';
-      document.getElementById('loading').style.display = 'block';
-
-      try {
-        const res = await fetch(`/api/order-license/${encodeURIComponent(orderId)}`);
-        if (res.ok) {
-          const data = await res.json();
-          document.getElementById('loading').style.display = 'none';
-          validateKey(data.license_key);
-        } else {
-          // License not yet created (IPN pending) — show key form with hint
-          document.getElementById('loading').style.display = 'none';
-          document.getElementById('key-form').style.display = 'block';
-          const hint = document.createElement('p');
-          hint.style.cssText = 'color:#92400e;background:#fffbeb;padding:0.8rem;border-radius:4px;margin-bottom:1rem';
-          hint.textContent = 'Ihre Lizenz wird gerade erstellt. Bitte geben Sie Ihren Lizenzkey ein, sobald Sie ihn per E-Mail erhalten haben. Sie koennen diese Seite auch spaeter erneut aufrufen.';
-          document.getElementById('key-form').querySelector('.card').prepend(hint);
-        }
-      } catch {
         document.getElementById('loading').style.display = 'none';
-        document.getElementById('key-form').style.display = 'block';
+        document.getElementById('no-versions').style.display = 'block';
       }
     })();
+
+    // License key check
+    document.getElementById('keyForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const key = document.getElementById('license_key').value.trim();
+      const result = document.getElementById('license-result');
+      if (!key) return;
+
+      result.textContent = 'Wird geprüft...';
+      result.className = 'license-result';
+
+      try {
+        const res = await fetch('/api/license/validate-download', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ licenseKey: key }),
+        });
+        const data = await res.json();
+        if (data.valid) {
+          result.textContent = '✓ Key gültig — ' + (data.productName || data.productId) + ', gültig bis ' + new Date(data.expiresAt).toLocaleDateString('de-DE');
+          result.className = 'license-result ok';
+        } else {
+          result.textContent = '✗ ' + (data.error || 'Key ungültig');
+          result.className = 'license-result err';
+        }
+      } catch {
+        result.textContent = 'Verbindungsfehler. Bitte versuchen Sie es später erneut.';
+        result.className = 'license-result err';
+      }
+    });
   </script>
 </body>
 </html>
