@@ -1,4 +1,5 @@
 const path = require('node:path');
+const fs = require('node:fs');
 
 module.exports = {
   name: 'Nachweis Lokal',
@@ -23,6 +24,43 @@ module.exports = {
     const mobilePath = path.join(__dirname, 'mobile');
 
     ipcMain.handle('mobile:start', async (_event, inspectionId) => {
+      const userDataPath = app.getPath('userData');
+
+      // 1. Check for active paid license
+      const licenseFile = path.join(userDataPath, 'license.json');
+      let hasActiveLicense = false;
+      try {
+        const data = JSON.parse(fs.readFileSync(licenseFile, 'utf-8'));
+        if (data.lastValidation?.valid && data.lastValidation?.status === 'active') {
+          const expiresAt = data.lastValidation.expiresAt ? new Date(data.lastValidation.expiresAt) : null;
+          hasActiveLicense = !expiresAt || expiresAt > new Date();
+        }
+      } catch (_) {}
+
+      // 2. If no paid license, check/create trial
+      let trialInfo = null;
+      if (!hasActiveLicense) {
+        const trialFile = path.join(userDataPath, 'mobile-trial.json');
+        try {
+          const trial = JSON.parse(fs.readFileSync(trialFile, 'utf-8'));
+          const startedAt = new Date(trial.startedAt);
+          const expiresAt = new Date(startedAt.getTime() + 28 * 24 * 60 * 60 * 1000);
+          const now = new Date();
+          if (now >= expiresAt) {
+            return { ok: false, reason: 'trial_expired', trialExpiresAt: expiresAt.toISOString() };
+          }
+          const daysLeft = Math.ceil((expiresAt.getTime() - now.getTime()) / (24 * 60 * 60 * 1000));
+          trialInfo = { trial: true, trialDaysLeft: daysLeft, trialExpiresAt: expiresAt.toISOString() };
+        } catch (_) {
+          // No trial file yet — create it (first use)
+          const startedAt = new Date().toISOString();
+          fs.writeFileSync(trialFile, JSON.stringify({ startedAt }));
+          const expiresAt = new Date(new Date(startedAt).getTime() + 28 * 24 * 60 * 60 * 1000);
+          trialInfo = { trial: true, trialDaysLeft: 28, trialExpiresAt: expiresAt.toISOString() };
+        }
+      }
+
+      // 3. Start mobile server
       const result = await startServer({
         getDb,
         mobilePath,
@@ -36,7 +74,7 @@ module.exports = {
       });
       setInspection(inspectionId);
       const qr = generateQR(result.url + '/inspect/' + inspectionId + '?token=' + result.token);
-      return { ...result, qrMatrix: qr.matrix, inspectionId };
+      return { ...result, qrMatrix: qr.matrix, inspectionId, ...(trialInfo || {}) };
     });
 
     ipcMain.handle('mobile:stop', async () => {

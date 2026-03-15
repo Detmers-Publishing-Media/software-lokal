@@ -6,14 +6,31 @@
   let mobileSession = $state(null);
   let starting = $state(false);
   let error = $state(null);
+  let licenseError = $state(null);
   let progress = $state(null);
+  let trialDaysLeft = $state(null);
   let pollInterval = null;
 
   async function startMobile() {
     starting = true;
     error = null;
+    licenseError = null;
     try {
-      mobileSession = await window.electronAPI.mobile.start(inspectionId);
+      const response = await window.electronAPI.mobile.start(inspectionId);
+
+      // Check for license gate
+      if (response.ok === false) {
+        if (response.reason === 'trial_expired') {
+          licenseError = 'trial_expired';
+        } else if (response.reason === 'license_required') {
+          licenseError = 'license_required';
+        }
+        starting = false;
+        return;
+      }
+
+      mobileSession = response;
+      trialDaysLeft = response.trial ? response.trialDaysLeft : null;
 
       // Listen for live result updates
       window.electronAPI.mobile.onResultUpdate((data) => {
@@ -90,6 +107,18 @@
   {#if error}
     <span class="error-hint">{error}</span>
   {/if}
+  {#if licenseError === 'trial_expired'}
+    <div class="license-notice">
+      <p>Ihre Testphase für die Offline-Prüfung ist abgelaufen. Mit einem Supportvertrag können Sie weiterhin mobil prüfen.</p>
+      <p class="license-price">Einführungspreis: 59 €/Jahr</p>
+    </div>
+  {:else if licenseError === 'license_required'}
+    <div class="license-notice">
+      <p>Offline-Prüfung erfordert einen Supportvertrag.</p>
+      <p class="license-price">Einführungspreis: 59 €/Jahr</p>
+      <p>Oder starten Sie eine kostenlose 4-Wochen-Testphase.</p>
+    </div>
+  {/if}
 {:else}
   <div class="mobile-panel">
     <div class="mobile-header">
@@ -107,6 +136,11 @@
       <p class="status-info">
         Gleichen WLAN wie Ihr Computer verbinden, dann QR-Code scannen.
       </p>
+      {#if trialDaysLeft != null}
+        <p class="trial-info">
+          Testphase: noch {trialDaysLeft} {trialDaysLeft === 1 ? 'Tag' : 'Tage'}
+        </p>
+      {/if}
       {#if progress}
         <p class="progress-info">
           {progress.done} von {progress.total} Punkte bearbeitet
@@ -189,5 +223,27 @@
     color: var(--color-primary);
     text-align: center;
     margin-top: 0.5rem;
+  }
+
+  .license-notice {
+    margin-top: 0.75rem;
+    padding: 1rem;
+    background: var(--color-warning-bg, #fff8e1);
+    border: 1px solid var(--color-warning-border, #ffe082);
+    border-radius: 0.5rem;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    max-width: 28rem;
+  }
+  .license-notice p { margin: 0 0 0.375rem 0; }
+  .license-notice p:last-child { margin-bottom: 0; }
+  .license-price { font-weight: 600; }
+
+  .trial-info {
+    font-size: 0.8125rem;
+    color: var(--color-warning, #e65100);
+    text-align: center;
+    margin-top: 0.5rem;
+    font-weight: 600;
   }
 </style>
