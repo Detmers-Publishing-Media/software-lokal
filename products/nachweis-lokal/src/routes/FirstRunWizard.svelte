@@ -317,6 +317,10 @@
             </button>
           </p>
         {:else}
+          <div class="info-box">
+            Diese Checklisten helfen beim Start — sie sind keine amtliche Vorschrift und keine vollständige Liste. Fragen Sie Ihre <Glossar term="BG">Berufsgenossenschaft (BG)</Glossar>, welche Prüfungen für Ihren Betrieb vorgeschrieben sind.
+          </div>
+
           {#if selectedTemplates.size > 0 && !showManualSelect}
             <div class="classifier-result">
               <p><strong>Diese Checklisten passen zu Ihrem Betrieb:</strong></p>

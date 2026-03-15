@@ -139,6 +139,10 @@
     {/if}
   </div>
 
+  <div class="disclaimer-bar">
+    Diese App dokumentiert Ihre Prüfungen — sie ersetzt keine Fachberatung. Welche Prüfungen vorgeschrieben sind, erfahren Sie bei Ihrer <Glossar term="BG">Berufsgenossenschaft (BG)</Glossar>. Die Beratung ist kostenlos.
+  </div>
+
   {#if !showQuickStart}
     <button class="btn-new-inspection" onclick={openQuickStart}>
       + Neue Prüfung starten
@@ -322,6 +326,7 @@
             <div class="recent-meta">
               <span class="badge badge-{insp.status === 'bestanden' ? 'success' : insp.status === 'bemaengelt' ? 'danger' : 'muted'}">{insp.status === 'bemaengelt' ? 'Mit Mängeln' : insp.status}</span>
               <span class="recent-date">{formatDate(insp.inspection_date)}</span>
+              <button class="btn-phone" onclick={() => currentView.set(`inspection:${insp.id}`)} title="Am Handy prüfen">📱</button>
             </div>
           </div>
         {/each}
@@ -487,4 +492,24 @@
   .actions { display: flex; gap: 0.75rem; }
   .btn-primary { padding: 0.5rem 1rem; background: var(--color-primary); color: white; border: none; border-radius: 0.375rem; cursor: pointer; }
   .btn-secondary { padding: 0.5rem 1rem; background: none; border: 1px solid var(--color-border); border-radius: 0.375rem; cursor: pointer; }
+
+  .disclaimer-bar {
+    font-size: 0.8125rem;
+    color: #5a6a7e;
+    background: #f0f7ff;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.375rem;
+    border-left: 3px solid #3b82f6;
+    line-height: 1.5;
+  }
+
+  .btn-phone {
+    background: none;
+    border: none;
+    font-size: 1.125rem;
+    cursor: pointer;
+    padding: 0.25rem;
+    opacity: 0.6;
+  }
+  .btn-phone:hover { opacity: 1; }
 </style>
