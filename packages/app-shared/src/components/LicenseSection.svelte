@@ -97,9 +97,12 @@
   {:else}
     <div class="license-none">
       <p class="muted">
-        Alle Funktionen stehen Ihnen kostenlos zur Verfügung.
-        Mit einem Supportvertrag erhalten Sie zusätzlich persönlichen Support,
-        automatische Updates und weitere Services.
+        Die Desktop-Version ist kostenlos nutzbar.
+        Mit einem Supportvertrag erhalten Sie zusätzlich: Offline-Prüfung mit dem Handy,
+        persönlichen Support und automatische Updates.
+      </p>
+      <p class="price-info">
+        <strong>Einführungspreis: 59 €/Jahr</strong> <span class="price-regular">(regulär 99 €/Jahr)</span>
       </p>
       <form class="key-form" onsubmit={e => { e.preventDefault(); handleEnterKey(); }}>
         <input
@@ -147,6 +150,8 @@
   .features { font-size: 0.8125rem; color: var(--color-text-muted); }
   .muted { color: var(--color-text-muted); font-size: 0.875rem; line-height: 1.5; }
   .hint { font-size: 0.8rem; color: var(--color-text-muted); margin-top: 0.5rem; }
+  .price-info { font-size: 0.9375rem; margin: 0.75rem 0 0; }
+  .price-regular { font-size: 0.8125rem; color: var(--color-text-muted); text-decoration: line-through; }
   .link { color: var(--color-primary); }
   .key-form { display: flex; gap: 0.5rem; margin: 1rem 0 0.5rem; }
   .key-input {

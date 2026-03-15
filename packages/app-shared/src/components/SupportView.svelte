@@ -246,12 +246,14 @@
     <!-- No active license: self-help only -->
     <div class="community-mode">
       <p class="muted">
-        Sie nutzen den Community-Modus.
-        Alle Funktionen stehen Ihnen zur Verfügung.
+        Sie nutzen die kostenlose Version.
+        Die Desktop-Funktionen stehen Ihnen vollständig zur Verfügung.
       </p>
       <p class="muted">
-        Für persönlichen Support, automatische Updates und weitere Services:
+        Mit einem Supportvertrag erhalten Sie zusätzlich:
+        Offline-Prüfung mit dem Handy, persönlichen Support und automatische Updates.
       </p>
+      <p class="muted"><strong>Einführungspreis: 59 €/Jahr</strong> (regulär 99 €/Jahr)</p>
       <div class="cta-buttons">
         <span class="link">Supportvertrag erwerben auf detmers-publish.de</span>
         <span class="separator">oder</span>
