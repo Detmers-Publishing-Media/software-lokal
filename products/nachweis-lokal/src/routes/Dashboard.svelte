@@ -7,9 +7,56 @@
     saveInspection, initInspectionResults, getTemplateItems, getOrgProfile
   } from '../lib/db.js';
   import { generateBlankFormPdf } from '../lib/pdf.js';
+  import { saveObject } from '../lib/db.js';
   import Glossar from '../components/Glossar.svelte';
 
   let { onStartWizard = null } = $props();
+
+  // Quick-Start
+  let showQuickStart = $state(false);
+  let qsTemplates = $state([]);
+  let qsObjects = $state([]);
+  let qsForm = $state({ template_id: '', object_id: '', inspector: '' });
+  let qsStarting = $state(false);
+  let showNewObject = $state(false);
+  let newObjName = $state('');
+  let newObjLocation = $state('');
+
+  async function openQuickStart() {
+    showQuickStart = true;
+    qsTemplates = await getTemplates();
+    qsObjects = await getObjects();
+  }
+
+  async function handleQuickCreate() {
+    if (!qsForm.template_id) return;
+    qsStarting = true;
+    const today = new Date().toISOString().split('T')[0];
+    const template = qsTemplates.find(t => t.id === parseInt(qsForm.template_id));
+    const id = await saveInspection({
+      template_id: parseInt(qsForm.template_id),
+      object_id: qsForm.object_id ? parseInt(qsForm.object_id) : null,
+      title: template?.name || 'Prüfung',
+      inspector: qsForm.inspector || '',
+      inspection_date: today,
+      status: 'offen',
+      notes: null,
+    });
+    await initInspectionResults(id, parseInt(qsForm.template_id));
+    qsStarting = false;
+    showQuickStart = false;
+    currentView.set(`inspection:execute:${id}`);
+  }
+
+  async function handleInlineObject() {
+    if (!newObjName.trim()) return;
+    const id = await saveObject({ name: newObjName.trim(), location: newObjLocation.trim() || null, category: null, identifier: null, notes: null });
+    qsObjects = await getObjects();
+    qsForm.object_id = String(id);
+    showNewObject = false;
+    newObjName = '';
+    newObjLocation = '';
+  }
 
   let stats = $state({ total: 0, offen: 0, bestanden: 0, bemaengelt: 0 });
   let dueItems = $state([]);
@@ -91,6 +138,57 @@
       </button>
     {/if}
   </div>
+
+  {#if !showQuickStart}
+    <button class="btn-new-inspection" onclick={openQuickStart}>
+      + Neue Prüfung starten
+    </button>
+  {:else}
+    <div class="quick-start">
+      <h3>Neue Prüfung</h3>
+      <div class="qs-fields">
+        <div class="qs-field">
+          <label>Checkliste *</label>
+          <select bind:value={qsForm.template_id}>
+            <option value="">Bitte wählen...</option>
+            {#each qsTemplates as t}
+              <option value={t.id}>{t.name}</option>
+            {/each}
+          </select>
+        </div>
+        <div class="qs-field">
+          <label>Wo prüfen?</label>
+          <select bind:value={qsForm.object_id} onchange={(e) => { if (e.target.value === '__new__') { showNewObject = true; qsForm.object_id = ''; } }}>
+            <option value="">Ohne Zuordnung</option>
+            {#each qsObjects as o}
+              <option value={o.id}>{o.name}{o.location ? ` (${o.location})` : ''}</option>
+            {/each}
+            <option value="__new__">+ Neu anlegen...</option>
+          </select>
+        </div>
+        {#if showNewObject}
+          <div class="qs-inline-new">
+            <input bind:value={newObjName} placeholder="Name, z.B. Kiosk oder Fritteuse" />
+            <input bind:value={newObjLocation} placeholder="Standort (optional)" />
+            <div class="qs-inline-btns">
+              <button class="btn-small btn-primary" onclick={handleInlineObject}>Anlegen</button>
+              <button class="btn-small btn-secondary" onclick={() => { showNewObject = false; }}>Abbrechen</button>
+            </div>
+          </div>
+        {/if}
+        <div class="qs-field">
+          <label>Prüfer</label>
+          <input bind:value={qsForm.inspector} placeholder="Ihr Name" />
+        </div>
+      </div>
+      <div class="qs-actions">
+        <button class="btn-primary" onclick={handleQuickCreate} disabled={!qsForm.template_id || qsStarting}>
+          {qsStarting ? 'Wird erstellt...' : 'Prüfung starten →'}
+        </button>
+        <button class="btn-secondary" onclick={() => { showQuickStart = false; }}>Abbrechen</button>
+      </div>
+    </div>
+  {/if}
 
   {#if overdueItems.length > 0}
     <div class="section section-urgent">
@@ -240,6 +338,30 @@
 <style>
   .dashboard { display: flex; flex-direction: column; gap: 1.25rem; }
   .dashboard-header { display: flex; justify-content: space-between; align-items: center; }
+  .btn-new-inspection {
+    width: 100%; padding: 1rem; background: var(--color-primary); color: white;
+    border: none; border-radius: 0.5rem; font-size: 1.0625rem; font-weight: 600;
+    cursor: pointer; text-align: center;
+  }
+  .btn-new-inspection:hover { opacity: 0.9; }
+
+  .quick-start {
+    background: white; border: 2px solid var(--color-primary); border-radius: 0.5rem;
+    padding: 1.25rem;
+  }
+  .quick-start h3 { margin: 0 0 1rem; font-size: 1rem; }
+  .qs-fields { display: flex; flex-direction: column; gap: 0.75rem; }
+  .qs-field { display: flex; flex-direction: column; gap: 0.25rem; }
+  .qs-field label { font-weight: 600; font-size: 0.8125rem; }
+  .qs-field select, .qs-field input { width: 100%; }
+  .qs-inline-new {
+    padding: 0.75rem; background: #f0f7ff; border: 1px solid var(--color-primary);
+    border-radius: 0.375rem; display: flex; flex-direction: column; gap: 0.5rem;
+  }
+  .qs-inline-btns { display: flex; gap: 0.5rem; }
+  .qs-actions { display: flex; gap: 0.5rem; margin-top: 1rem; }
+  .btn-small { padding: 0.375rem 0.75rem; font-size: 0.8125rem; }
+
   .btn-wizard {
     padding: 0.5rem 1rem; background: var(--color-surface);
     border: 2px solid var(--color-primary); border-radius: 0.375rem;
