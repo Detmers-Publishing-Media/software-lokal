@@ -5,7 +5,7 @@
   --color-surface: #f7fafc;
   --color-border: #e2e8f0;
   --color-text: #1a202c;
-  --color-text-muted: #718096;
+  --color-text-muted: #5a6a7e;
   --color-success: #38a169;
   --color-warning: #d69e2e;
   --color-danger: #e53e3e;
@@ -42,4 +42,9 @@ input:focus, select:focus, textarea:focus {
   outline: none;
   border-color: var(--color-primary);
   box-shadow: 0 0 0 1px var(--color-primary);
+}
+
+button:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }

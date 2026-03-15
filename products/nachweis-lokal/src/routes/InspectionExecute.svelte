@@ -75,9 +75,6 @@
         ? `Prüfung abgeschlossen! Nächste Prüfung in ${template.interval_days} Tagen angelegt.`
         : 'Prüfung abgeschlossen und gespeichert!';
       completedMessage = msg;
-      setTimeout(() => {
-        currentView.set(`inspection:${inspectionId}`);
-      }, 3000);
     }
   }
 </script>
@@ -86,7 +83,9 @@
   <div class="completed-screen">
     <div class="completed-icon">✓</div>
     <h2>{completedMessage}</h2>
-    <p class="completed-hint">Sie werden in wenigen Sekunden weitergeleitet...</p>
+    <button class="btn-primary" onclick={() => currentView.set(`inspection:${inspectionId}`)}>
+      Zum Protokoll &rarr;
+    </button>
   </div>
 {:else if inspection}
   <div class="page">
@@ -98,7 +97,7 @@
     </div>
 
     <div class="progress-section">
-      <div class="progress-bar">
+      <div class="progress-bar" role="progressbar" aria-valuenow={progressPercent} aria-valuemin="0" aria-valuemax="100">
         <div class="progress-fill" style="width: {progressPercent}%"></div>
       </div>
       <span class="progress-label">{doneCount} von {totalCount} Punkten bearbeitet</span>
@@ -169,11 +168,16 @@
   .check-hint { font-size: 0.8125rem; color: var(--color-text-muted); margin: 0.25rem 0 0 2rem; }
   .check-buttons { display: flex; gap: 0.5rem; margin-top: 0.5rem; margin-left: 2rem; }
   .result-btn {
-    padding: 0.25rem 0.75rem;
+    padding: 0.375rem 1rem;
     border: 1px solid var(--color-border);
     border-radius: 0.25rem;
     background: white;
     font-size: 0.8125rem;
+    min-height: 44px;
+    min-width: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
   }
   .result-btn:hover { background: var(--color-surface); }
   .active-ok { background: #c6f6d5; border-color: #38a169; color: #22543d; }
@@ -198,5 +202,4 @@
   }
   .completed-icon { font-size: 4rem; color: var(--color-success); margin-bottom: 1rem; }
   .completed-screen h2 { font-size: 1.25rem; margin-bottom: 0.5rem; }
-  .completed-hint { color: var(--color-text-muted); font-size: 0.875rem; }
 </style>

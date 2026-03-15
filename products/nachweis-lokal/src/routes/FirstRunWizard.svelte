@@ -184,17 +184,21 @@
     step = 3;
   }
 
+  function handleBack() {
+    if (step > 1) step--;
+  }
+
   function handleSkipAll() {
     oncomplete();
   }
 </script>
 
-<div class="wizard-backdrop">
+<div class="wizard-backdrop" role="dialog" aria-modal="true" aria-label="Einrichtungsassistent">
   <div class="wizard">
     <div class="wizard-header">
       <h1>Willkommen bei Nachweis Lokal</h1>
       <p class="subtitle">Prüfungen dokumentieren — einfach und sicher.</p>
-      <div class="progress">
+      <div class="progress" role="progressbar" aria-valuenow={step} aria-valuemin="1" aria-valuemax={totalSteps} aria-label="Fortschritt">
         <div class="progress-bar" style="width: {(step / totalSteps) * 100}%"></div>
       </div>
       <span class="step-label">Schritt {step} von {totalSteps}</span>
@@ -361,6 +365,9 @@
           {#if selectedTemplates.size > 0}
             <p class="selection-count">{selectedTemplates.size} {selectedTemplates.size === 1 ? 'Checkliste' : 'Checklisten'} ausgewählt</p>
           {/if}
+          {#if classifierDone && selectedTemplates.size === 0}
+            <p class="warning-hint">Keine Checklisten ausgewählt. Sie können später welche hinzufügen.</p>
+          {/if}
         {/if}
 
       {:else if step === 4}
@@ -413,6 +420,11 @@
         </button>
       {:else}
         <div></div>
+      {/if}
+      {#if step > 1}
+        <button class="btn-back" onclick={handleBack}>
+          &larr; Zurück
+        </button>
       {/if}
       <div class="footer-right">
         {#if step === 1}
@@ -991,4 +1003,16 @@
   .btn-skip:hover {
     color: var(--color-text);
   }
+
+  .warning-hint { color: #e65100; font-size: 0.8125rem; margin-top: 0.5rem; }
+
+  .btn-back {
+    padding: 0.5rem 1rem;
+    background: none;
+    border: none;
+    color: var(--color-text-muted);
+    font-size: 0.875rem;
+    cursor: pointer;
+  }
+  .btn-back:hover { color: var(--color-text); }
 </style>
