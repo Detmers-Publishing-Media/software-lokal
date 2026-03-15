@@ -3,7 +3,6 @@
   import { currentView } from '../lib/stores/navigation.js';
   import { getInspection, getInspectionResults, saveInspectionResults, saveInspection, getTemplate, getInspections, saveTemplate, saveTemplateItems, getTemplateItems, createRecurringInspection, createDefectsFromInspection } from '../lib/db.js';
   import PhotoAttachment from '../components/PhotoAttachment.svelte';
-  import MobileInspectButton from '../components/MobileInspectButton.svelte';
 
   let { inspectionId } = $props();
   let inspection = $state(null);
@@ -136,7 +135,6 @@
       <span><strong>{inspection.title}</strong></span>
       <span>Prüfer: {inspection.inspector}</span>
       {#if inspection.object_name}<span>Gerät / Raum: {inspection.object_name}</span>{/if}
-      <MobileInspectButton {inspectionId} />
     </div>
 
     <div class="progress-section">

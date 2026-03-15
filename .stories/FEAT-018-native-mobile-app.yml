@@ -1,0 +1,81 @@
+# Native Mobile App (React Native / Expo)
+
+id: "FEAT-018"
+title: "Native Mobile App für Nachweis Lokal (React Native / Expo)"
+epic: "NACHWEIS-MOBILE"
+status: "inbox"
+priority: 1
+
+story_type: "platform-core"
+lane: "slow"
+platform_impact: "high"
+founder_gate_required: true
+force_approve_allowed: false
+auto_merge_allowed: false
+
+platform_rationale: |
+  PWA über lokalen HTTP-Server gescheitert (Browser-Sicherheit,
+  HTTPS auf lokaler IP, nicht endanwender-tauglich).
+  Native App nötig für zuverlässige Vor-Ort-Prüfungen.
+
+reused_by_products: ["nachweis-lokal"]
+
+non_goals:
+  - "Keine Cloud-Synchronisation (WLAN-Sync mit Desktop)"
+  - "Kein eigenständiges Bezahlmodell in der App"
+  - "Keine Desktop-Funktionen (PDF, Verwaltung, Mängeltracking)"
+
+description: |
+  Native Mobile App als Companion für Nachweis Lokal Desktop.
+  Strategie muss noch final entschieden werden (siehe review-product-strategy-mobile.md).
+
+  Technologie: React Native / Expo
+  Plattformen: Android + iOS
+  Vertrieb: Play Store + App Store (kostenlos als Companion)
+
+  Kern-Features:
+  - Pairing mit Desktop per QR-Code (WLAN)
+  - Checklisten vom Desktop laden
+  - Prüfung durchführen (OK / Mängel / Entfällt)
+  - Fotos aufnehmen (native Kamera)
+  - Offline-Modus (lokale SQLite-DB)
+  - Sync bei Reconnect
+  - Demo-Modus für App-Store-Review
+
+  Architektur:
+  - Desktop: Pairing-Server (HTTP/WebSocket im Main-Prozess)
+  - Mobile: React Native + Expo + SQLite
+  - Sync: REST-API über WLAN oder Datei-Export/Import
+  - Kein Cloud-Server nötig
+
+  Offene Fragen (zu klären vor Umsetzung):
+  - App-Store-Strategie (Companion vs. eigenständig vs. Freemium)
+  - Lizenzmodell (siehe review-product-strategy-mobile.md)
+  - Apple Developer Account einrichten
+  - Google Play Developer Account einrichten
+
+acceptance_criteria:
+  - "App im Play Store und App Store verfügbar"
+  - "Pairing mit Desktop per QR-Code funktioniert"
+  - "Prüfung offline auf dem Handy durchführbar"
+  - "Fotos über native Kamera aufnehmen"
+  - "Ergebnisse synchronisieren bei WLAN-Verbindung"
+  - "Demo-Modus ohne Desktop-Verbindung"
+  - "Apple App Store Review bestanden"
+
+affected_files:
+  - "products/nachweis-lokal-mobile/ (neues React Native Projekt)"
+  - "packages/electron-platform/lib/mobile-server.cjs (Pairing-API)"
+
+depends_on:
+  - "Produktstrategie-Entscheidung (review-product-strategy-mobile.md)"
+
+manual_steps:
+  - step: "Apple Developer Account einrichten (99 USD/Jahr)"
+    owner: "PO"
+  - step: "Google Play Developer Account einrichten (25 USD einmalig)"
+    owner: "PO"
+  - step: "Produktstrategie festlegen (Companion vs. eigenständig)"
+    owner: "PO"
+
+estimated_effort: "XL"

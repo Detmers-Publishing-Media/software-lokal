@@ -4,7 +4,6 @@
   import { getInspection, getInspectionResults, deleteInspection, getOrgProfile, getDefects, createReinspection, getAttachmentsByInspection } from '../lib/db.js';
   import { generateProtocolPdf, generateDeficiencyPdf, loadImageAsDataUrl } from '../lib/pdf.js';
   import PhotoAttachment from '../components/PhotoAttachment.svelte';
-  import MobileInspectButton from '../components/MobileInspectButton.svelte';
 
   let { inspectionId } = $props();
   let inspection = $state(null);
@@ -102,7 +101,6 @@
       <div class="actions">
         {#if inspection.status === 'offen'}
           <button class="btn-primary" onclick={() => currentView.set(`inspection:execute:${inspectionId}`)}>Fortsetzen</button>
-          <MobileInspectButton {inspectionId} />
         {/if}
         <button class="btn-secondary" onclick={handlePrintProtocol} disabled={generatingPdf}>
           {generatingPdf ? 'Erstelle PDF...' : 'PDF Protokoll'}
