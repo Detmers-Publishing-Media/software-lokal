@@ -199,7 +199,7 @@ Gib nur die CSV aus, ohne Erklärungen.`;
       />
       <button class="btn-classify" onclick={handleClassify} disabled={!betriebText.trim()}>Suchen</button>
       {#if speechSupported}
-        <button class="btn-mic" onclick={startSpeech} disabled={listening} title="Sprechen">
+        <button class="btn-mic" onmousedown={startSpeech} disabled={listening} title="Sprechen">
           {listening ? '⏺' : '🎤'}
         </button>
       {/if}

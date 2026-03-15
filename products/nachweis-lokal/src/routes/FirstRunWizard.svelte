@@ -4,6 +4,7 @@
     importLibraryTemplate, getTemplates
   } from '../lib/db.js';
   import { generateProtocolPdf } from '../lib/pdf.js';
+  import { currentView } from '../lib/stores/navigation.js';
   import libraryData from '../assets/template-library.json';
   import Glossar from '../components/Glossar.svelte';
 
@@ -329,7 +330,7 @@
               Finden
             </button>
             {#if speechSupported}
-              <button class="btn-mic" onclick={startSpeech} disabled={listening} title="Sprechen">
+              <button class="btn-mic" onmousedown={startSpeech} disabled={listening} title="Sprechen">
                 {listening ? '⏺' : '🎤'}
               </button>
             {/if}
@@ -363,7 +364,9 @@
               </ul>
               <p class="selected-hint">Häkchen entfernen um eine Checkliste abzuwählen.</p>
               {#if businessSelectedCount > 0 && !hasBusinessLicense}
-                <p class="business-hint">{businessSelectedCount} von {selectedTemplates.size} empfohlenen Checklisten sind im Business-Paket enthalten.</p>
+                <div class="info-box info-box-warning">
+                  Die mit „Business" gekennzeichneten Checklisten sind kuratierte Branchenvorlagen und können nur mit dem Nachweis Lokal Business-Paket genutzt werden. Sie können jederzeit eigene Checklisten erstellen — kostenlos und ohne Einschränkung.
+                </div>
               {/if}
             </div>
           {/if}
@@ -405,6 +408,13 @@
           {#if classifierDone && selectedTemplates.size === 0}
             <p class="warning-hint">Keine Checklisten ausgewählt. Sie können später welche hinzufügen.</p>
           {/if}
+
+          <div class="create-own">
+            <button class="btn-secondary" onclick={() => { oncomplete(); currentView.set('template:new'); }}>
+              Eigene Checkliste erstellen →
+            </button>
+            <p class="hint">Sie können jederzeit eigene Checklisten erstellen — kostenlos und ohne Einschränkung.</p>
+          </div>
         {/if}
 
       {:else if step === 4}
@@ -1040,6 +1050,9 @@
   .btn-skip:hover {
     color: var(--color-text);
   }
+
+  .create-own { margin-top: 1rem; text-align: center; }
+  .create-own .btn-secondary { padding: 0.5rem 1.5rem; }
 
   .warning-hint { color: #e65100; font-size: 0.8125rem; margin-top: 0.5rem; }
   .business-badge { background: #6366f1; color: white; font-size: 0.625rem; padding: 0.125rem 0.375rem; border-radius: 0.25rem; }

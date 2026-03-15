@@ -103,6 +103,19 @@
           <option value={t.id}>{t.name}</option>
         {/each}
       </select>
+      {#if templates.length === 0}
+        <div class="empty-templates-hint">
+          <p>Noch keine Checklisten vorhanden.</p>
+          <div class="empty-actions">
+            <button type="button" class="btn-secondary" onclick={() => currentView.set('templates')}>
+              Aus Bibliothek hinzufügen
+            </button>
+            <button type="button" class="btn-secondary" onclick={() => currentView.set('template:new')}>
+              Eigene erstellen
+            </button>
+          </div>
+        </div>
+      {/if}
     </div>
 
     {#if showCustomize}
@@ -260,4 +273,8 @@
   .interval-input { display: flex; align-items: center; gap: 0.5rem; }
   .interval-input input { width: 100px; }
   .interval-input span { font-size: 0.875rem; color: var(--color-text-muted); }
+
+  .empty-templates-hint { margin-top: 0.5rem; padding: 0.75rem; background: #fffbeb; border: 1px solid #fbbf24; border-radius: 0.375rem; }
+  .empty-templates-hint p { margin: 0 0 0.5rem; font-size: 0.875rem; color: #92400e; }
+  .empty-actions { display: flex; gap: 0.5rem; }
 </style>
