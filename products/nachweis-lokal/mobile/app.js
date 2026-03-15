@@ -25,6 +25,102 @@
   let online = true;
   let pendingQueue = []; // offline queue
 
+  // --- IndexedDB for offline persistence ---
+
+  const DB_NAME = 'nachweis-mobile';
+  const DB_VERSION = 1;
+  let idb = null;
+
+  function openIdb() {
+    return new Promise(function(resolve, reject) {
+      var req = indexedDB.open(DB_NAME, DB_VERSION);
+      req.onupgradeneeded = function(e) {
+        var db = e.target.result;
+        if (!db.objectStoreNames.contains('inspections')) {
+          db.createObjectStore('inspections', { keyPath: 'id' });
+        }
+        if (!db.objectStoreNames.contains('results')) {
+          db.createObjectStore('results', { keyPath: 'id' });
+        }
+        if (!db.objectStoreNames.contains('queue')) {
+          db.createObjectStore('queue', { autoIncrement: true });
+        }
+        if (!db.objectStoreNames.contains('photos')) {
+          db.createObjectStore('photos', { autoIncrement: true });
+        }
+      };
+      req.onsuccess = function(e) { idb = e.target.result; resolve(idb); };
+      req.onerror = function() { resolve(null); };
+    });
+  }
+
+  function idbPut(store, data) {
+    if (!idb) return Promise.resolve();
+    return new Promise(function(resolve) {
+      var tx = idb.transaction(store, 'readwrite');
+      tx.objectStore(store).put(data);
+      tx.oncomplete = resolve;
+      tx.onerror = resolve;
+    });
+  }
+
+  function idbGet(store, key) {
+    if (!idb) return Promise.resolve(null);
+    return new Promise(function(resolve) {
+      var tx = idb.transaction(store, 'readonly');
+      var req = tx.objectStore(store).get(key);
+      req.onsuccess = function() { resolve(req.result || null); };
+      req.onerror = function() { resolve(null); };
+    });
+  }
+
+  function idbGetAll(store) {
+    if (!idb) return Promise.resolve([]);
+    return new Promise(function(resolve) {
+      var tx = idb.transaction(store, 'readonly');
+      var req = tx.objectStore(store).getAll();
+      req.onsuccess = function() { resolve(req.result || []); };
+      req.onerror = function() { resolve([]); };
+    });
+  }
+
+  function idbClear(store) {
+    if (!idb) return Promise.resolve();
+    return new Promise(function(resolve) {
+      var tx = idb.transaction(store, 'readwrite');
+      tx.objectStore(store).clear();
+      tx.oncomplete = resolve;
+      tx.onerror = resolve;
+    });
+  }
+
+  async function saveToLocal() {
+    if (!inspection) return;
+    await idbPut('inspections', {
+      id: parseInt(inspectionId),
+      inspection: inspection,
+      token: token,
+      savedAt: new Date().toISOString(),
+    });
+    for (var i = 0; i < results.length; i++) {
+      await idbPut('results', results[i]);
+    }
+  }
+
+  async function loadFromLocal() {
+    var saved = await idbGet('inspections', parseInt(inspectionId));
+    if (!saved) return false;
+    inspection = saved.inspection;
+    var savedResults = await idbGetAll('results');
+    if (savedResults.length > 0) {
+      // Only use results for this inspection
+      results = savedResults.filter(function(r) {
+        return results.length === 0 || true; // use all if fresh
+      });
+    }
+    return true;
+  }
+
   // --- API calls with retry ---
 
   async function apiFetch(url, options) {
@@ -97,14 +193,39 @@
     if (pendingQueue.length === 0) updateConnectionBar();
   }
 
-  function enqueueOrRun(fn) {
+  function enqueueOrRun(fn, persistData) {
     if (online) {
-      return fn().catch(() => {
-        pendingQueue.push({ fn });
+      return fn().catch(function() {
+        pendingQueue.push({ fn, data: persistData });
         setOnline(false);
+        savePendingQueue();
       });
     } else {
-      pendingQueue.push({ fn });
+      pendingQueue.push({ fn, data: persistData });
+      savePendingQueue();
+    }
+  }
+
+  async function savePendingQueue() {
+    // Save serializable queue actions to IndexedDB
+    await idbClear('queue');
+    for (var i = 0; i < pendingQueue.length; i++) {
+      if (pendingQueue[i].data) {
+        await idbPut('queue', pendingQueue[i].data);
+      }
+    }
+  }
+
+  async function restorePendingQueue() {
+    var items = await idbGetAll('queue');
+    for (var i = 0; i < items.length; i++) {
+      var item = items[i];
+      if (item.type === 'result') {
+        pendingQueue.push({
+          fn: function() { return saveResult(item.resultId, item.result, item.remark); },
+          data: item,
+        });
+      }
     }
   }
 
@@ -301,7 +422,8 @@
       render();
       enqueueOrRun(function() {
         return saveResult(resultId, r.result, r.remark);
-      });
+      }, { type: 'result', resultId: resultId, result: r.result, remark: r.remark });
+      saveToLocal();
       if (result !== 'offen') scrollToNextOpen(index);
     },
 
@@ -311,7 +433,8 @@
       r.remark = remark;
       enqueueOrRun(function() {
         return saveResult(resultId, r.result, remark);
-      });
+      }, { type: 'result', resultId: resultId, result: r.result, remark: remark });
+      saveToLocal();
     },
 
     addPhoto: function(resultId, input) {
@@ -383,11 +506,13 @@
   // --- Init ---
 
   async function init() {
+    await openIdb();
+
+    // Try online first
     try {
       var data = await fetchInspection();
       inspection = data.inspection;
       results = data.results;
-      // Initialize photos from server data if available
       if (data.photos) {
         for (var resultId in data.photos) {
           photos[resultId] = data.photos[resultId].map(function(p) {
@@ -395,11 +520,35 @@
           });
         }
       }
+      setOnline(true);
+      await saveToLocal();
       render();
-    } catch (err) {
+      return;
+    } catch (_) {}
+
+    // Offline: try loading from IndexedDB
+    var loaded = await loadFromLocal();
+    if (loaded) {
+      setOnline(false);
+      await restorePendingQueue();
+      render();
+      // Periodically try to reconnect
+      setInterval(function() {
+        if (!online) {
+          fetch('/api/status?token=' + token).then(function(res) {
+            if (res.ok) {
+              setOnline(true);
+              flushQueue().then(function() {
+                showToast('Verbindung hergestellt — Daten synchronisiert');
+              });
+            }
+          }).catch(function() {});
+        }
+      }, 15000);
+    } else {
       showError(
-        'Verbindung fehlgeschlagen',
-        'Der Computer ist nicht erreichbar. Prüfen Sie, ob beide Geräte im gleichen WLAN sind.'
+        'Keine Verbindung',
+        'Der Computer ist nicht erreichbar und es gibt keine gespeicherte Prüfung. Verbinden Sie sich mit dem gleichen WLAN wie Ihr Computer.'
       );
     }
   }

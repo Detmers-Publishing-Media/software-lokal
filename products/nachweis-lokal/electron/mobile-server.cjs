@@ -169,6 +169,13 @@ function handleRequest(req, res) {
   const url = new URL(req.url, 'http://localhost');
   const pathname = url.pathname;
 
+  // Service Worker and manifest must be served from root scope
+  if (pathname === '/mobile/sw.js' || pathname === '/mobile/manifest.json') {
+    const filePath = path.join(mobileStaticPath, pathname.slice('/mobile/'.length));
+    serveStaticFile(res, filePath);
+    return;
+  }
+
   // Static file serving from /mobile/
   if (pathname.startsWith('/mobile/')) {
     const relativePath = pathname.slice('/mobile/'.length);

@@ -10,6 +10,7 @@
   <meta name="format-detection" content="telephone=no">
   <title>Prüfung</title>
   <link rel="stylesheet" href="/mobile/style.css">
+  <link rel="manifest" href="/mobile/manifest.json">
 </head>
 <body>
   <div id="app">
@@ -19,5 +20,10 @@
     </div>
   </div>
   <script src="/mobile/app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/mobile/sw.js').catch(function() {});
+    }
+  </script>
 </body>
 </html>
