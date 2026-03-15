@@ -206,9 +206,13 @@ Gib nur die CSV aus, ohne Erklärungen.`;
     {#if classifierResults}
       <div class="classifier-result">
         <p class="result-text">
-          Für <strong>{classifierResults.branchLabels.join(', ')}</strong> empfehlen wir
-          <strong>{classifierResults.templates.length} Checklisten</strong>:
+          <strong>Diese Checklisten passen zu Ihrem Betrieb ({classifierResults.branchLabels.join(', ')}):</strong>
         </p>
+        <ul class="result-list">
+          {#each classifierResults.templates.filter(t => !t.branches?.includes('alle')).slice(0, 12) as t}
+            <li>{t.name} <span class="result-meta">({t.items.length} Punkte)</span></li>
+          {/each}
+        </ul>
       </div>
     {/if}
 
@@ -330,6 +334,10 @@ Gib nur die CSV aus, ohne Erklärungen.`;
     min-width: 40px;
   }
   .btn-mic:disabled { opacity: 0.5; }
+  .result-list { list-style: none; margin: 0.5rem 0 0; columns: 2; }
+  .result-list li { font-size: 0.8125rem; padding: 0.125rem 0; break-inside: avoid; }
+  .result-meta { color: #718096; font-size: 0.75rem; }
+  @media (max-width: 600px) { .result-list { columns: 1; } }
   .classifier-result {
     background: #f0fff4;
     border-left: 3px solid #38a169;

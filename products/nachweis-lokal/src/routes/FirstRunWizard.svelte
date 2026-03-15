@@ -57,9 +57,9 @@
     const matched = Object.entries(scores).filter(([_, s]) => s > 0).sort((a, b) => b[1] - a[1]).map(([b]) => b);
     if (matched.length > 0) {
       selectedBranch = matched[0];
-      // Auto-select matching templates
+      // Auto-select: only branch-specific templates (not "alle" to keep list short)
       const matchedTemplates = libraryData.filter(t =>
-        t.branches && (t.branches.includes('alle') || t.branches.some(b => matched.includes(b)))
+        t.branches && t.branches.some(b => matched.includes(b))
       );
       selectedTemplates = new Set(matchedTemplates.map(t => t.id));
     }
@@ -217,23 +217,42 @@
             </button>
           </p>
         {:else}
-          {#if selectedTemplates.size > 0 && !showManualSelect}
+          {#if selectedTemplates.size > 0}
             <div class="classifier-result">
-              <p><strong>{selectedTemplates.size} Checklisten</strong> passen zu Ihrem Betrieb. Sie können die Auswahl unten anpassen.</p>
+              <p><strong>Diese Checklisten passen zu Ihrem Betrieb:</strong></p>
+              <ul class="selected-list">
+                {#each libraryData.filter(t => selectedTemplates.has(t.id)) as t}
+                  <li>
+                    <label class="selected-item">
+                      <input type="checkbox" checked onchange={() => {
+                        const next = new Set(selectedTemplates);
+                        if (next.has(t.id)) next.delete(t.id); else next.add(t.id);
+                        selectedTemplates = next;
+                      }} />
+                      <span>{t.name}</span>
+                      <span class="selected-meta">{t.items.length} Punkte</span>
+                    </label>
+                  </li>
+                {/each}
+              </ul>
+              <p class="selected-hint">Häkchen entfernen um eine Checkliste abzuwählen.</p>
             </div>
           {/if}
-          <div class="info-box">
-            Diese Checklisten helfen beim Start — sie sind keine amtliche Vorschrift. Fragen Sie Ihre <Glossar term="BG">Berufsgenossenschaft (BG)</Glossar> für eine vollständige Liste.
-          </div>
-          <div class="branch-filter">
-            {#each branchLabels as b}
-              <button
-                class="branch-btn"
-                class:active={selectedBranch === b.key}
-                onclick={() => selectedBranch = b.key}
-              >{b.label}</button>
-            {/each}
-          </div>
+          <details class="manual-expand">
+            <summary>Weitere Checklisten hinzufügen</summary>
+            <div class="info-box" style="margin-top:0.75rem">
+              Diese Checklisten helfen beim Start — sie sind keine amtliche Vorschrift. Fragen Sie Ihre <Glossar term="BG">Berufsgenossenschaft (BG)</Glossar> für eine vollständige Liste.
+            </div>
+            <div class="branch-filter">
+              {#each branchLabels as b}
+                <button
+                  class="branch-btn"
+                  class:active={selectedBranch === b.key}
+                  onclick={() => selectedBranch = b.key}
+                >{b.label}</button>
+              {/each}
+            </div>
+          </details>
         {/if}
 
         {#if classifierDone}
@@ -438,6 +457,13 @@
     font-size: 0.875rem; margin-bottom: 0.75rem;
   }
   .classifier-result p { margin: 0; }
+  .selected-list { list-style: none; margin: 0.75rem 0 0; display: flex; flex-direction: column; gap: 0.375rem; }
+  .selected-item { display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; cursor: pointer; }
+  .selected-item input { width: 1rem; height: 1rem; }
+  .selected-meta { color: #718096; font-size: 0.75rem; }
+  .selected-hint { font-size: 0.75rem; color: #718096; margin-top: 0.5rem; }
+  .manual-expand { margin-top: 0.75rem; font-size: 0.875rem; }
+  .manual-expand summary { cursor: pointer; color: var(--color-primary); font-weight: 600; }
 
   .info-box {
     padding: 0.75rem 1rem;
