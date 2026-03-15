@@ -1,7 +1,7 @@
 <script>
   import { currentView } from '../lib/stores/navigation.js';
   import {
-    saveOrgProfile, saveObject,
+    saveOrgProfile,
     importLibraryTemplate, getTemplates
   } from '../lib/db.js';
   import libraryData from '../assets/template-library.json';
@@ -10,7 +10,7 @@
   let { oncomplete } = $props();
 
   let step = $state(1);
-  const totalSteps = 4;
+  const totalSteps = 3;
 
   // Step 1: Willkommen (kein State noetig)
 
@@ -91,10 +91,7 @@
     );
   });
 
-  // Step 3: Erstes Geraet / Raum
-  let object = $state({ name: '', location: '', category: '' });
-
-  // Step 4: Organisation (optional)
+  // Step 3: Organisation (optional)
   let org = $state({ name: '', street: '', zip: '', city: '', responsible: '' });
 
   let saving = $state(false);
@@ -121,18 +118,6 @@
       saving = false;
       step = 3;
     } else if (step === 3) {
-      // Erstes Geraet / Raum
-      if (object.name.trim()) {
-        await saveObject({
-          name: object.name.trim(),
-          location: object.location.trim() || null,
-          category: object.category.trim() || null,
-          identifier: null,
-          notes: null,
-        });
-      }
-      step = 4;
-    } else if (step === 4) {
       // Organisation
       if (org.name.trim()) {
         await saveOrgProfile(org);
@@ -280,26 +265,6 @@
         {/if}
 
       {:else if step === 3}
-        <h2>Wo prüfen Sie?</h2>
-        <p class="hint">Geben Sie Ihr erstes Gerät, Ihren ersten Raum oder Ihre erste Anlage ein. Weitere können Sie jederzeit hinzufügen.</p>
-        <div class="fields">
-          <div class="field">
-            <label for="wiz-obj-name">Bezeichnung *</label>
-            <input id="wiz-obj-name" bind:value={object.name} placeholder="z.B. Feuerlöscher EG-01" />
-          </div>
-          <div class="row">
-            <div class="field">
-              <label for="wiz-obj-loc">Standort</label>
-              <input id="wiz-obj-loc" bind:value={object.location} placeholder="z.B. Erdgeschoss, Flur" />
-            </div>
-            <div class="field">
-              <label for="wiz-obj-cat">Kategorie</label>
-              <input id="wiz-obj-cat" bind:value={object.category} placeholder="z.B. Brandschutz" />
-            </div>
-          </div>
-        </div>
-
-      {:else if step === 4}
         <h2>Ihre Daten (optional)</h2>
         <p class="hint">Erscheint als Briefkopf auf Ihren Prüfprotokollen. Sie können das auch später unter Einstellungen ergänzen.</p>
         <div class="fields">

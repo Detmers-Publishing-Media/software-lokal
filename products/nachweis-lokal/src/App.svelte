@@ -160,7 +160,7 @@
     {:else if !dbReady}
       <div class="loading">Datenbank wird geladen...</div>
     {:else if route.page === 'dashboard'}
-      <Dashboard />
+      <Dashboard onStartWizard={() => { showWizard = true; }} />
     {:else if route.page === 'inspections'}
       <InspectionList />
     {:else if route.page === 'inspection-new'}

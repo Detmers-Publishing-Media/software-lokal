@@ -9,6 +9,8 @@
   import { generateBlankFormPdf } from '../lib/pdf.js';
   import Glossar from '../components/Glossar.svelte';
 
+  let { onStartWizard = null } = $props();
+
   let stats = $state({ total: 0, offen: 0, bestanden: 0, bemaengelt: 0 });
   let dueItems = $state([]);
   let openDefectCount = $state(0);
@@ -81,7 +83,14 @@
 </script>
 
 <div class="dashboard">
-  <h1>Dashboard</h1>
+  <div class="dashboard-header">
+    <h1>Dashboard</h1>
+    {#if onStartWizard}
+      <button class="btn-wizard" onclick={onStartWizard}>
+        🧭 Einrichtungsassistent
+      </button>
+    {/if}
+  </div>
 
   {#if overdueItems.length > 0}
     <div class="section section-urgent">
@@ -230,6 +239,13 @@
 
 <style>
   .dashboard { display: flex; flex-direction: column; gap: 1.25rem; }
+  .dashboard-header { display: flex; justify-content: space-between; align-items: center; }
+  .btn-wizard {
+    padding: 0.5rem 1rem; background: var(--color-surface);
+    border: 2px solid var(--color-primary); border-radius: 0.375rem;
+    color: var(--color-primary); font-size: 0.875rem; font-weight: 600; cursor: pointer;
+  }
+  .btn-wizard:hover { background: var(--color-primary); color: white; }
 
   .section { border: 1px solid var(--color-border); border-radius: 0.5rem; overflow: hidden; }
   .section-urgent { border-color: #e53e3e; }
