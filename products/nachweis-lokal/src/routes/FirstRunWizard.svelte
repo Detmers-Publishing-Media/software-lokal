@@ -1,20 +1,69 @@
 <script>
-  import { currentView } from '../lib/stores/navigation.js';
   import {
     saveOrgProfile,
     importLibraryTemplate, getTemplates
   } from '../lib/db.js';
+  import { generateProtocolPdf } from '../lib/pdf.js';
   import libraryData from '../assets/template-library.json';
   import Glossar from '../components/Glossar.svelte';
 
   let { oncomplete } = $props();
 
   let step = $state(1);
-  const totalSteps = 3;
+  const totalSteps = 5;
 
-  // Step 1: Willkommen (kein State noetig)
+  // Step 2: Demo-Pruefung
+  const demoItems = [
+    { label: 'Feuerl\u00f6scher sichtbar und zug\u00e4nglich?', hint: 'Nicht hinter Kartons oder M\u00f6beln versteckt', required: true },
+    { label: 'Fluchtweg frei und nicht blockiert?', hint: 'Keine Kisten, M\u00fcll oder M\u00f6bel im Weg', required: true },
+    { label: 'Notausgang-Schild beleuchtet?', hint: 'Gr\u00fcnes Schild \u00fcber der T\u00fcr', required: true },
+    { label: 'Rauchmelder an der Decke vorhanden?', hint: '', required: false },
+    { label: 'Elektrokabel ohne sichtbare Sch\u00e4den?', hint: 'Keine Br\u00fcche, Risse oder lose Stellen', required: true },
+  ];
 
-  // Step 2: KI-Assistent + Checklisten
+  let demoResults = $state(demoItems.map(item => ({
+    ...item,
+    result: 'offen',
+    remark: '',
+  })));
+  let demoCompleted = $state(false);
+
+  let demoDoneCount = $derived(demoResults.filter(r => r.result !== 'offen').length);
+  let demoAllDone = $derived(demoResults.every(r => r.result !== 'offen'));
+
+  function setDemoResult(index, value) {
+    demoResults[index] = { ...demoResults[index], result: value };
+  }
+
+  function setDemoRemark(index, value) {
+    demoResults[index] = { ...demoResults[index], remark: value };
+  }
+
+  function finishDemo() {
+    demoCompleted = true;
+  }
+
+  function showDemoPdf() {
+    const demoInspection = {
+      title: 'Brandschutz Schnellcheck (Demo)',
+      inspector: 'Demo-Nutzer',
+      object_name: 'Beispielgeb\u00e4ude',
+      date: new Date().toISOString().slice(0, 10),
+      status: demoResults.some(r => r.result === 'maengel') ? 'bemaengelt' : 'bestanden',
+      ref_code: 'DEMO-001',
+    };
+    const pdfResults = demoResults.map((r, i) => ({
+      sort_order: i,
+      label: r.label,
+      hint: r.hint,
+      required: r.required,
+      result: r.result,
+      remark: r.remark || '',
+    }));
+    generateProtocolPdf(demoInspection, pdfResults, {}, false);
+  }
+
+  // Step 3: KI-Betriebsassistent
   let selectedTemplates = $state(new Set());
   let selectedBranch = $state('alle');
   let betriebText = $state('');
@@ -26,7 +75,7 @@
   const branchLabels = [
     { key: 'alle', label: 'Alle' },
     { key: 'gastro', label: 'Gastronomie' },
-    { key: 'buero', label: 'Büro' },
+    { key: 'buero', label: 'B\u00fcro' },
     { key: 'kita', label: 'Kita' },
     { key: 'handwerk', label: 'Handwerk' },
     { key: 'einzelhandel', label: 'Einzelhandel' },
@@ -35,13 +84,13 @@
   ];
 
   const keywords = {
-    gastro: ['restaurant', 'imbiss', 'café', 'cafe', 'küche', 'kochen', 'gastronomie', 'speisen', 'essen', 'bar', 'kneipe', 'zapf', 'bier', 'fritteuse', 'grill', 'lebensmittel', 'hygiene', 'catering', 'kantine', 'bäckerei', 'metzgerei', 'kiosk'],
-    buero: ['büro', 'office', 'schreibtisch', 'bildschirm', 'computer', 'arbeitsplatz', 'praxis', 'kanzlei', 'agentur', 'beratung', 'verwaltung', 'server'],
-    kita: ['kita', 'kindergarten', 'krippe', 'hort', 'schule', 'kinder', 'spielplatz', 'spielgeräte', 'turnhalle', 'betreuung', 'außengelände'],
-    handwerk: ['werkstatt', 'handwerk', 'maschine', 'werkzeug', 'elektro', 'elektriker', 'installation', 'montage', 'baustelle', 'leiter', 'lager', 'regal', 'produktion', 'schweißen', 'schreinerei'],
-    einzelhandel: ['laden', 'geschäft', 'shop', 'verkauf', 'kasse', 'regal', 'einzelhandel', 'supermarkt', 'boutique'],
-    hausverwaltung: ['gebäude', 'haus', 'wohnung', 'vermieter', 'hausverwaltung', 'aufzug', 'heizung', 'keller', 'tiefgarage', 'treppe'],
-    verein: ['verein', 'sport', 'fußball', 'tennis', 'schwimmbad', 'turnhalle', 'sportplatz', 'minigolf', 'clubhaus'],
+    gastro: ['restaurant', 'imbiss', 'caf\u00e9', 'cafe', 'k\u00fcche', 'kochen', 'gastronomie', 'speisen', 'essen', 'bar', 'kneipe', 'zapf', 'bier', 'fritteuse', 'grill', 'lebensmittel', 'hygiene', 'catering', 'kantine', 'b\u00e4ckerei', 'metzgerei', 'kiosk'],
+    buero: ['b\u00fcro', 'office', 'schreibtisch', 'bildschirm', 'computer', 'arbeitsplatz', 'praxis', 'kanzlei', 'agentur', 'beratung', 'verwaltung', 'server'],
+    kita: ['kita', 'kindergarten', 'krippe', 'hort', 'schule', 'kinder', 'spielplatz', 'spielger\u00e4te', 'turnhalle', 'betreuung', 'au\u00dfengel\u00e4nde'],
+    handwerk: ['werkstatt', 'handwerk', 'maschine', 'werkzeug', 'elektro', 'elektriker', 'installation', 'montage', 'baustelle', 'leiter', 'lager', 'regal', 'produktion', 'schwei\u00dfen', 'schreinerei'],
+    einzelhandel: ['laden', 'gesch\u00e4ft', 'shop', 'verkauf', 'kasse', 'regal', 'einzelhandel', 'supermarkt', 'boutique'],
+    hausverwaltung: ['geb\u00e4ude', 'haus', 'wohnung', 'vermieter', 'hausverwaltung', 'aufzug', 'heizung', 'keller', 'tiefgarage', 'treppe'],
+    verein: ['verein', 'sport', 'fu\u00dfball', 'tennis', 'schwimmbad', 'turnhalle', 'sportplatz', 'minigolf', 'clubhaus'],
   };
 
   function classifyBetrieb() {
@@ -57,7 +106,6 @@
     const matched = Object.entries(scores).filter(([_, s]) => s > 0).sort((a, b) => b[1] - a[1]).map(([b]) => b);
     if (matched.length > 0) {
       selectedBranch = matched[0];
-      // Auto-select: only branch-specific templates (not "alle" to keep list short)
       const matchedTemplates = libraryData.filter(t =>
         t.branches && t.branches.some(b => matched.includes(b))
       );
@@ -91,11 +139,6 @@
     );
   });
 
-  // Step 3: Organisation (optional)
-  let org = $state({ name: '', street: '', zip: '', city: '', responsible: '' });
-
-  let saving = $state(false);
-
   function toggleTemplate(id) {
     const next = new Set(selectedTemplates);
     if (next.has(id)) next.delete(id);
@@ -103,35 +146,42 @@
     selectedTemplates = next;
   }
 
+  // Step 4: Organisation (optional)
+  let org = $state({ name: '', street: '', zip: '', city: '', responsible: '' });
+
+  let saving = $state(false);
+  let importedCount = $state(0);
+
   async function handleNext() {
     if (step === 1) {
-      // Willkommen — nichts zu speichern
       step = 2;
     } else if (step === 2) {
-      // Checklisten importieren
+      step = 3;
+    } else if (step === 3) {
+      // Import selected templates
       saving = true;
+      let count = 0;
       for (const t of libraryData) {
         if (selectedTemplates.has(t.id)) {
           await importLibraryTemplate(t);
+          count++;
         }
       }
+      importedCount = count;
       saving = false;
-      step = 3;
-    } else if (step === 3) {
-      // Organisation
+      step = 4;
+    } else if (step === 4) {
       if (org.name.trim()) {
         await saveOrgProfile(org);
       }
+      step = 5;
+    } else if (step === 5) {
       oncomplete();
     }
   }
 
-  function handleSkip() {
-    if (step < totalSteps) {
-      step++;
-    } else {
-      oncomplete();
-    }
+  function skipToSetup() {
+    step = 3;
   }
 
   function handleSkipAll() {
@@ -143,7 +193,7 @@
   <div class="wizard">
     <div class="wizard-header">
       <h1>Willkommen bei Nachweis Lokal</h1>
-      <p class="subtitle">Richten Sie die App in wenigen Schritten ein.</p>
+      <p class="subtitle">Pr\u00fcfungen dokumentieren \u2014 einfach und sicher.</p>
       <div class="progress">
         <div class="progress-bar" style="width: {(step / totalSteps) * 100}%"></div>
       </div>
@@ -152,34 +202,95 @@
 
     <div class="wizard-body">
       {#if step === 1}
-        <h2>Prüfungen dokumentieren — einfach und sicher</h2>
+        <!-- Willkommen -->
+        <h2>Pr\u00fcfungen dokumentieren \u2014 einfach und sicher</h2>
         <div class="welcome">
-          <p>Nachweis Lokal hilft Ihnen, wiederkehrende Prüfungen zu dokumentieren — <strong>rechtssicher, ohne Cloud, direkt auf Ihrem Rechner.</strong></p>
-          <div class="welcome-steps">
-            <div class="welcome-step">
-              <span class="welcome-num">1</span>
-              <span><strong>Checkliste wählen</strong> — fertige Vorlagen oder eigene erstellen</span>
-            </div>
-            <div class="welcome-step">
-              <span class="welcome-num">2</span>
-              <span><strong>Gerät oder Raum zuordnen</strong> — was wird geprüft?</span>
-            </div>
-            <div class="welcome-step">
-              <span class="welcome-num">3</span>
-              <span><strong>Prüfung durchführen</strong> — Punkte abhaken, Fotos machen, fertig</span>
-            </div>
+          <p>Probieren Sie es aus: F\u00fchren Sie jetzt eine kurze Demo-Pr\u00fcfung durch. Das dauert nur 2 Minuten.</p>
+          <div class="welcome-actions">
+            <button class="btn-primary btn-large" onclick={() => step = 2}>
+              Jetzt ausprobieren
+            </button>
+            <button class="link-btn" onclick={skipToSetup}>
+              Direkt einrichten
+            </button>
           </div>
-          <p class="welcome-hint">Das Dashboard erinnert Sie automatisch an fällige Prüfungen.</p>
           <div class="info-box info-box-warning">
-            <strong>Warum ist das wichtig?</strong> Als Unternehmer müssen Sie bestimmte Dinge regelmäßig prüfen — zum Beispiel Feuerlöscher, elektrische Geräte oder Fluchtwege. Wenn etwas passiert und Sie keine Prüfung nachweisen können, haften Sie persönlich. Auch Ihre Versicherung kann die Zahlung verweigern.
+            <strong>Warum ist das wichtig?</strong> Als Unternehmer m\u00fcssen Sie bestimmte Dinge regelm\u00e4\u00dfig pr\u00fcfen \u2014 zum Beispiel Feuerl\u00f6scher, elektrische Ger\u00e4te oder Fluchtwege. Wenn etwas passiert und Sie keine Pr\u00fcfung nachweisen k\u00f6nnen, haften Sie pers\u00f6nlich. Auch Ihre Versicherung kann die Zahlung verweigern.
           </div>
         </div>
 
       {:else if step === 2}
+        <!-- Demo-Pruefung -->
+        {#if !demoCompleted}
+          <h2>Brandschutz Schnellcheck</h2>
+          <p class="hint">Pr\u00fcfen Sie die folgenden 5 Punkte \u2014 genau so funktioniert eine echte Pr\u00fcfung.</p>
+
+          <div class="demo-progress-section">
+            <div class="demo-progress-bar">
+              <div class="demo-progress-fill" style="width: {(demoDoneCount / demoItems.length) * 100}%"></div>
+            </div>
+            <span class="demo-progress-label">{demoDoneCount} von {demoItems.length} gepr\u00fcft</span>
+          </div>
+
+          <div class="demo-checklist">
+            {#each demoResults as r, i}
+              <div class="check-item">
+                <div class="check-header">
+                  <span class="check-num">{i + 1}.</span>
+                  <span class="check-label">{r.label}</span>
+                  {#if r.required}<span class="check-required">Pflicht</span>{/if}
+                </div>
+                {#if r.hint}
+                  <div class="check-hint">{r.hint}</div>
+                {/if}
+                <div class="check-buttons">
+                  <button class="result-btn {r.result === 'ok' ? 'active-ok' : ''}" onclick={() => setDemoResult(i, 'ok')}>OK</button>
+                  <button class="result-btn {r.result === 'maengel' ? 'active-fail' : ''}" onclick={() => setDemoResult(i, 'maengel')}>M\u00e4ngel</button>
+                  <button class="result-btn {r.result === 'nicht_anwendbar' ? 'active-na' : ''}" onclick={() => setDemoResult(i, 'nicht_anwendbar')}>Entf\u00e4llt</button>
+                </div>
+                {#if r.result === 'maengel'}
+                  <textarea
+                    placeholder="Was ist das Problem?"
+                    value={r.remark ?? ''}
+                    oninput={(e) => setDemoRemark(i, e.target.value)}
+                    rows="2"
+                  ></textarea>
+                {/if}
+              </div>
+            {/each}
+          </div>
+
+          <div class="demo-actions">
+            <button class="btn-primary btn-large" onclick={finishDemo} disabled={!demoAllDone}>
+              Demo abschlie\u00dfen
+            </button>
+            <button class="link-btn" onclick={skipToSetup}>
+              Direkt einrichten
+            </button>
+          </div>
+        {:else}
+          <!-- Demo abgeschlossen -->
+          <div class="demo-success">
+            <div class="success-icon">&#10003;</div>
+            <h2>Pr\u00fcfung abgeschlossen!</h2>
+            <p>So sieht Ihr Pr\u00fcfprotokoll aus.</p>
+            <div class="demo-success-actions">
+              <button class="btn-secondary btn-large" onclick={showDemoPdf}>
+                Als PDF anzeigen
+              </button>
+              <button class="btn-primary btn-large" onclick={() => step = 3}>
+                Weiter zur Einrichtung &rarr;
+              </button>
+            </div>
+          </div>
+        {/if}
+
+      {:else if step === 3}
+        <!-- KI-Betriebsassistent -->
         <h2>Beschreiben Sie Ihren Betrieb</h2>
 
         {#if !classifierDone}
-          <p class="hint">Was für ein Betrieb ist das? Wir finden die passenden Checklisten für Sie.</p>
+          <p class="hint">Was f\u00fcr ein Betrieb ist das? Wir finden die passenden Checklisten f\u00fcr Sie.</p>
           <div class="assistant-input">
             <input
               type="text"
@@ -192,41 +303,38 @@
             </button>
             {#if speechSupported}
               <button class="btn-mic" onclick={startSpeech} disabled={listening} title="Sprechen">
-                {listening ? '⏺' : '🎤'}
+                {listening ? '\u23fa' : '\ud83c\udfa4'}
               </button>
             {/if}
           </div>
           <p class="skip-link">
             <button class="link-btn" onclick={() => { showManualSelect = true; classifierDone = true; }}>
-              Ich möchte selbst auswählen
+              Ich m\u00f6chte selbst ausw\u00e4hlen
             </button>
           </p>
         {:else}
-          {#if selectedTemplates.size > 0}
+          {#if selectedTemplates.size > 0 && !showManualSelect}
             <div class="classifier-result">
               <p><strong>Diese Checklisten passen zu Ihrem Betrieb:</strong></p>
               <ul class="selected-list">
                 {#each libraryData.filter(t => selectedTemplates.has(t.id)) as t}
                   <li>
                     <label class="selected-item">
-                      <input type="checkbox" checked onchange={() => {
-                        const next = new Set(selectedTemplates);
-                        if (next.has(t.id)) next.delete(t.id); else next.add(t.id);
-                        selectedTemplates = next;
-                      }} />
+                      <input type="checkbox" checked onchange={() => toggleTemplate(t.id)} />
                       <span>{t.name}</span>
                       <span class="selected-meta">{t.items.length} Punkte</span>
                     </label>
                   </li>
                 {/each}
               </ul>
-              <p class="selected-hint">Häkchen entfernen um eine Checkliste abzuwählen.</p>
+              <p class="selected-hint">H\u00e4kchen entfernen um eine Checkliste abzuw\u00e4hlen.</p>
             </div>
           {/if}
-          <details class="manual-expand">
-            <summary>Weitere Checklisten hinzufügen</summary>
+
+          <details class="manual-expand" open={showManualSelect}>
+            <summary>{showManualSelect ? 'Checklisten ausw\u00e4hlen' : 'Weitere Checklisten hinzuf\u00fcgen'}</summary>
             <div class="info-box" style="margin-top:0.75rem">
-              Diese Checklisten helfen beim Start — sie sind keine amtliche Vorschrift. Fragen Sie Ihre <Glossar term="BG">Berufsgenossenschaft (BG)</Glossar> für eine vollständige Liste.
+              Diese Checklisten helfen beim Start \u2014 sie sind keine amtliche Vorschrift. Fragen Sie Ihre <Glossar term="BG">Berufsgenossenschaft (BG)</Glossar> f\u00fcr eine vollst\u00e4ndige Liste.
             </div>
             <div class="branch-filter">
               {#each branchLabels as b}
@@ -237,36 +345,28 @@
                 >{b.label}</button>
               {/each}
             </div>
+            <ul class="checklist-select">
+              {#each filteredLibrary as t}
+                <li>
+                  <label class="selected-item">
+                    <input type="checkbox" checked={selectedTemplates.has(t.id)} onchange={() => toggleTemplate(t.id)} />
+                    <span>{t.name}</span>
+                    <span class="selected-meta">{t.items.length} Punkte \u00b7 {t.category}</span>
+                  </label>
+                </li>
+              {/each}
+            </ul>
           </details>
+
+          {#if selectedTemplates.size > 0}
+            <p class="selection-count">{selectedTemplates.size} {selectedTemplates.size === 1 ? 'Checkliste' : 'Checklisten'} ausgew\u00e4hlt</p>
+          {/if}
         {/if}
 
-        {#if classifierDone}
-        <div class="template-grid">
-          {#each filteredLibrary as t}
-            <button
-              class="template-card"
-              class:selected={selectedTemplates.has(t.id)}
-              onclick={() => toggleTemplate(t.id)}
-            >
-              <div class="card-top">
-                <span class="card-name">{t.name}</span>
-                <span class="card-badge">{t.category}</span>
-              </div>
-              <span class="card-meta">{t.items.length} Prüfpunkte</span>
-              {#if selectedTemplates.has(t.id)}
-                <span class="card-check">&#10003;</span>
-              {/if}
-            </button>
-          {/each}
-        </div>
-        {#if selectedTemplates.size > 0}
-          <p class="selection-count">{selectedTemplates.size} {selectedTemplates.size === 1 ? 'Checkliste' : 'Checklisten'} ausgewählt</p>
-        {/if}
-        {/if}
-
-      {:else if step === 3}
+      {:else if step === 4}
+        <!-- Firmendaten (optional) -->
         <h2>Ihre Daten (optional)</h2>
-        <p class="hint">Erscheint als Briefkopf auf Ihren Prüfprotokollen. Sie können das auch später unter Einstellungen ergänzen.</p>
+        <p class="hint">Erscheint als Briefkopf auf Ihren Pr\u00fcfprotokollen. Sie k\u00f6nnen das auch sp\u00e4ter unter Einstellungen erg\u00e4nzen.</p>
         <div class="fields">
           <div class="field">
             <label for="wiz-org">Organisation</label>
@@ -274,7 +374,7 @@
           </div>
           <div class="row">
             <div class="field">
-              <label for="wiz-street">Straße</label>
+              <label for="wiz-street">Stra\u00dfe</label>
               <input id="wiz-street" bind:value={org.street} />
             </div>
             <div class="field small">
@@ -291,30 +391,52 @@
             <input id="wiz-responsible" bind:value={org.responsible} placeholder="z.B. Max Mustermann, Sicherheitsbeauftragter" />
           </div>
         </div>
+
+      {:else if step === 5}
+        <!-- Fertig -->
+        <div class="finish-screen">
+          <div class="success-icon">&#10003;</div>
+          <h2>Einrichtung abgeschlossen!</h2>
+          {#if importedCount > 0}
+            <p>{importedCount} {importedCount === 1 ? 'Checkliste wurde' : 'Checklisten wurden'} importiert.</p>
+          {:else}
+            <p>Sie k\u00f6nnen jederzeit Checklisten aus der Bibliothek importieren.</p>
+          {/if}
+        </div>
       {/if}
     </div>
 
     <div class="wizard-footer">
-      <button class="btn-skip" onclick={handleSkipAll}>
-        Einrichtung überspringen
-      </button>
+      {#if step !== 5}
+        <button class="btn-skip" onclick={handleSkipAll}>
+          Einrichtung \u00fcberspringen
+        </button>
+      {:else}
+        <div></div>
+      {/if}
       <div class="footer-right">
-        {#if step > 1}
-          <button class="btn-secondary" onclick={handleSkip}>
-            Überspringen
+        {#if step === 1}
+          <!-- Step 1: only the body buttons -->
+        {:else if step === 2 && !demoCompleted}
+          <!-- Step 2 interactive: only body buttons -->
+        {:else if step === 2 && demoCompleted}
+          <!-- Step 2 success: only body buttons -->
+        {:else if step === 3}
+          <button class="btn-primary" onclick={handleNext} disabled={saving}>
+            {saving ? 'Importiere...' : 'Weiter'}
+          </button>
+        {:else if step === 4}
+          <button class="btn-secondary" onclick={() => { step = 5; }}>
+            \u00dcberspringen
+          </button>
+          <button class="btn-primary" onclick={handleNext}>
+            Weiter
+          </button>
+        {:else if step === 5}
+          <button class="btn-primary btn-large" onclick={handleNext}>
+            Zum Dashboard &rarr;
           </button>
         {/if}
-        <button class="btn-primary" onclick={handleNext} disabled={saving}>
-          {#if saving}
-            Importiere...
-          {:else if step === 1}
-            Los geht's
-          {:else if step === totalSteps}
-            Fertig
-          {:else}
-            Weiter
-          {/if}
-        </button>
       </div>
     </div>
   </div>
@@ -395,40 +517,20 @@
     margin: 0 0 1rem;
   }
 
-  .assistant-input { display: flex; gap: 0.5rem; margin-bottom: 0.5rem; }
-  .assistant-input input {
-    flex: 1; padding: 0.75rem; border: 2px solid var(--color-border);
-    border-radius: 0.5rem; font-size: 1rem;
+  /* Step 1: Welcome */
+  .welcome p {
+    font-size: 0.9375rem;
+    line-height: 1.5;
+    margin: 0 0 1.25rem;
   }
-  .assistant-input input:focus { outline: none; border-color: var(--color-primary); }
-  .btn-classify {
-    padding: 0.75rem 1.25rem; background: var(--color-primary); color: white;
-    border: none; border-radius: 0.5rem; font-size: 0.9375rem; font-weight: 600; cursor: pointer;
+
+  .welcome-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
   }
-  .btn-classify:disabled { opacity: 0.5; }
-  .btn-mic {
-    padding: 0.75rem; background: none; border: 2px solid var(--color-border);
-    border-radius: 0.5rem; font-size: 1.25rem; cursor: pointer; min-width: 48px;
-  }
-  .btn-mic:disabled { opacity: 0.5; }
-  .skip-link { margin-top: 0.75rem; }
-  .link-btn {
-    background: none; border: none; color: var(--color-primary);
-    text-decoration: underline; cursor: pointer; font-size: 0.875rem;
-  }
-  .classifier-result {
-    background: #f0fff4; border-left: 3px solid #38a169;
-    border-radius: 0.375rem; padding: 0.75rem 1rem;
-    font-size: 0.875rem; margin-bottom: 0.75rem;
-  }
-  .classifier-result p { margin: 0; }
-  .selected-list { list-style: none; margin: 0.75rem 0 0; display: flex; flex-direction: column; gap: 0.375rem; }
-  .selected-item { display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; cursor: pointer; }
-  .selected-item input { width: 1rem; height: 1rem; }
-  .selected-meta { color: #718096; font-size: 0.75rem; }
-  .selected-hint { font-size: 0.75rem; color: #718096; margin-top: 0.5rem; }
-  .manual-expand { margin-top: 0.75rem; font-size: 0.875rem; }
-  .manual-expand summary { cursor: pointer; color: var(--color-primary); font-weight: 600; }
 
   .info-box {
     padding: 0.75rem 1rem;
@@ -447,30 +549,327 @@
     color: #92400e;
   }
 
-  .welcome p { font-size: 0.9375rem; line-height: 1.5; margin: 0 0 1rem; }
-  .welcome-steps { display: flex; flex-direction: column; gap: 0.75rem; margin: 1.25rem 0; }
-  .welcome-step {
+  /* Step 2: Demo checklist */
+  .demo-progress-section {
     display: flex;
-    align-items: flex-start;
-    gap: 0.75rem;
-    font-size: 0.875rem;
-    line-height: 1.4;
+    flex-direction: column;
+    gap: 0.25rem;
+    margin-bottom: 1rem;
   }
-  .welcome-num {
+
+  .demo-progress-bar {
+    height: 6px;
+    background: var(--color-border);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .demo-progress-fill {
+    height: 100%;
+    background: var(--color-primary);
+    border-radius: 3px;
+    transition: width 0.3s;
+  }
+
+  .demo-progress-label {
+    font-size: 0.8125rem;
+    color: var(--color-text-muted);
+  }
+
+  .demo-checklist {
     display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .check-item {
+    padding: 0.75rem;
+    border: 1px solid var(--color-border);
+    border-radius: 0.375rem;
+    background: var(--color-surface);
+  }
+
+  .check-header {
+    display: flex;
+    gap: 0.5rem;
     align-items: center;
-    justify-content: center;
-    width: 1.75rem;
-    height: 1.75rem;
-    border-radius: 50%;
+  }
+
+  .check-num {
+    font-weight: 700;
+    min-width: 1.5rem;
+  }
+
+  .check-label {
+    font-weight: 600;
+    flex: 1;
+  }
+
+  .check-required {
+    font-size: 0.6875rem;
+    color: var(--color-primary);
+  }
+
+  .check-hint {
+    font-size: 0.8125rem;
+    color: var(--color-text-muted);
+    margin: 0.25rem 0 0 2rem;
+  }
+
+  .check-buttons {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+    margin-left: 2rem;
+  }
+
+  .result-btn {
+    padding: 0.375rem 1rem;
+    border: 1px solid var(--color-border);
+    border-radius: 0.25rem;
+    background: white;
+    font-size: 0.875rem;
+    cursor: pointer;
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  .result-btn:hover {
+    background: var(--color-surface);
+  }
+
+  .active-ok {
+    background: #c6f6d5;
+    border-color: #38a169;
+    color: #22543d;
+  }
+
+  .active-fail {
+    background: #fed7d7;
+    border-color: #e53e3e;
+    color: #9b2c2c;
+  }
+
+  .active-na {
+    background: #e2e8f0;
+    border-color: #a0aec0;
+    color: #4a5568;
+  }
+
+  .check-item textarea {
+    margin-top: 0.5rem;
+    margin-left: 2rem;
+    width: calc(100% - 2rem);
+    padding: 0.5rem;
+    border: 1px solid var(--color-border);
+    border-radius: 0.375rem;
+    font-size: 0.8125rem;
+    resize: vertical;
+  }
+
+  .demo-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 0.5rem;
+  }
+
+  /* Demo success screen */
+  .demo-success {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 2rem 0;
+  }
+
+  .demo-success h2 {
+    margin: 0.5rem 0 0.25rem;
+  }
+
+  .demo-success p {
+    color: var(--color-text-muted);
+    margin: 0 0 1.5rem;
+  }
+
+  .demo-success-actions {
+    display: flex;
+    gap: 0.75rem;
+  }
+
+  .success-icon {
+    font-size: 3rem;
+    color: #38a169;
+    line-height: 1;
+  }
+
+  /* Step 3: KI-Assistent */
+  .assistant-input {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .assistant-input input {
+    flex: 1;
+    padding: 0.75rem;
+    border: 2px solid var(--color-border);
+    border-radius: 0.5rem;
+    font-size: 1rem;
+  }
+
+  .assistant-input input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+  }
+
+  .btn-classify {
+    padding: 0.75rem 1.25rem;
     background: var(--color-primary);
     color: white;
-    font-weight: 700;
-    font-size: 0.8125rem;
-    flex-shrink: 0;
+    border: none;
+    border-radius: 0.5rem;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    cursor: pointer;
   }
-  .welcome-hint { color: var(--color-text-muted); font-size: 0.8125rem; margin: 0; }
 
+  .btn-classify:disabled {
+    opacity: 0.5;
+  }
+
+  .btn-mic {
+    padding: 0.75rem;
+    background: none;
+    border: 2px solid var(--color-border);
+    border-radius: 0.5rem;
+    font-size: 1.25rem;
+    cursor: pointer;
+    min-width: 48px;
+  }
+
+  .btn-mic:disabled {
+    opacity: 0.5;
+  }
+
+  .skip-link {
+    margin-top: 0.75rem;
+  }
+
+  .link-btn {
+    background: none;
+    border: none;
+    color: var(--color-primary);
+    text-decoration: underline;
+    cursor: pointer;
+    font-size: 0.875rem;
+  }
+
+  .classifier-result {
+    background: #f0fff4;
+    border-left: 3px solid #38a169;
+    border-radius: 0.375rem;
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .classifier-result p {
+    margin: 0;
+  }
+
+  .selected-list {
+    list-style: none;
+    padding: 0;
+    margin: 0.75rem 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+  }
+
+  .selected-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    cursor: pointer;
+  }
+
+  .selected-item input {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  .selected-meta {
+    color: #718096;
+    font-size: 0.75rem;
+  }
+
+  .selected-hint {
+    font-size: 0.75rem;
+    color: #718096;
+    margin-top: 0.5rem;
+  }
+
+  .manual-expand {
+    margin-top: 0.75rem;
+    font-size: 0.875rem;
+  }
+
+  .manual-expand summary {
+    cursor: pointer;
+    color: var(--color-primary);
+    font-weight: 600;
+  }
+
+  .branch-filter {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .branch-btn {
+    padding: 0.25rem 0.75rem;
+    border: 1px solid var(--color-border);
+    border-radius: 1rem;
+    background: none;
+    font-size: 0.75rem;
+    cursor: pointer;
+    color: var(--color-text);
+  }
+
+  .branch-btn:hover {
+    border-color: var(--color-primary);
+  }
+
+  .branch-btn.active {
+    background: var(--color-primary);
+    color: white;
+    border-color: var(--color-primary);
+  }
+
+  .checklist-select {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+    max-height: 250px;
+    overflow-y: auto;
+  }
+
+  .selection-count {
+    font-size: 0.8125rem;
+    color: var(--color-primary);
+    font-weight: 600;
+    margin: 0.5rem 0 0;
+  }
+
+  /* Step 4: Organisation */
   .fields {
     display: flex;
     flex-direction: column;
@@ -485,14 +884,19 @@
     flex: 1;
   }
 
-  .field.small { max-width: 100px; }
+  .field.small {
+    max-width: 100px;
+  }
 
   .field label {
     font-weight: 600;
     font-size: 0.8125rem;
   }
 
-  .row { display: flex; gap: 1rem; }
+  .row {
+    display: flex;
+    gap: 1rem;
+  }
 
   input {
     width: 100%;
@@ -508,85 +912,26 @@
     box-shadow: 0 0 0 2px rgba(43, 108, 176, 0.15);
   }
 
-  .branch-filter { display: flex; flex-wrap: wrap; gap: 0.375rem; margin-bottom: 0.75rem; }
-  .branch-btn {
-    padding: 0.25rem 0.75rem;
-    border: 1px solid var(--color-border);
-    border-radius: 1rem;
-    background: none;
-    font-size: 0.75rem;
-    cursor: pointer;
-    color: var(--color-text);
-  }
-  .branch-btn:hover { border-color: var(--color-primary); }
-  .branch-btn.active {
-    background: var(--color-primary);
-    color: white;
-    border-color: var(--color-primary);
-  }
-
-  .template-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-    gap: 0.5rem;
-  }
-
-  .template-card {
-    position: relative;
-    padding: 0.75rem;
-    border: 2px solid var(--color-border);
-    border-radius: 0.5rem;
-    background: white;
-    cursor: pointer;
-    text-align: left;
+  /* Step 5: Finish */
+  .finish-screen {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
-    transition: border-color 0.15s;
+    align-items: center;
+    text-align: center;
+    padding: 3rem 0;
   }
 
-  .template-card:hover { border-color: var(--color-primary); }
-
-  .template-card.selected {
-    border-color: var(--color-primary);
-    background: #ebf4ff;
+  .finish-screen h2 {
+    margin: 0.5rem 0 0.25rem;
   }
 
-  .card-top {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 0.5rem;
+  .finish-screen p {
+    color: var(--color-text-muted);
+    font-size: 0.9375rem;
+    margin: 0;
   }
 
-  .card-name { font-weight: 600; font-size: 0.8125rem; }
-  .card-badge {
-    padding: 0.0625rem 0.375rem;
-    border-radius: 0.25rem;
-    font-size: 0.625rem;
-    font-weight: 600;
-    background: #e2e8f0;
-    color: #4a5568;
-    white-space: nowrap;
-  }
-  .card-meta { font-size: 0.75rem; color: var(--color-text-muted); }
-
-  .card-check {
-    position: absolute;
-    top: 0.5rem;
-    right: 0.5rem;
-    color: var(--color-primary);
-    font-size: 1rem;
-    font-weight: 700;
-  }
-
-  .selection-count {
-    font-size: 0.8125rem;
-    color: var(--color-primary);
-    font-weight: 600;
-    margin: 0.5rem 0 0;
-  }
-
+  /* Footer */
   .wizard-footer {
     padding: 1rem 1.5rem;
     border-top: 1px solid var(--color-border);
@@ -609,7 +954,17 @@
     font-size: 0.875rem;
     cursor: pointer;
   }
-  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .btn-large {
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    min-height: 44px;
+  }
 
   .btn-secondary {
     padding: 0.5rem 1rem;
@@ -619,7 +974,10 @@
     font-size: 0.875rem;
     cursor: pointer;
   }
-  .btn-secondary:hover { background: var(--color-surface); }
+
+  .btn-secondary:hover {
+    background: var(--color-surface);
+  }
 
   .btn-skip {
     padding: 0.5rem 0;
@@ -629,5 +987,8 @@
     font-size: 0.8125rem;
     cursor: pointer;
   }
-  .btn-skip:hover { color: var(--color-text); }
+
+  .btn-skip:hover {
+    color: var(--color-text);
+  }
 </style>

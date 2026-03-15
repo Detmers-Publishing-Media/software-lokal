@@ -1,11 +1,13 @@
 <script>
   import { onMount } from 'svelte';
   import { currentView } from '../lib/stores/navigation.js';
-  import { getTemplates, getObjects, getInspectors, saveInspection, initInspectionResults } from '../lib/db.js';
+  import { getTemplates, getObjects, getInspectors, saveInspection, initInspectionResults, saveObject } from '../lib/db.js';
 
   let templates = $state([]);
   let objects = $state([]);
   let inspectors = $state([]);
+  let showNewObject = $state(false);
+  let newObject = $state({ name: '', location: '' });
   let form = $state({
     template_id: '',
     object_id: '',
@@ -62,13 +64,41 @@
       </select>
     </div>
     <div class="field">
-      <label for="object">Gerät / Raum (optional)</label>
-      <select id="object" bind:value={form.object_id}>
-        <option value="">Kein Gerät / Raum</option>
-        {#each objects as o}
-          <option value={o.id}>{o.name}{o.location ? ` (${o.location})` : ''}</option>
-        {/each}
-      </select>
+      <label for="object">Gerät / Raum</label>
+      <div class="object-select">
+        <select id="object" bind:value={form.object_id} onchange={(e) => { if (e.target.value === '__new__') { showNewObject = true; form.object_id = ''; } }}>
+          <option value="">Kein Gerät / Raum</option>
+          {#each objects as o}
+            <option value={o.id}>{o.name}{o.location ? ` (${o.location})` : ''}</option>
+          {/each}
+          <option value="__new__">+ Neu anlegen...</option>
+        </select>
+      </div>
+      {#if showNewObject}
+        <div class="inline-new-object">
+          <div class="row">
+            <div class="field">
+              <label for="new-obj-name">Name *</label>
+              <input id="new-obj-name" bind:value={newObject.name} placeholder="z.B. Feuerlöscher Flur EG" />
+            </div>
+            <div class="field">
+              <label for="new-obj-loc">Standort</label>
+              <input id="new-obj-loc" bind:value={newObject.location} placeholder="z.B. Erdgeschoss" />
+            </div>
+          </div>
+          <div class="inline-actions">
+            <button type="button" class="btn-primary btn-small" onclick={async () => {
+              if (!newObject.name.trim()) return;
+              const id = await saveObject({ name: newObject.name.trim(), location: newObject.location.trim() || null, category: null, identifier: null, notes: null });
+              objects = await getObjects();
+              form.object_id = String(id);
+              showNewObject = false;
+              newObject = { name: '', location: '' };
+            }}>Anlegen</button>
+            <button type="button" class="btn-secondary btn-small" onclick={() => { showNewObject = false; }}>Abbrechen</button>
+          </div>
+        </div>
+      {/if}
     </div>
     <div class="field">
       <label for="title">Titel *</label>
@@ -112,4 +142,12 @@
   .actions { display: flex; gap: 0.75rem; margin-top: 1rem; }
   .btn-primary { padding: 0.5rem 1rem; background: var(--color-primary); color: white; border: none; border-radius: 0.375rem; }
   .btn-secondary { padding: 0.5rem 1rem; background: none; border: 1px solid var(--color-border); border-radius: 0.375rem; }
+  .btn-small { padding: 0.375rem 0.75rem; font-size: 0.8125rem; }
+  .inline-new-object {
+    margin-top: 0.5rem; padding: 0.75rem;
+    border: 1px solid var(--color-primary); border-radius: 0.375rem;
+    background: #f0f7ff;
+  }
+  .inline-new-object .field { margin-bottom: 0.5rem; }
+  .inline-actions { display: flex; gap: 0.5rem; }
 </style>

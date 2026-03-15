@@ -1,0 +1,68 @@
+# Wizard = Nutzung — Zero-Config-Onboarding
+
+id: "FEAT-017"
+title: "Wizard IST die Nutzung — Demo-Prüfung + Inline-Setup + KI-Assistent"
+epic: "NACHWEIS-ONBOARDING"
+status: "in_progress"
+priority: 1
+
+story_type: "product-fast"
+lane: "fast"
+platform_impact: "none"
+founder_gate_required: false
+force_approve_allowed: true
+auto_merge_allowed: true
+
+description: |
+  Kompletter Umbau des Onboarding. Statt "erst konfigurieren, dann nutzen"
+  wird der Wizard zur Nutzung selbst. Time-to-First-Value von 15 Min auf 3 Min.
+
+  Phase 1 — Demo-Prüfung (Erst ausprobieren):
+  - App startet → "Wollen Sie es ausprobieren?"
+  - 5-Punkt Brandschutz-Schnellcheck als Demo
+  - Nutzer hakt ab, macht optional Foto
+  - PDF wird sofort angezeigt → Aha-Moment
+  - "So sieht Ihr Prüfprotokoll aus!"
+
+  Phase 2 — KI-Betriebsassistent:
+  - "Jetzt für Ihren Betrieb einrichten?"
+  - "Beschreiben Sie Ihren Betrieb" (Text/Sprache)
+  - Classifier wählt passende Checklisten
+  - Checkbox-Liste zum Anpassen
+
+  Phase 3 — Erste echte Prüfung mit Inline-Setup:
+  - Checkliste auswählen → "Wo prüfen Sie?"
+  - Raum/Gerät direkt inline anlegen (kein Menü-Umweg)
+  - Prüfung durchführen
+  - PDF mit echten Daten
+
+  Phase 4 — Firmendaten (optional, am Ende):
+  - "Firmendaten hinterlegen für professionelle PDFs?"
+  - Name, Adresse → überspringbar
+  - Jederzeit später unter Einstellungen nachholbar
+
+  Technisch:
+  - FirstRunWizard.svelte komplett neu
+  - Demo-Daten als Seed-Funktion in db.js
+  - InspectionForm: Inline-Geräte/Raum-Erstellung
+  - Dashboard: kein leerer Zustand mehr (Demo-Daten sichtbar)
+
+acceptance_criteria:
+  - "Nutzer kann in unter 3 Minuten eine Demo-Prüfung abschließen"
+  - "PDF wird sofort nach Demo-Prüfung angezeigt"
+  - "KI-Assistent findet passende Checklisten nach Betriebsbeschreibung"
+  - "Geräte/Räume können inline im Prüfungsformular angelegt werden"
+  - "Firmendaten werden erst am Ende abgefragt (optional)"
+  - "Dashboard zeigt nach Demo sofort Daten (nicht leer)"
+  - "Kein separater Menü-Schritt für Geräte/Räume nötig"
+
+affected_files:
+  - "products/nachweis-lokal/src/routes/FirstRunWizard.svelte (komplett neu)"
+  - "products/nachweis-lokal/src/routes/InspectionForm.svelte (Inline-Geräte)"
+  - "products/nachweis-lokal/src/routes/Dashboard.svelte"
+  - "products/nachweis-lokal/src/lib/db.js (Demo-Seed)"
+  - "products/nachweis-lokal/src/App.svelte"
+  - "products/nachweis-lokal/package.json (v0.7.0)"
+
+depends_on: []
+estimated_effort: "L"
