@@ -1,4 +1,4 @@
-# Native Mobile App (React Native / Expo)
+# Native Mobile App — MVP (eigenständig nutzbar)
 
 id: "FEAT-018"
 title: "Native Mobile App für Nachweis Lokal (React Native / Expo)"
@@ -14,68 +14,102 @@ force_approve_allowed: false
 auto_merge_allowed: false
 
 platform_rationale: |
-  PWA über lokalen HTTP-Server gescheitert (Browser-Sicherheit,
-  HTTPS auf lokaler IP, nicht endanwender-tauglich).
-  Native App nötig für zuverlässige Vor-Ort-Prüfungen.
+  Prüfungen finden vor Ort statt, nicht am Schreibtisch.
+  PWA über lokalen HTTP-Server gescheitert (Browser-Sicherheit).
+  Native App nötig — muss eigenständig nutzbar sein (Apple Guideline 4.2).
 
 reused_by_products: ["nachweis-lokal"]
 
 non_goals:
-  - "Keine Cloud-Synchronisation (WLAN-Sync mit Desktop)"
-  - "Kein eigenständiges Bezahlmodell in der App"
-  - "Keine Desktop-Funktionen (PDF, Verwaltung, Mängeltracking)"
+  - "Kein Companion — eigenständig nutzbar ohne Desktop"
+  - "Keine Cloud-Synchronisation in v1"
+  - "Kein KI-Assistent mit LLM in v1"
+  - "Keine Teamfunktionen"
 
 description: |
-  Native Mobile App als Companion für Nachweis Lokal Desktop.
-  Strategie muss noch final entschieden werden (siehe review-product-strategy-mobile.md).
+  Eigenständige Mobile App (Android + iOS) unter proprietärer Lizenz.
+  Kostenlose Basisversion im App Store.
 
-  Technologie: React Native / Expo
-  Plattformen: Android + iOS
-  Vertrieb: Play Store + App Store (kostenlos als Companion)
+  === MVP (v0.9.0) — Kostenlos, eigenständig ===
 
-  Kern-Features:
-  - Pairing mit Desktop per QR-Code (WLAN)
-  - Checklisten vom Desktop laden
-  - Prüfung durchführen (OK / Mängel / Entfällt)
-  - Fotos aufnehmen (native Kamera)
-  - Offline-Modus (lokale SQLite-DB)
-  - Sync bei Reconnect
-  - Demo-Modus für App-Store-Review
+  Technologie: React Native + Expo, expo-sqlite, expo-camera
+  Lizenz: Proprietär (eigene Codebase, kein GPL)
 
-  Architektur:
-  - Desktop: Pairing-Server (HTTP/WebSocket im Main-Prozess)
-  - Mobile: React Native + Expo + SQLite
-  - Sync: REST-API über WLAN oder Datei-Export/Import
-  - Kein Cloud-Server nötig
+  Onboarding:
+  1. Sprache wählen (DE + TR/EN Untertitel)
+  2. Betrieb beschreiben → Keyword-Classifier → passende Basis-Vorlagen
+  3. Demo-Prüfung (5 Punkte)
+  4. Eigene Checkliste erstellen oder Vorlage verwenden
 
-  Offene Fragen (zu klären vor Umsetzung):
-  - App-Store-Strategie (Companion vs. eigenständig vs. Freemium)
-  - Lizenzmodell (siehe review-product-strategy-mobile.md)
-  - Apple Developer Account einrichten
-  - Google Play Developer Account einrichten
+  Features:
+  - Eigene Checklisten erstellen (unbegrenzt)
+  - 5 Basis-Vorlagen (CC-BY-SA)
+  - Prüfung durchführen (OK/Mängel/Entfällt, Fotos, Mängel-Text)
+  - Raum/Gerät inline anlegen
+  - Punkte anpassbar beim ersten Einsatz
+  - Ergebnisse lokal speichern (SQLite)
+  - Prüfungshistorie
+  - Fälligkeits-Erinnerung (Push Notification)
+  - Offline-fähig
+  - Mehrsprachig (DE + TR/EN)
+
+  Nicht in v1: PDF-Export, Desktop-Sync, Business-Vorlagen, KI-LLM, Hash-Kette
+
+  === v2 (In-App-Kauf, 19,99 EUR einmalig) ===
+
+  - PDF-Export mit Briefkopf + QR-Code
+  - 31+ Business-Vorlagen
+  - Desktop-Sync (WLAN-Import/Export)
+  - KI-Assistent
+  - Hash-Kette
+  - Organisationsprofil
+
+  === App Store ===
+
+  - Kostenlos in Play Store + App Store
+  - Eigenständig nutzbar (Apple 4.2 konform)
+  - Kein Lizenzkey, kein externer Kauflink
+  - In-App-Kauf v2 über Apple/Google Billing (15% Provision)
+  - Demo-Modus für Reviewer
+
+  === Screens ===
+
+  1. Dashboard (Fälligkeiten, letzte Prüfungen, + Neue Prüfung)
+  2. Checklisten (5 Basis + eigene + Business-Preview)
+  3. Neue Prüfung (Checkliste + Raum/Gerät + Prüfer)
+  4. Prüfung durchführen (Fortschritt, Touch-Buttons, Fotos)
+  5. Prüfungsdetail (Ergebnisse, Fotos)
+  6. Einstellungen (Sprache)
+
+  === Architektur ===
+
+  Neues Repo: nachweis-lokal-mobile/ (proprietär)
+  - app/ (Expo Router)
+  - components/ (ChecklistItem, PhotoCapture, ProgressBar)
+  - lib/ (db.ts, i18n.ts, classifier.ts)
+  - assets/ (template-library.json, business-catalog.json)
 
 acceptance_criteria:
-  - "App im Play Store und App Store verfügbar"
-  - "Pairing mit Desktop per QR-Code funktioniert"
-  - "Prüfung offline auf dem Handy durchführbar"
-  - "Fotos über native Kamera aufnehmen"
-  - "Ergebnisse synchronisieren bei WLAN-Verbindung"
-  - "Demo-Modus ohne Desktop-Verbindung"
-  - "Apple App Store Review bestanden"
-
-affected_files:
-  - "products/nachweis-lokal-mobile/ (neues React Native Projekt)"
-  - "packages/electron-platform/lib/mobile-server.cjs (Pairing-API)"
+  - "App im Play Store und App Store (kostenlos)"
+  - "Eigenständig nutzbar ohne Desktop"
+  - "Eigene Checklisten erstellen und Prüfung durchführen"
+  - "Fotos über native Kamera"
+  - "Ergebnisse lokal in SQLite"
+  - "5 Basis-Vorlagen"
+  - "Offline-fähig"
+  - "Demo-Modus für Reviewer"
+  - "Kein GPL-Code"
 
 depends_on:
-  - "Produktstrategie-Entscheidung (review-product-strategy-mobile.md)"
+  - "Apple Developer Account (99 $/Jahr)"
+  - "Google Play Console (25 $ einmalig)"
 
 manual_steps:
-  - step: "Apple Developer Account einrichten (99 USD/Jahr)"
+  - step: "Apple Developer Account einrichten"
     owner: "PO"
-  - step: "Google Play Developer Account einrichten (25 USD einmalig)"
+  - step: "Google Play Console einrichten"
     owner: "PO"
-  - step: "Produktstrategie festlegen (Companion vs. eigenständig)"
+  - step: "App Store Listing vorbereiten"
     owner: "PO"
 
 estimated_effort: "XL"
