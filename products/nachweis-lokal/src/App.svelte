@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { currentView } from './lib/stores/navigation.js';
   import { initDb, getTemplates, getOrgProfile, getDueInspections } from './lib/db.js';
+  import { sub, getLanguage } from './lib/i18n.js';
   import Dashboard from './routes/Dashboard.svelte';
   import FirstRunWizard from './routes/FirstRunWizard.svelte';
   import TemplateList from './routes/TemplateList.svelte';
@@ -129,7 +130,10 @@
           <li class="separator"></li>
         {/if}
         {#if group.header}
-          <li class="group-header">{group.header}</li>
+          <li class="group-header">
+            {group.header}
+            {#if sub(group.header)}<span class="sub">{sub(group.header)}</span>{/if}
+          </li>
         {/if}
         {#each group.items as item}
           <li>
@@ -138,6 +142,7 @@
               onclick={() => currentView.set(item.id)}
             >
               {item.label}
+              {#if sub(item.label)}<span class="sub">{sub(item.label)}</span>{/if}
             </button>
           </li>
         {/each}
@@ -225,6 +230,15 @@
   .separator {
     border-top: 1px solid var(--color-border);
     margin: 0.5rem 0;
+  }
+
+  .sub {
+    display: block;
+    font-size: 0.625rem;
+    opacity: 0.6;
+    font-weight: 400;
+    letter-spacing: 0;
+    line-height: 1.2;
   }
 
   .sidebar button {

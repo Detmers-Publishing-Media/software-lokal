@@ -4,8 +4,10 @@
   import { getOrgProfile, saveOrgProfile, getInspectors, saveInspector, deleteInspector } from '../lib/db.js';
   import { LicenseSection } from '@codefabrik/app-shared/components';
   import Integrity from './Integrity.svelte';
+  import { getLanguage, setLanguage, availableLanguages } from '../lib/i18n.js';
 
   let activeTab = $state('profile');
+  let subtitleLang = $state(getLanguage());
   let form = $state({ name: '', street: '', zip: '', city: '', contact_email: '', contact_phone: '', responsible: '' });
   let saving = $state(false);
   let saved = $state(false);
@@ -164,6 +166,22 @@
     </section>
 
     <section>
+      <h2>Sprache / Language</h2>
+      <p class="hint">Untertitel in einer zweiten Sprache anzeigen.</p>
+      <div class="lang-options">
+        {#each availableLanguages as lang}
+          <label class="lang-option">
+            <input type="radio" name="subtitle-lang" value={lang.code}
+              checked={subtitleLang === lang.code}
+              onchange={() => { subtitleLang = lang.code; setLanguage(lang.code); location.reload(); }}
+            />
+            {lang.label}
+          </label>
+        {/each}
+      </div>
+    </section>
+
+    <section>
       <h2>Supportvertrag</h2>
       <LicenseSection />
     </section>
@@ -217,6 +235,9 @@
   .bold { font-weight: 600; }
   .muted { color: var(--color-text-muted); font-size: 0.8125rem; }
   .empty { color: var(--color-text-muted); font-style: italic; font-size: 0.875rem; }
+  .lang-options { display: flex; flex-direction: column; gap: 0.5rem; }
+  .lang-option { display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; cursor: pointer; }
+  .lang-option input { width: 1rem; height: 1rem; }
   .inline-form { display: flex; gap: 0.5rem; align-items: center; }
   .inline-form input { flex: 1; }
   .btn-primary { padding: 0.5rem 1rem; background: var(--color-primary); color: white; border: none; border-radius: 0.375rem; }
