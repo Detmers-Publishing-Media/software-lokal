@@ -1,8 +1,11 @@
 const http = require('node:http');
+const https = require('node:https');
+const tls = require('node:tls');
 const fs = require('node:fs');
 const path = require('node:path');
 const os = require('node:os');
 const crypto = require('node:crypto');
+const { execSync } = require('node:child_process');
 
 let server = null;
 let token = null;
@@ -18,6 +21,43 @@ let mobileStaticPath = null;
 const IDLE_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
 const MAX_UPLOAD_SIZE = 10 * 1024 * 1024; // 10 MB
 const DEFAULT_PORT = 18080;
+
+/**
+ * Generate a self-signed certificate for HTTPS on local network.
+ * Uses Node.js built-in crypto (no openssl CLI needed).
+ */
+function generateSelfSignedCert(ip) {
+  const { generateKeyPairSync, createSign, X509Certificate } = crypto;
+
+  // Generate RSA key pair
+  const { privateKey, publicKey } = generateKeyPairSync('rsa', {
+    modulusLength: 2048,
+    publicKeyEncoding: { type: 'spki', format: 'pem' },
+    privateKeyEncoding: { type: 'pkcs8', format: 'pem' },
+  });
+
+  // Try openssl for certificate generation (most reliable)
+  try {
+    const tmpDir = os.tmpdir();
+    const keyFile = path.join(tmpDir, 'nachweis-mobile-key.pem');
+    const certFile = path.join(tmpDir, 'nachweis-mobile-cert.pem');
+
+    fs.writeFileSync(keyFile, privateKey);
+    execSync(
+      `openssl req -new -x509 -key "${keyFile}" -out "${certFile}" -days 365 -subj "/CN=Nachweis Lokal" -addext "subjectAltName=IP:${ip}" 2>/dev/null`,
+      { timeout: 5000 }
+    );
+    const cert = fs.readFileSync(certFile, 'utf-8');
+    // Cleanup
+    try { fs.unlinkSync(keyFile); } catch (_) {}
+    try { fs.unlinkSync(certFile); } catch (_) {}
+
+    return { key: privateKey, cert };
+  } catch (_) {
+    // openssl not available — fall back to HTTP
+    return null;
+  }
+}
 
 function detectLocalIp() {
   const interfaces = os.networkInterfaces();
@@ -390,18 +430,26 @@ function startServer({ getDb, mobilePath, onResultUpdate }) {
   token = crypto.randomBytes(16).toString('hex');
   serverIp = detectLocalIp();
 
-  server = http.createServer(handleRequest);
+  // Try HTTPS with self-signed cert, fall back to HTTP
+  const certs = generateSelfSignedCert(serverIp);
+  let protocol;
+  if (certs) {
+    server = https.createServer({ key: certs.key, cert: certs.cert }, handleRequest);
+    protocol = 'https';
+  } else {
+    server = http.createServer(handleRequest);
+    protocol = 'http';
+  }
 
   // Try default port, fall back to random
   return new Promise((resolve, reject) => {
     server.once('error', (err) => {
       if (err.code === 'EADDRINUSE') {
-        // Retry with random port
         server.listen(0, '0.0.0.0', () => {
           serverPort = server.address().port;
           resetIdleTimer();
-          const url = `http://${serverIp}:${serverPort}`;
-          resolve({ url, port: serverPort, ip: serverIp, token });
+          const url = `${protocol}://${serverIp}:${serverPort}`;
+          resolve({ url, port: serverPort, ip: serverIp, token, protocol });
         });
       } else {
         reject(err);
@@ -411,8 +459,8 @@ function startServer({ getDb, mobilePath, onResultUpdate }) {
     server.listen(DEFAULT_PORT, '0.0.0.0', () => {
       serverPort = DEFAULT_PORT;
       resetIdleTimer();
-      const url = `http://${serverIp}:${serverPort}`;
-      resolve({ url, port: serverPort, ip: serverIp, token });
+      const url = `${protocol}://${serverIp}:${serverPort}`;
+      resolve({ url, port: serverPort, ip: serverIp, token, protocol });
     });
   });
 }
@@ -439,7 +487,7 @@ function getStatus() {
     active: server !== null,
     inspectionId: currentInspectionId,
     token,
-    url: server ? `http://${serverIp}:${serverPort}` : null,
+    url: server ? `${server instanceof https.Server ? 'https' : 'http'}://${serverIp}:${serverPort}` : null,
   };
 }
 
