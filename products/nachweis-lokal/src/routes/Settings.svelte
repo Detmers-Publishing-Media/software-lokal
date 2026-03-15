@@ -1,7 +1,7 @@
 <script>
   import { onMount } from 'svelte';
   import { currentView } from '../lib/stores/navigation.js';
-  import { getOrgProfile, saveOrgProfile, getInspectors, saveInspector, deleteInspector } from '../lib/db.js';
+  import { getOrgProfile, saveOrgProfile, getInspectors, saveInspector, deleteInspector, importBusinessTemplates } from '../lib/db.js';
   import { LicenseSection } from '@codefabrik/app-shared/components';
   import Integrity from './Integrity.svelte';
   import { getLanguage, setLanguage, availableLanguages } from '../lib/i18n.js';
@@ -18,6 +18,11 @@
   let newInspector = $state({ name: '', role: '', qualification: '' });
   let savingInspector = $state(false);
 
+  // Business template import
+  let hasBusinessLicense = $state(false);
+  let importingTemplates = $state(false);
+  let importResult = $state('');
+
   onMount(async () => {
     const profile = await getOrgProfile();
     if (profile) {
@@ -32,6 +37,12 @@
       };
     }
     inspectorList = await getInspectors();
+
+    // Check license status for template import
+    try {
+      const licStatus = await window.electronAPI.license.getStatus();
+      hasBusinessLicense = licStatus?.active || false;
+    } catch (_) {}
 
     // Wenn von aussen auf Integritaet navigiert wurde
     if ($currentView === 'integrity') {
@@ -75,6 +86,39 @@
   async function handleDeleteInspector(id) {
     await deleteInspector(id);
     inspectorList = await getInspectors();
+  }
+
+  async function handleImportTemplates() {
+    importingTemplates = true;
+    importResult = '';
+    try {
+      const hash = await window.electronAPI.license.getHash();
+      if (!hash) {
+        importResult = 'Kein Lizenzkey gefunden';
+        importingTemplates = false;
+        return;
+      }
+      const portalUrl = 'https://portal.detmers-publish.de';
+      const res = await fetch(`${portalUrl}/api/templates/nachweis-lokal?hash=${encodeURIComponent(hash)}`);
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        importResult = err.error || 'Download fehlgeschlagen';
+        importingTemplates = false;
+        return;
+      }
+      const data = await res.json();
+      if (data.templates && Array.isArray(data.templates)) {
+        const count = await importBusinessTemplates(data.templates);
+        importResult = count > 0
+          ? `${count} Vorlagen importiert`
+          : 'Alle Vorlagen sind bereits vorhanden';
+      } else {
+        importResult = 'Keine Vorlagen erhalten';
+      }
+    } catch (_) {
+      importResult = 'Verbindungsfehler — bitte Internetverbindung pruefen';
+    }
+    importingTemplates = false;
   }
 </script>
 
@@ -184,6 +228,16 @@
     <section>
       <h2>Nachweis Lokal Business</h2>
       <LicenseSection />
+      {#if hasBusinessLicense}
+        <div class="templates-import">
+          <button class="btn-primary" onclick={handleImportTemplates} disabled={importingTemplates}>
+            {importingTemplates ? 'Importiere Vorlagen...' : 'Branchenvorlagen importieren'}
+          </button>
+          {#if importResult}
+            <p class="import-result">{importResult}</p>
+          {/if}
+        </div>
+      {/if}
     </section>
 
     <section>
@@ -243,4 +297,7 @@
   .btn-primary { padding: 0.5rem 1rem; background: var(--color-primary); color: white; border: none; border-radius: 0.375rem; }
   .btn-small { padding: 0.25rem 0.5rem; font-size: 0.75rem; border-radius: 0.25rem; }
   .btn-danger { background: var(--color-danger); color: white; border: none; }
+  .templates-import { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.75rem; }
+  .templates-import .btn-primary { align-self: flex-start; }
+  .import-result { font-size: 0.875rem; color: var(--color-text-muted); }
 </style>

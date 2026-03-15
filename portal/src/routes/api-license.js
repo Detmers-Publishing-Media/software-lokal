@@ -366,6 +366,51 @@ router.get('/api/license/deliver', async (req, res) => {
   }
 });
 
+// --- Business Templates Download ---
+
+/**
+ * GET /api/templates/:product_id?hash=XXXX
+ * Returns business templates for a valid license (validated by license_hash).
+ * The hash is the HMAC-SHA256 of the license key, available via electronAPI.license.getHash().
+ */
+router.get('/api/templates/:product_id', async (req, res) => {
+  try {
+    const { product_id } = req.params;
+    const { hash } = req.query;
+
+    if (!hash) {
+      return res.status(401).json({ error: 'License hash fehlt' });
+    }
+
+    // Validate license by hash
+    const { rows } = await pool.query(
+      "SELECT * FROM licenses WHERE license_hash = $1 AND product_id = $2 AND status = 'active'",
+      [hash, product_id]
+    );
+    if (rows.length === 0) {
+      return res.status(403).json({ error: 'Lizenzkey ungueltig oder abgelaufen' });
+    }
+
+    // Check expiration
+    const lic = rows[0];
+    if (lic.expires_at && new Date(lic.expires_at) < new Date()) {
+      return res.status(403).json({ error: 'Lizenzkey abgelaufen' });
+    }
+
+    // Serve the templates file
+    const templatesPath = path.join(DOWNLOADS_DIR, product_id, 'business-templates.json');
+    if (!fs.existsSync(templatesPath)) {
+      return res.status(404).json({ error: 'Keine Vorlagen verfuegbar' });
+    }
+
+    const templates = JSON.parse(fs.readFileSync(templatesPath, 'utf-8'));
+    res.json({ templates });
+  } catch (err) {
+    console.error('Templates download error:', err.message);
+    res.status(500).json({ error: 'Serverfehler' });
+  }
+});
+
 // Exposed for tests only
 router._resetTrialRate = () => trialHits.clear();
 
