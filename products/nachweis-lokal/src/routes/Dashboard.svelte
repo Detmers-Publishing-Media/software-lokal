@@ -17,6 +17,8 @@
 
   let overdueItems = $derived(dueItems.filter(d => d.urgency === 'ueberfaellig'));
   let soonDueItems = $derived(dueItems.filter(d => d.urgency === 'bald_faellig'));
+  let okItems = $derived(dueItems.filter(d => d.urgency === 'ok'));
+  let complianceRate = $derived(dueItems.length > 0 ? Math.round(okItems.length / dueItems.length * 100) : null);
 
   let startingInspection = $state(null);
 
@@ -158,13 +160,16 @@
   {/if}
 
   <div class="stats">
+    {#if complianceRate !== null}
+      <div class="stat-card compliance-card">
+        <div class="stat-value" class:success={complianceRate >= 80} class:warning={complianceRate >= 50 && complianceRate < 80} class:danger={complianceRate < 50}>{complianceRate}%</div>
+        <div class="stat-label">Prüfungen aktuell</div>
+        <div class="stat-detail">{okItems.length} von {dueItems.length} im Zeitplan</div>
+      </div>
+    {/if}
     <div class="stat-card">
       <div class="stat-value">{stats.total}</div>
-      <div class="stat-label">Prüfungen gesamt</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-value open">{stats.offen}</div>
-      <div class="stat-label">Offen</div>
+      <div class="stat-label">Gesamt</div>
     </div>
     <div class="stat-card">
       <div class="stat-value success">{stats.bestanden}</div>
@@ -308,6 +313,9 @@
   .stat-value.success { color: var(--color-success); }
   .stat-value.danger { color: var(--color-danger); }
   .stat-label { font-size: 0.8125rem; color: var(--color-text-muted); }
+  .stat-detail { font-size: 0.75rem; color: var(--color-text-muted); margin-top: 0.125rem; }
+  .stat-value.warning { color: var(--color-warning); }
+  .compliance-card { border-left: 3px solid var(--color-primary); }
 
   .defect-row, .recent-row {
     display: flex;
