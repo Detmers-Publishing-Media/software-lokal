@@ -13,6 +13,132 @@
   let importedIds = $state(new Set());
   let selectedBranch = $state('alle');
 
+  // --- Stufe 1: KI-Prompt ---
+  let promptCopied = $state(false);
+
+  const aiPrompt = `Ich brauche Prüfchecklisten für meinen Betrieb als CSV-Datei.
+
+Format: Semikolon-getrennt, eine Checkliste pro Zeile.
+Spalten: Name;Beschreibung;Kategorie;Intervall (Tage);Prüfpunkte (getrennt mit |)
+
+Beispiel:
+Feuerlöscher-Prüfung;Jährliche Sichtprüfung;Brandschutz;365;Plombierung intakt|Prüfdatum aktuell|Standort gekennzeichnet|Beschilderung vorhanden
+
+Mein Betrieb:
+[HIER IHREN BETRIEB BESCHREIBEN — z.B. "Imbiss mit Fritteuse und Zapfanlage" oder "Büro mit 5 Arbeitsplätzen" oder "Kita mit Außengelände"]
+
+Bitte erstelle 5-10 passende Checklisten mit jeweils 5-10 Prüfpunkten.
+Berücksichtige deutsche Vorschriften (DGUV, BetrSichV, ArbStättV).
+Gib nur die CSV aus, ohne Erklärungen.`;
+
+  function copyPrompt() {
+    navigator.clipboard.writeText(aiPrompt);
+    promptCopied = true;
+    setTimeout(() => promptCopied = false, 3000);
+  }
+
+  // --- Stufe 2: Keyword-Classifier ---
+  let betriebText = $state('');
+  let classifierResults = $state(null);
+
+  const keywords = {
+    gastro: ['restaurant', 'imbiss', 'café', 'cafe', 'küche', 'kochen', 'gastronomie', 'speisen', 'essen', 'trinken', 'bar', 'kneipe', 'zapf', 'bier', 'getränke', 'fritteuse', 'grill', 'ofen', 'spülmaschine', 'lebensmittel', 'hygiene', 'haccp', 'gesundheitszeugnis', 'bewirtung', 'catering', 'kantine', 'mensa', 'bäckerei', 'metzgerei', 'fleisch', 'fisch'],
+    buero: ['büro', 'office', 'schreibtisch', 'bildschirm', 'computer', 'monitor', 'arbeitsplatz', 'praxis', 'kanzlei', 'agentur', 'beratung', 'verwaltung', 'empfang', 'besprechung', 'meeting', 'homeoffice', 'drucker', 'server'],
+    kita: ['kita', 'kindergarten', 'kinderbetreuung', 'krippe', 'hort', 'schule', 'kinder', 'spielplatz', 'spielgeräte', 'turnhalle', 'sport', 'betreuung', 'erzieher', 'außengelände', 'sandkasten', 'rutsche', 'schaukel'],
+    handwerk: ['werkstatt', 'handwerk', 'maschine', 'werkzeug', 'säge', 'bohren', 'schleifen', 'schweißen', 'lackieren', 'schreinerei', 'tischlerei', 'schlosserei', 'elektro', 'installation', 'montage', 'baustelle', 'gerüst', 'leiter', 'höhenarbeit', 'kran', 'stapler', 'gabelstapler', 'lager', 'regal', 'palette', 'produktion', 'fertigung'],
+    einzelhandel: ['laden', 'geschäft', 'shop', 'verkauf', 'kasse', 'regal', 'lager', 'einzelhandel', 'handel', 'filiale', 'supermarkt', 'boutique', 'drogerie', 'apotheke', 'optiker', 'warenhaus'],
+    hausverwaltung: ['gebäude', 'haus', 'wohnung', 'mieter', 'vermieter', 'hausverwaltung', 'immobilie', 'treppe', 'treppenhaus', 'aufzug', 'fahrstuhl', 'lift', 'heizung', 'wasser', 'legionellen', 'dach', 'keller', 'tiefgarage', 'parkhaus', 'garage'],
+    verein: ['verein', 'sport', 'fußball', 'tennis', 'schwimmbad', 'turnhalle', 'sportplatz', 'minigolf', 'clubhaus', 'vereinsheim', 'mitglieder', 'ehrenamt', 'training', 'wettkampf'],
+  };
+
+  // Common keywords that apply to many businesses
+  const commonKeywords = {
+    brandschutz: ['feuer', 'brand', 'feuerlöscher', 'rauchmelder', 'fluchtweg', 'notausgang', 'alarm'],
+    elektro: ['strom', 'elektrisch', 'kabel', 'steckdose', 'verlängerung', 'geräte', 'elektro'],
+    fahrzeug: ['auto', 'fahrzeug', 'transporter', 'lieferwagen', 'fuhrpark', 'pkw', 'lkw'],
+    erstehilfe: ['erste hilfe', 'verbandskasten', 'defibrillator', 'notfall'],
+  };
+
+  function classifyBetrieb(text) {
+    const lower = text.toLowerCase();
+    const words = lower.split(/[\s,;.!?]+/);
+    const scores = {};
+
+    // Score each branch
+    for (const [branch, kws] of Object.entries(keywords)) {
+      scores[branch] = 0;
+      for (const kw of kws) {
+        if (lower.includes(kw)) scores[branch] += 2;
+      }
+    }
+
+    // Find matching branches (score > 0)
+    const matched = Object.entries(scores)
+      .filter(([_, s]) => s > 0)
+      .sort((a, b) => b[1] - a[1])
+      .map(([branch]) => branch);
+
+    // If nothing matched, return all
+    if (matched.length === 0) return null;
+
+    // Find matching templates
+    const matchedTemplates = libraryData.filter(t => {
+      if (!t.branches) return false;
+      if (t.branches.includes('alle')) return true;
+      return t.branches.some(b => matched.includes(b));
+    });
+
+    // Check for common extras
+    const extras = [];
+    for (const [key, kws] of Object.entries(commonKeywords)) {
+      if (kws.some(kw => lower.includes(kw))) {
+        extras.push(key);
+      }
+    }
+
+    return {
+      branches: matched,
+      templates: matchedTemplates,
+      extras,
+      branchLabels: matched.map(b => {
+        const found = branchLabels.find(bl => bl.key === b);
+        return found ? found.label : b;
+      }),
+    };
+  }
+
+  function handleClassify() {
+    if (!betriebText.trim()) return;
+    classifierResults = classifyBetrieb(betriebText);
+    if (classifierResults && classifierResults.branches.length > 0) {
+      selectedBranch = classifierResults.branches[0];
+    }
+  }
+
+  // --- Stufe 3: Spracheingabe ---
+  let listening = $state(false);
+  let speechSupported = $state(typeof window !== 'undefined' && ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window));
+
+  function startSpeech() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) return;
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'de-DE';
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    listening = true;
+    recognition.onresult = (event) => {
+      betriebText = event.results[0][0].transcript;
+      listening = false;
+      handleClassify();
+    };
+    recognition.onerror = () => { listening = false; };
+    recognition.onend = () => { listening = false; };
+    recognition.start();
+  }
+
   const branchLabels = [
     { key: 'alle', label: 'Alle' },
     { key: 'gastro', label: 'Gastronomie' },
@@ -58,6 +184,43 @@
   <p class="description">Fertige Checklisten zum direkten Übernehmen. Die Checklisten können nach dem Import angepasst werden.</p>
   <div class="info-box">
     Diese Checklisten sind ein guter Start — sie sind keine amtliche Vorschrift. Passen Sie die Punkte an Ihren Betrieb an. Wenn Sie unsicher sind: Fragen Sie Ihre <Glossar term="BG">Berufsgenossenschaft (BG)</Glossar>. Jeder Betrieb in Deutschland hat eine BG.
+  </div>
+
+  <div class="assistant-section">
+    <h3>Welche Checklisten brauchen Sie?</h3>
+    <div class="assistant-input">
+      <input
+        type="text"
+        bind:value={betriebText}
+        placeholder="Beschreiben Sie Ihren Betrieb, z.B. Imbiss mit Fritteuse und Zapfanlage"
+        onkeydown={(e) => { if (e.key === 'Enter') handleClassify(); }}
+      />
+      <button class="btn-classify" onclick={handleClassify} disabled={!betriebText.trim()}>Suchen</button>
+      {#if speechSupported}
+        <button class="btn-mic" onclick={startSpeech} disabled={listening} title="Sprechen">
+          {listening ? '⏺' : '🎤'}
+        </button>
+      {/if}
+    </div>
+
+    {#if classifierResults}
+      <div class="classifier-result">
+        <p class="result-text">
+          Für <strong>{classifierResults.branchLabels.join(', ')}</strong> empfehlen wir
+          <strong>{classifierResults.templates.length} Checklisten</strong>:
+        </p>
+      </div>
+    {/if}
+
+    <details class="ai-prompt-section">
+      <summary>Eigene Checklisten mit KI erstellen (ChatGPT, Claude, Gemini)</summary>
+      <div class="ai-prompt-content">
+        <p>Kopieren Sie diesen Prompt und fügen Sie ihn in Ihre KI ein. Beschreiben Sie dort Ihren Betrieb. Das Ergebnis können Sie als CSV unter „CSV-Import" einfügen.</p>
+        <button class="btn-copy" onclick={copyPrompt}>
+          {promptCopied ? '✓ Kopiert!' : 'Prompt kopieren'}
+        </button>
+      </div>
+    </details>
   </div>
 
   <div class="branch-filter">
@@ -126,6 +289,70 @@
     color: #1e40af;
     line-height: 1.5;
   }
+  .assistant-section {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  .assistant-section h3 { font-size: 0.9375rem; margin: 0; }
+  .assistant-input { display: flex; gap: 0.5rem; }
+  .assistant-input input {
+    flex: 1;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--color-border);
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+  }
+  .assistant-input input:focus { outline: none; border-color: var(--color-primary); }
+  .btn-classify {
+    padding: 0.5rem 1rem;
+    background: var(--color-primary);
+    color: white;
+    border: none;
+    border-radius: 0.375rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .btn-classify:disabled { opacity: 0.5; }
+  .btn-mic {
+    padding: 0.5rem;
+    background: none;
+    border: 1px solid var(--color-border);
+    border-radius: 0.375rem;
+    font-size: 1.125rem;
+    cursor: pointer;
+    min-width: 40px;
+  }
+  .btn-mic:disabled { opacity: 0.5; }
+  .classifier-result {
+    background: #f0fff4;
+    border-left: 3px solid #38a169;
+    border-radius: 0.375rem;
+    padding: 0.625rem 0.75rem;
+    font-size: 0.8125rem;
+  }
+  .result-text { margin: 0; }
+  .ai-prompt-section { font-size: 0.8125rem; color: var(--color-text-muted); }
+  .ai-prompt-section summary { cursor: pointer; color: var(--color-primary); }
+  .ai-prompt-content { margin-top: 0.5rem; display: flex; flex-direction: column; gap: 0.5rem; }
+  .ai-prompt-content p { margin: 0; line-height: 1.5; }
+  .btn-copy {
+    align-self: flex-start;
+    padding: 0.375rem 0.75rem;
+    background: none;
+    border: 1px solid var(--color-primary);
+    color: var(--color-primary);
+    border-radius: 0.375rem;
+    font-size: 0.8125rem;
+    cursor: pointer;
+  }
+
   .branch-filter { display: flex; flex-wrap: wrap; gap: 0.375rem; }
   .branch-btn {
     padding: 0.25rem 0.75rem;
