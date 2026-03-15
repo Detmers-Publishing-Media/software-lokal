@@ -49,20 +49,26 @@ description: |
   - Punkte anpassbar beim ersten Einsatz
   - Ergebnisse lokal speichern (SQLite)
   - Prüfungshistorie
+  - PDF-Export (einfach, ohne Briefkopf — Ergebnisliste mit Datum/Prüfer/Status)
   - Fälligkeits-Erinnerung (Push Notification)
   - Offline-fähig
   - Mehrsprachig (DE + TR/EN)
 
-  Nicht in v1: PDF-Export, Desktop-Sync, Business-Vorlagen, KI-LLM, Hash-Kette
+  Nicht in v1: Desktop-Sync, Business-Vorlagen, KI-LLM, Hash-Kette
+
+  === Freemium-Grenze (kostenlos vs. bezahlt) ===
+
+  Kostenlos: Funktional vollständig — prüfen, dokumentieren, einfaches PDF
+  Bezahlt: Professionell — Briefkopf, QR-Code, Fotos im PDF, Business-Vorlagen
 
   === v2 (In-App-Kauf, 19,99 EUR einmalig) ===
 
-  - PDF-Export mit Briefkopf + QR-Code
+  - PDF mit Briefkopf, QR-Code und eingebetteten Fotos
+  - Organisationsprofil (Briefkopf-Daten)
   - 31+ Business-Vorlagen
   - Desktop-Sync (WLAN-Import/Export)
   - KI-Assistent
-  - Hash-Kette
-  - Organisationsprofil
+  - Hash-Kette (tamper-evident-log)
 
   === App Store ===
 
