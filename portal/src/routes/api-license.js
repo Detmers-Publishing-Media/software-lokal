@@ -1,7 +1,12 @@
 const { Router } = require('express');
+const fs = require('node:fs');
+const path = require('node:path');
 const license = require('../services/license');
+const pool = require('../db/pool');
 const adminAuth = require('../middleware/admin-auth');
 const { PRODUCT_PREFIXES, TRIAL_PREFIXES } = require('../services/license-keygen');
+
+const DOWNLOADS_DIR = process.env.DOWNLOADS_DIR || '/data/downloads';
 
 const router = Router();
 
@@ -210,6 +215,153 @@ router.delete('/api/admin/license/:id/instances/:instanceId', adminAuth, async (
     res.json(result);
   } catch (err) {
     console.error('Instance removal error:', err.message);
+    res.status(500).json({ error: 'Interner Fehler' });
+  }
+});
+
+// --- Download validation ---
+
+/**
+ * Sort version strings descending (newest first).
+ */
+function sortVersionsDesc(versions) {
+  return versions.sort((a, b) => {
+    const pa = a.replace(/^v/, '').split('.').map(Number);
+    const pb = b.replace(/^v/, '').split('.').map(Number);
+    for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+      const diff = (pb[i] || 0) - (pa[i] || 0);
+      if (diff !== 0) return diff;
+    }
+    return 0;
+  });
+}
+
+/**
+ * POST /api/license/validate-download
+ * Validates a license key and returns product info with download URLs.
+ * Used by the download page to check a key and show available downloads.
+ *
+ * Body: { licenseKey }
+ * Returns: { valid, productId, productName, version, downloads: { linux, macos, windows } }
+ */
+router.post('/api/license/validate-download', async (req, res) => {
+  try {
+    const { licenseKey } = req.body;
+    if (!licenseKey) {
+      return res.status(400).json({ valid: false, reason: 'missing_key' });
+    }
+
+    // Validate the license key (without instance tracking)
+    const result = await license.validateForApp(licenseKey, null, null);
+    if (!result.valid) {
+      const messages = {
+        unknown: 'Unbekannter Lizenzkey. Bitte ueberpruefen Sie Ihre Eingabe.',
+        expired: 'Ihr Lizenzkey ist abgelaufen.',
+        revoked: 'Ihr Lizenzkey wurde widerrufen.',
+        wrong_product: 'Der Lizenzkey gehoert zu einem anderen Produkt.',
+      };
+      return res.json({
+        valid: false,
+        reason: result.reason,
+        error: messages[result.reason] || 'Lizenzkey ungueltig.',
+      });
+    }
+
+    const productId = result.productId;
+
+    // Load product name
+    const { rows: productRows } = await pool.query(
+      'SELECT name FROM products WHERE id = $1', [productId]);
+    const productName = productRows.length ? productRows[0].name : productId;
+
+    // Find latest version from download directory
+    const productDir = path.join(DOWNLOADS_DIR, productId);
+    let version = null;
+    const downloads = {};
+
+    if (fs.existsSync(productDir)) {
+      const versions = fs.readdirSync(productDir)
+        .filter(f => {
+          try { return fs.statSync(path.join(productDir, f)).isDirectory(); }
+          catch { return false; }
+        });
+
+      const sorted = sortVersionsDesc(versions);
+      if (sorted.length > 0) {
+        version = sorted[0];
+        const versionDir = path.join(productDir, version);
+        const platforms = ['linux', 'macos', 'windows'];
+
+        for (const platform of platforms) {
+          const platformDir = path.join(versionDir, platform);
+          if (fs.existsSync(platformDir)) {
+            const files = fs.readdirSync(platformDir);
+            if (files.length > 0) {
+              downloads[platform] = `/api/download/${encodeURIComponent(productId)}/${platform}?version=${encodeURIComponent(version)}`;
+            }
+          }
+        }
+      }
+    }
+
+    res.json({
+      valid: true,
+      productId,
+      productName,
+      version,
+      expiresAt: result.expiresAt,
+      downloads,
+    });
+  } catch (err) {
+    console.error('Download validation error:', err.message);
+    res.status(500).json({ valid: false, reason: 'server_error' });
+  }
+});
+
+// --- Digistore24 license delivery (GET) ---
+
+/**
+ * GET /api/license/deliver
+ * Digistore24 calls this after purchase to retrieve the license key
+ * for display on the thank-you page ("Liefern" tab).
+ *
+ * Query: ?order_id=XXX&product_id=YYY
+ * Returns: { license_key } or creates one if IPN hasn't arrived yet.
+ */
+router.get('/api/license/deliver', async (req, res) => {
+  try {
+    const { order_id, product_id } = req.query;
+
+    if (!order_id) {
+      return res.status(400).json({ error: 'order_id Parameter fehlt' });
+    }
+
+    // Look up existing license by order_id
+    const { rows } = await pool.query(
+      'SELECT license_key FROM licenses WHERE order_id = $1', [order_id]);
+
+    if (rows.length > 0) {
+      return res.json({ license_key: rows[0].license_key });
+    }
+
+    // No license yet — IPN might not have arrived. Generate key now if product_id is provided.
+    if (!product_id) {
+      return res.status(404).json({
+        error: 'Lizenz noch nicht erstellt. Bitte versuchen Sie es in wenigen Sekunden erneut.',
+      });
+    }
+
+    const resolvedProductId = await license.resolveProductId(product_id) || product_id;
+
+    const result = await license.activateFromIPN({
+      order_id,
+      product_id: resolvedProductId,
+      payment_id: null,
+    });
+
+    res.json({ license_key: result.licenseKey });
+  } catch (err) {
+    console.error('License delivery error:', err.message);
     res.status(500).json({ error: 'Interner Fehler' });
   }
 });
