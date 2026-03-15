@@ -14,9 +14,14 @@
 
   // Step 1: Willkommen (kein State noetig)
 
-  // Step 2: Checklisten aus Bibliothek
+  // Step 2: KI-Assistent + Checklisten
   let selectedTemplates = $state(new Set());
   let selectedBranch = $state('alle');
+  let betriebText = $state('');
+  let classifierDone = $state(false);
+  let showManualSelect = $state(false);
+  let listening = $state(false);
+  let speechSupported = $state(typeof window !== 'undefined' && ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window));
 
   const branchLabels = [
     { key: 'alle', label: 'Alle' },
@@ -28,6 +33,56 @@
     { key: 'hausverwaltung', label: 'Hausverwaltung' },
     { key: 'verein', label: 'Verein' },
   ];
+
+  const keywords = {
+    gastro: ['restaurant', 'imbiss', 'café', 'cafe', 'küche', 'kochen', 'gastronomie', 'speisen', 'essen', 'bar', 'kneipe', 'zapf', 'bier', 'fritteuse', 'grill', 'lebensmittel', 'hygiene', 'catering', 'kantine', 'bäckerei', 'metzgerei', 'kiosk'],
+    buero: ['büro', 'office', 'schreibtisch', 'bildschirm', 'computer', 'arbeitsplatz', 'praxis', 'kanzlei', 'agentur', 'beratung', 'verwaltung', 'server'],
+    kita: ['kita', 'kindergarten', 'krippe', 'hort', 'schule', 'kinder', 'spielplatz', 'spielgeräte', 'turnhalle', 'betreuung', 'außengelände'],
+    handwerk: ['werkstatt', 'handwerk', 'maschine', 'werkzeug', 'elektro', 'elektriker', 'installation', 'montage', 'baustelle', 'leiter', 'lager', 'regal', 'produktion', 'schweißen', 'schreinerei'],
+    einzelhandel: ['laden', 'geschäft', 'shop', 'verkauf', 'kasse', 'regal', 'einzelhandel', 'supermarkt', 'boutique'],
+    hausverwaltung: ['gebäude', 'haus', 'wohnung', 'vermieter', 'hausverwaltung', 'aufzug', 'heizung', 'keller', 'tiefgarage', 'treppe'],
+    verein: ['verein', 'sport', 'fußball', 'tennis', 'schwimmbad', 'turnhalle', 'sportplatz', 'minigolf', 'clubhaus'],
+  };
+
+  function classifyBetrieb() {
+    if (!betriebText.trim()) return;
+    const lower = betriebText.toLowerCase();
+    const scores = {};
+    for (const [branch, kws] of Object.entries(keywords)) {
+      scores[branch] = 0;
+      for (const kw of kws) {
+        if (lower.includes(kw)) scores[branch] += 2;
+      }
+    }
+    const matched = Object.entries(scores).filter(([_, s]) => s > 0).sort((a, b) => b[1] - a[1]).map(([b]) => b);
+    if (matched.length > 0) {
+      selectedBranch = matched[0];
+      // Auto-select matching templates
+      const matchedTemplates = libraryData.filter(t =>
+        t.branches && (t.branches.includes('alle') || t.branches.some(b => matched.includes(b)))
+      );
+      selectedTemplates = new Set(matchedTemplates.map(t => t.id));
+    }
+    classifierDone = true;
+  }
+
+  function startSpeech() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) return;
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'de-DE';
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    listening = true;
+    recognition.onresult = (event) => {
+      betriebText = event.results[0][0].transcript;
+      listening = false;
+      classifyBetrieb();
+    };
+    recognition.onerror = () => { listening = false; };
+    recognition.onend = () => { listening = false; };
+    recognition.start();
+  }
 
   let filteredLibrary = $derived.by(() => {
     if (selectedBranch === 'alle') return libraryData;
@@ -136,20 +191,52 @@
         </div>
 
       {:else if step === 2}
-        <h2>Was prüfen Sie?</h2>
-        <p class="hint">Wählen Sie die Checklisten, die zu Ihrer Organisation passen. Sie können später weitere hinzufügen oder eigene erstellen.</p>
-        <div class="info-box">
-          Welche Prüfungen Sie machen müssen, ist bei jedem Betrieb anders. Diese Checklisten helfen Ihnen beim Start — sie sind aber keine vollständige Liste. Fragen Sie Ihre <Glossar term="BG">Berufsgenossenschaft (BG)</Glossar>. Die BG sagt Ihnen, welche Prüfungen Sie genau brauchen.
-        </div>
-        <div class="branch-filter">
-          {#each branchLabels as b}
-            <button
-              class="branch-btn"
-              class:active={selectedBranch === b.key}
-              onclick={() => selectedBranch = b.key}
-            >{b.label}</button>
-          {/each}
-        </div>
+        <h2>Beschreiben Sie Ihren Betrieb</h2>
+
+        {#if !classifierDone}
+          <p class="hint">Was für ein Betrieb ist das? Wir finden die passenden Checklisten für Sie.</p>
+          <div class="assistant-input">
+            <input
+              type="text"
+              bind:value={betriebText}
+              placeholder="z.B. Imbiss mit Fritteuse und Zapfanlage"
+              onkeydown={(e) => { if (e.key === 'Enter') classifyBetrieb(); }}
+            />
+            <button class="btn-classify" onclick={classifyBetrieb} disabled={!betriebText.trim()}>
+              Finden
+            </button>
+            {#if speechSupported}
+              <button class="btn-mic" onclick={startSpeech} disabled={listening} title="Sprechen">
+                {listening ? '⏺' : '🎤'}
+              </button>
+            {/if}
+          </div>
+          <p class="skip-link">
+            <button class="link-btn" onclick={() => { showManualSelect = true; classifierDone = true; }}>
+              Ich möchte selbst auswählen
+            </button>
+          </p>
+        {:else}
+          {#if selectedTemplates.size > 0 && !showManualSelect}
+            <div class="classifier-result">
+              <p><strong>{selectedTemplates.size} Checklisten</strong> passen zu Ihrem Betrieb. Sie können die Auswahl unten anpassen.</p>
+            </div>
+          {/if}
+          <div class="info-box">
+            Diese Checklisten helfen beim Start — sie sind keine amtliche Vorschrift. Fragen Sie Ihre <Glossar term="BG">Berufsgenossenschaft (BG)</Glossar> für eine vollständige Liste.
+          </div>
+          <div class="branch-filter">
+            {#each branchLabels as b}
+              <button
+                class="branch-btn"
+                class:active={selectedBranch === b.key}
+                onclick={() => selectedBranch = b.key}
+              >{b.label}</button>
+            {/each}
+          </div>
+        {/if}
+
+        {#if classifierDone}
         <div class="template-grid">
           {#each filteredLibrary as t}
             <button
@@ -170,6 +257,7 @@
         </div>
         {#if selectedTemplates.size > 0}
           <p class="selection-count">{selectedTemplates.size} {selectedTemplates.size === 1 ? 'Checkliste' : 'Checklisten'} ausgewählt</p>
+        {/if}
         {/if}
 
       {:else if step === 3}
@@ -322,6 +410,34 @@
     font-size: 0.8125rem;
     margin: 0 0 1rem;
   }
+
+  .assistant-input { display: flex; gap: 0.5rem; margin-bottom: 0.5rem; }
+  .assistant-input input {
+    flex: 1; padding: 0.75rem; border: 2px solid var(--color-border);
+    border-radius: 0.5rem; font-size: 1rem;
+  }
+  .assistant-input input:focus { outline: none; border-color: var(--color-primary); }
+  .btn-classify {
+    padding: 0.75rem 1.25rem; background: var(--color-primary); color: white;
+    border: none; border-radius: 0.5rem; font-size: 0.9375rem; font-weight: 600; cursor: pointer;
+  }
+  .btn-classify:disabled { opacity: 0.5; }
+  .btn-mic {
+    padding: 0.75rem; background: none; border: 2px solid var(--color-border);
+    border-radius: 0.5rem; font-size: 1.25rem; cursor: pointer; min-width: 48px;
+  }
+  .btn-mic:disabled { opacity: 0.5; }
+  .skip-link { margin-top: 0.75rem; }
+  .link-btn {
+    background: none; border: none; color: var(--color-primary);
+    text-decoration: underline; cursor: pointer; font-size: 0.875rem;
+  }
+  .classifier-result {
+    background: #f0fff4; border-left: 3px solid #38a169;
+    border-radius: 0.375rem; padding: 0.75rem 1rem;
+    font-size: 0.875rem; margin-bottom: 0.75rem;
+  }
+  .classifier-result p { margin: 0; }
 
   .info-box {
     padding: 0.75rem 1rem;
