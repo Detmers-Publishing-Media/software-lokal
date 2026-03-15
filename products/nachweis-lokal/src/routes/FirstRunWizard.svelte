@@ -6,6 +6,7 @@
   import { generateProtocolPdf } from '../lib/pdf.js';
   import { currentView } from '../lib/stores/navigation.js';
   import libraryData from '../assets/template-library.json';
+  import businessCatalog from '../assets/business-catalog.json';
   import Glossar from '../components/Glossar.svelte';
 
   let { oncomplete } = $props();
@@ -100,6 +101,12 @@
     verein: ['verein', 'sport', 'fußball', 'tennis', 'schwimmbad', 'turnhalle', 'sportplatz', 'minigolf', 'clubhaus'],
   };
 
+  // Combined list for classifier matching
+  const allLibraryData = [
+    ...libraryData.map(t => ({ ...t, source: 'basis' })),
+    ...businessCatalog.map(t => ({ ...t, source: 'business' })),
+  ];
+
   function classifyBetrieb() {
     if (!betriebText.trim()) return;
     const lower = betriebText.toLowerCase();
@@ -113,10 +120,11 @@
     const matched = Object.entries(scores).filter(([_, s]) => s > 0).sort((a, b) => b[1] - a[1]).map(([b]) => b);
     if (matched.length > 0) {
       selectedBranch = matched[0];
-      const matchedTemplates = libraryData.filter(t =>
+      const matchedTemplates = allLibraryData.filter(t =>
         t.branches && t.branches.some(b => matched.includes(b))
       );
-      selectedTemplates = new Set(matchedTemplates.map(t => t.id));
+      // Only pre-select basis templates
+      selectedTemplates = new Set(matchedTemplates.filter(t => t.source === 'basis').map(t => t.id));
     }
     classifierDone = true;
   }
@@ -148,14 +156,24 @@
   }
 
   let filteredLibrary = $derived.by(() => {
-    if (selectedBranch === 'alle') return libraryData;
-    return libraryData.filter(t =>
+    if (selectedBranch === 'alle') return allLibraryData;
+    return allLibraryData.filter(t =>
       t.branches && (t.branches.includes(selectedBranch) || t.branches.includes('alle'))
     );
   });
 
-  let businessSelectedCount = $derived(
-    libraryData.filter(t => selectedTemplates.has(t.id) && t.tier === 'business').length
+  let businessMatchCount = $derived(
+    allLibraryData.filter(t => t.source === 'business' && (() => {
+      if (!classifierDone) return false;
+      const lower = betriebText.toLowerCase();
+      const scores = {};
+      for (const [branch, kws] of Object.entries(keywords)) {
+        scores[branch] = 0;
+        for (const kw of kws) { if (lower.includes(kw)) scores[branch] += 2; }
+      }
+      const matched = Object.entries(scores).filter(([_, s]) => s > 0).map(([b]) => b);
+      return t.branches && t.branches.some(b => matched.includes(b));
+    })()).length
   );
 
   function toggleTemplate(id) {
@@ -177,12 +195,11 @@
     } else if (step === 2) {
       step = 3;
     } else if (step === 3) {
-      // Import selected templates (only basis if no business license)
+      // Import selected basis templates
       saving = true;
       let count = 0;
       for (const t of libraryData) {
         if (selectedTemplates.has(t.id)) {
-          if (t.tier === 'business' && !hasBusinessLicense) continue;
           await importLibraryTemplate(t);
           count++;
         }
@@ -352,20 +369,17 @@
                 {#each libraryData.filter(t => selectedTemplates.has(t.id)) as t}
                   <li>
                     <label class="selected-item">
-                      <input type="checkbox" checked={t.tier !== 'business' || hasBusinessLicense} disabled={t.tier === 'business' && !hasBusinessLicense} onchange={() => toggleTemplate(t.id)} />
+                      <input type="checkbox" checked onchange={() => toggleTemplate(t.id)} />
                       <span>{t.name}</span>
-                      {#if t.tier === 'business'}
-                        <span class="business-badge">Business</span>
-                      {/if}
                       <span class="selected-meta">{t.items.length} Punkte</span>
                     </label>
                   </li>
                 {/each}
               </ul>
               <p class="selected-hint">Häkchen entfernen um eine Checkliste abzuwählen.</p>
-              {#if businessSelectedCount > 0 && !hasBusinessLicense}
-                <div class="info-box info-box-warning">
-                  Die mit „Business" gekennzeichneten Checklisten sind kuratierte Branchenvorlagen und können nur mit dem Nachweis Lokal Business-Paket genutzt werden. Sie können jederzeit eigene Checklisten erstellen — kostenlos und ohne Einschränkung.
+              {#if businessMatchCount > 0}
+                <div class="business-preview-hint">
+                  <p>{businessMatchCount} kuratierte Branchenvorlagen sind im Business-Paket enthalten. Sie können jederzeit eigene Checklisten erstellen.</p>
                 </div>
               {/if}
             </div>
@@ -387,15 +401,20 @@
             </div>
             <ul class="checklist-select">
               {#each filteredLibrary as t}
-                {@const isBusinessLocked = t.tier === 'business' && !hasBusinessLicense}
+                {@const isBusiness = t.source === 'business'}
+                {@const itemCount = isBusiness ? t.itemCount : t.items.length}
                 <li>
-                  <label class="selected-item" class:template-locked={isBusinessLocked}>
-                    <input type="checkbox" checked={selectedTemplates.has(t.id) && !isBusinessLocked} disabled={isBusinessLocked} onchange={() => toggleTemplate(t.id)} />
+                  <label class="selected-item" class:template-locked={isBusiness && !hasBusinessLicense}>
+                    {#if isBusiness}
+                      <input type="checkbox" disabled checked={false} />
+                    {:else}
+                      <input type="checkbox" checked={selectedTemplates.has(t.id)} onchange={() => toggleTemplate(t.id)} />
+                    {/if}
                     <span>{t.name}</span>
-                    {#if t.tier === 'business'}
+                    {#if isBusiness}
                       <span class="business-badge">Business</span>
                     {/if}
-                    <span class="selected-meta">{t.items.length} Punkte · {t.category}</span>
+                    <span class="selected-meta">{itemCount} Punkte · {t.category}</span>
                   </label>
                 </li>
               {/each}
@@ -1057,6 +1076,16 @@
   .warning-hint { color: #e65100; font-size: 0.8125rem; margin-top: 0.5rem; }
   .business-badge { background: #6366f1; color: white; font-size: 0.625rem; padding: 0.125rem 0.375rem; border-radius: 0.25rem; }
   .business-hint { font-size: 0.8125rem; color: #6366f1; margin-top: 0.5rem; font-style: italic; }
+  .business-preview-hint {
+    margin-top: 0.75rem;
+    padding: 0.625rem 0.75rem;
+    background: #f0f7ff;
+    border-left: 3px solid #6366f1;
+    border-radius: 0.375rem;
+    font-size: 0.8125rem;
+    color: #4338ca;
+  }
+  .business-preview-hint p { margin: 0; line-height: 1.5; }
   .template-locked { opacity: 0.6; }
 
   .btn-back {

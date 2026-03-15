@@ -3,11 +3,11 @@
   import { currentView } from '../lib/stores/navigation.js';
   import { importLibraryTemplate, getTemplates } from '../lib/db.js';
   import libraryData from '../assets/template-library.json';
+  import businessCatalog from '../assets/business-catalog.json';
   import Glossar from '../components/Glossar.svelte';
 
   let { embedded = false } = $props();
 
-  let templates = $state([]);
   let existingNames = $state([]);
   let importing = $state(null);
   let importedIds = $state(new Set());
@@ -82,8 +82,12 @@ Gib nur die CSV aus, ohne Erklärungen.`;
     // If nothing matched, return all
     if (matched.length === 0) return null;
 
-    // Find matching templates
-    const matchedTemplates = libraryData.filter(t => {
+    // Find matching templates (basis + business catalog)
+    const allForMatch = [
+      ...libraryData.map(t => ({ ...t, source: 'basis' })),
+      ...businessCatalog.map(t => ({ ...t, source: 'business' })),
+    ];
+    const matchedTemplates = allForMatch.filter(t => {
       if (!t.branches) return false;
       if (t.branches.includes('alle')) return true;
       return t.branches.some(b => matched.includes(b));
@@ -151,15 +155,20 @@ Gib nur die CSV aus, ohne Erklärungen.`;
     { key: 'verein', label: 'Verein' },
   ];
 
+  // Combine basis library + business catalog
+  let allTemplates = $derived.by(() => [
+    ...libraryData.map(t => ({ ...t, source: 'basis' })),
+    ...businessCatalog.map(t => ({ ...t, source: 'business' })),
+  ]);
+
   let filteredTemplates = $derived.by(() => {
-    if (selectedBranch === 'alle') return templates;
-    return templates.filter(t =>
+    if (selectedBranch === 'alle') return allTemplates;
+    return allTemplates.filter(t =>
       t.branches && (t.branches.includes(selectedBranch) || t.branches.includes('alle'))
     );
   });
 
   onMount(async () => {
-    templates = libraryData;
     const existing = await getTemplates();
     existingNames = existing.map(t => t.name);
     hasBusinessLicense = (await window.electronAPI?.license?.getStatus())?.active || false;
@@ -212,7 +221,13 @@ Gib nur die CSV aus, ohne Erklärungen.`;
         </p>
         <ul class="result-list">
           {#each classifierResults.templates.filter(t => !t.branches?.includes('alle')).slice(0, 12) as t}
-            <li>{t.name} <span class="result-meta">({t.items.length} Punkte)</span></li>
+            <li>
+              {t.name}
+              <span class="result-meta">({t.source === 'business' ? t.itemCount : t.items.length} Punkte)</span>
+              {#if t.source === 'business'}
+                <span class="business-badge">Business</span>
+              {/if}
+            </li>
           {/each}
         </ul>
       </div>
@@ -241,46 +256,53 @@ Gib nur die CSV aus, ohne Erklärungen.`;
 
   {#if !hasBusinessLicense}
     <div class="business-banner">
-      <strong>35+ kuratierte Branchenvorlagen im Business-Paket</strong>
+      <strong>31 kuratierte Branchenvorlagen im Business-Paket</strong>
       <p>89 EUR/Jahr inkl. MwSt · <a href="https://portal.detmers-publish.de/nachweis-lokal#preise">Mehr erfahren</a></p>
     </div>
   {/if}
 
   <div class="library-grid">
     {#each filteredTemplates as t}
-      {@const isLocked = t.tier === 'business' && !hasBusinessLicense}
+      {@const isBusiness = t.source === 'business'}
+      {@const isLocked = isBusiness && !hasBusinessLicense}
+      {@const isImported = existingNames.includes(t.name)}
+      {@const itemCount = isBusiness ? t.itemCount : t.items.length}
       <div class="library-card" class:template-locked={isLocked}>
         <div class="card-header">
           <h3>{t.name}</h3>
           <span class="badge">{t.category}</span>
-          {#if t.tier === 'business'}
+          {#if isBusiness}
             <span class="business-badge">Business</span>
           {/if}
         </div>
         <p class="card-desc">{t.description}</p>
         <div class="card-meta">
-          <span>{t.items.length} Prüfpunkte</span>
+          <span>{itemCount} Prüfpunkte</span>
           {#if t.interval_days}
             <span>Intervall: {t.interval_days} Tage</span>
           {/if}
         </div>
-        <details class="items-preview">
-          <summary>Prüfpunkte anzeigen</summary>
-          <ul>
-            {#each t.items as item, i}
-              <li>
-                <span class="item-num">{i + 1}.</span>
-                {item.label}
-                {#if item.required}<span class="item-required">Pflicht</span>{/if}
-              </li>
-            {/each}
-          </ul>
-        </details>
+        {#if !isBusiness && t.items}
+          <details class="items-preview">
+            <summary>Prüfpunkte anzeigen</summary>
+            <ul>
+              {#each t.items as item, i}
+                <li>
+                  <span class="item-num">{i + 1}.</span>
+                  {item.label}
+                  {#if item.required}<span class="item-required">Pflicht</span>{/if}
+                </li>
+              {/each}
+            </ul>
+          </details>
+        {/if}
         <div class="card-actions">
           {#if isLocked}
             <button class="btn-primary" disabled>Im Business-Paket enthalten</button>
-          {:else if alreadyExists(t.name)}
+          {:else if isImported || importedIds.has(t.name)}
             <button class="btn-secondary" disabled>Bereits vorhanden</button>
+          {:else if isBusiness && hasBusinessLicense}
+            <button class="btn-secondary" disabled>Bereits importiert oder Import ausstehend</button>
           {:else}
             <button class="btn-primary" onclick={() => handleImport(t)} disabled={importing === t.id}>
               {importing === t.id ? 'Wird importiert...' : 'Checkliste übernehmen'}

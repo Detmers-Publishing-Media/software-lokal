@@ -30,6 +30,9 @@ dist/
 release/
 *.tar.gz
 
+# Proprietary content (not in public repo)
+business-templates.json
+
 # OS
 .DS_Store
 Thumbs.db

@@ -574,6 +574,35 @@ export async function importLibraryTemplate(libraryTemplate) {
   return templateId;
 }
 
+// --- Business Template Import ---
+
+export async function importBusinessTemplates(templatesJson) {
+  let imported = 0;
+  for (const t of templatesJson) {
+    // Check if template with same name already exists
+    const existing = await query('SELECT id FROM templates WHERE name = ?', [t.name]);
+    if (existing.length > 0) continue; // skip duplicates
+
+    const id = await saveTemplate({
+      name: t.name,
+      description: t.description || null,
+      category: t.category || null,
+      interval_days: t.interval_days || null,
+    });
+
+    if (t.items && t.items.length > 0) {
+      await saveTemplateItems(id, t.items.map(item => ({
+        label: item.label,
+        hint: item.hint || null,
+        required: item.required !== false,
+      })));
+    }
+    imported++;
+  }
+  await appendEvent('BusinessVorlagenImportiert', { count: imported });
+  return imported;
+}
+
 // --- Wiederkehrende Pruefungen ---
 
 export async function createRecurringInspection(sourceInspectionId) {
