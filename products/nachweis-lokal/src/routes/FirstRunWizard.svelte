@@ -1,6 +1,6 @@
 <script>
   import {
-    saveOrgProfile,
+    saveOrgProfile, saveInspector,
     importLibraryTemplate, getTemplates
   } from '../lib/db.js';
   import { generateProtocolPdf } from '../lib/pdf.js';
@@ -119,16 +119,24 @@
     if (!SpeechRecognition) return;
     const recognition = new SpeechRecognition();
     recognition.lang = 'de-DE';
-    recognition.continuous = false;
-    recognition.interimResults = false;
+    recognition.continuous = true;
+    recognition.interimResults = true;
     listening = true;
+    let gotResult = false;
     recognition.onresult = (event) => {
-      betriebText = event.results[0][0].transcript;
-      listening = false;
-      classifyBetrieb();
+      const transcript = Array.from(event.results).map(r => r[0].transcript).join('');
+      betriebText = transcript;
+      if (event.results[event.results.length - 1].isFinal) {
+        gotResult = true;
+        listening = false;
+        recognition.stop();
+        classifyBetrieb();
+      }
     };
-    recognition.onerror = () => { listening = false; };
-    recognition.onend = () => { listening = false; };
+    recognition.onerror = (e) => { listening = false; };
+    recognition.onend = () => {
+      if (!gotResult) listening = false;
+    };
     recognition.start();
   }
 
@@ -173,6 +181,10 @@
     } else if (step === 4) {
       if (org.name.trim()) {
         await saveOrgProfile(org);
+      }
+      // Verantwortliche Person automatisch als Prüfer speichern
+      if (org.responsible.trim()) {
+        try { await saveInspector({ name: org.responsible.trim() }); } catch (_) {}
       }
       step = 5;
     } else if (step === 5) {
