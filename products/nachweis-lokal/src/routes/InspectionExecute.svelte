@@ -10,6 +10,11 @@
   let saving = $state(false);
   let template = $state(null);
   let autoRecurring = $state(false);
+  let completedMessage = $state(null);
+
+  let doneCount = $derived(results.filter(r => r.result !== 'offen').length);
+  let totalCount = $derived(results.length);
+  let progressPercent = $derived(totalCount > 0 ? Math.round(doneCount / totalCount * 100) : 0);
 
   onMount(async () => {
     inspection = await getInspection(inspectionId);
@@ -66,18 +71,37 @@
 
     saving = false;
     if (finalize) {
-      currentView.set(`inspection:${inspectionId}`);
+      const msg = autoRecurring && template?.interval_days > 0
+        ? `Prüfung abgeschlossen! Nächste Prüfung in ${template.interval_days} Tagen angelegt.`
+        : 'Prüfung abgeschlossen und gespeichert!';
+      completedMessage = msg;
+      setTimeout(() => {
+        currentView.set(`inspection:${inspectionId}`);
+      }, 3000);
     }
   }
 </script>
 
-{#if inspection}
+{#if completedMessage}
+  <div class="completed-screen">
+    <div class="completed-icon">✓</div>
+    <h2>{completedMessage}</h2>
+    <p class="completed-hint">Sie werden in wenigen Sekunden weitergeleitet...</p>
+  </div>
+{:else if inspection}
   <div class="page">
     <h1>Prüfung durchführen</h1>
     <div class="meta">
       <span><strong>{inspection.title}</strong></span>
       <span>Prüfer: {inspection.inspector}</span>
       {#if inspection.object_name}<span>Gerät / Raum: {inspection.object_name}</span>{/if}
+    </div>
+
+    <div class="progress-section">
+      <div class="progress-bar">
+        <div class="progress-fill" style="width: {progressPercent}%"></div>
+      </div>
+      <span class="progress-label">{doneCount} von {totalCount} Punkten bearbeitet</span>
     </div>
 
     <div class="checklist">
@@ -162,4 +186,17 @@
   .actions { display: flex; gap: 0.75rem; margin-top: 1rem; }
   .btn-primary { padding: 0.5rem 1rem; background: var(--color-primary); color: white; border: none; border-radius: 0.375rem; }
   .btn-secondary { padding: 0.5rem 1rem; background: none; border: 1px solid var(--color-border); border-radius: 0.375rem; }
+
+  .progress-section { display: flex; flex-direction: column; gap: 0.25rem; }
+  .progress-bar { height: 6px; background: var(--color-border); border-radius: 3px; overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--color-primary); border-radius: 3px; transition: width 0.3s; }
+  .progress-label { font-size: 0.8125rem; color: var(--color-text-muted); }
+
+  .completed-screen {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    height: 60vh; text-align: center;
+  }
+  .completed-icon { font-size: 4rem; color: var(--color-success); margin-bottom: 1rem; }
+  .completed-screen h2 { font-size: 1.25rem; margin-bottom: 0.5rem; }
+  .completed-hint { color: var(--color-text-muted); font-size: 0.875rem; }
 </style>
