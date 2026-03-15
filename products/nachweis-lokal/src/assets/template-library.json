@@ -554,7 +554,7 @@
   {
     "id": "minigolf-anlage",
     "name": "Minigolf-Anlage",
-    "description": "Prüfung der Minigolf-Bahnen, Hindernisse und Ausstattung (Verkehrssicherungspflicht / DIN EN 13899)",
+    "description": "Prüfung der Minigolf-Bahnen, Hindernisse, Gelände und Ausstattung (Verkehrssicherungspflicht / DIN EN 13899)",
     "category": "Freizeit",
     "branches": ["gastro", "verein"],
     "interval_days": 90,
@@ -570,7 +570,37 @@
       { "label": "Beleuchtung der Bahnen funktionsfähig?", "hint": "Nur bei Abendspiel / Schwarzlicht-Anlage", "required": false },
       { "label": "Bepflanzung/Dekoration sicher (keine herabfallenden Teile)?", "required": true },
       { "label": "Wege zwischen Bahnen eben und stolperfrei?", "required": true },
+      { "label": "Bäume: sichtbare Schäden, tote Äste, Schieflage?", "hint": "Sichtprüfung vom Boden. Bei Auffälligkeiten an Verpächter/Stadt melden — Datum und Meldung dokumentieren!", "required": true },
+      { "label": "Zäune und Absperrungen intakt?", "required": true },
+      { "label": "Mülleimer vorhanden und geleert?", "required": true },
+      { "label": "Sitzbänke/Mobiliar stabil und ohne Splitter?", "required": true },
+      { "label": "Toiletten/Sanitär sauber und funktionsfähig?", "hint": "Falls auf dem Gelände vorhanden", "required": false },
       { "label": "Haftungshinweis / Benutzungsordnung ausgehängt?", "required": true }
+    ]
+  },
+  {
+    "id": "elektrobetrieb-werkzeug",
+    "name": "Elektriker — Werkzeug und Messgeräte",
+    "description": "Regelmäßige Prüfung von Elektrowerkzeug, Messgeräten und PSA für den Elektro-Handwerksbetrieb",
+    "category": "Handwerk",
+    "branches": ["handwerk"],
+    "interval_days": 180,
+    "items": [
+      { "label": "Multimeter/Messgeräte kalibriert und innerhalb Prüffrist?", "hint": "Kalibrierdatum auf dem Gerät oder im Zertifikat prüfen", "required": true },
+      { "label": "Isolationsmessgerät funktionsfähig?", "required": true },
+      { "label": "Spannungsprüfer (Duspol) funktionsfähig?", "hint": "Vor und nach Messung an bekannter Spannung prüfen", "required": true },
+      { "label": "Bohrmaschine/Akkuschrauber: Kabel, Gehäuse, Kohlebürsten?", "hint": "Sichtprüfung auf Beschädigung, Kabelbruch, Risse", "required": true },
+      { "label": "Flex/Winkelschleifer: Schutzhaube, Scheibe, Flansch?", "required": true },
+      { "label": "Lötstation/Heißluft: Kabel, Ablage, Temperaturregelung?", "required": false },
+      { "label": "Verlängerungskabel und Kabeltrommeln unbeschädigt?", "hint": "Vollständig abrollen, Kabel auf Risse/Brüche prüfen", "required": true },
+      { "label": "Leiter/Tritt: Sprossen fest, Gelenke, rutschfeste Füße?", "required": true },
+      { "label": "Sicherungskasten/Prüfkoffer komplett bestückt?", "required": false },
+      { "label": "Isolierte Werkzeuge (VDE) unbeschädigt?", "hint": "Isolierung darf keine Risse, Löcher oder Abschürfungen haben", "required": true },
+      { "label": "Schutzbrille vorhanden und kratzerfreier?", "required": true },
+      { "label": "Isolierhandschuhe geprüft und innerhalb Nutzungsdauer?", "hint": "Aufblastest, Sichtprüfung auf Löcher, Verfallsdatum", "required": true },
+      { "label": "Sicherheitsschuhe in gutem Zustand?", "required": true },
+      { "label": "Erste-Hilfe-Kasten im Fahrzeug vollständig?", "required": true },
+      { "label": "Prüfprotokolle der letzten DGUV V3 Prüfung vorhanden?", "hint": "Für alle ortsveränderlichen Geräte, max. 12 Monate alt", "required": true }
     ]
   },
   {
